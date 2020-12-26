@@ -5,6 +5,7 @@
    [clojure.spec.alpha :as s]
    [spec-tools.data-spec :as ds]
    [spec-tools.core :as st]
+   [tick.alpha.api :as t]
    ))
 
 ;; TODO do I need this? (s/def ::uuid-indexed (s/and map? (s/every-kv uuid? some?)))
@@ -65,17 +66,15 @@
    :version  "version-not-set"
 
    :calendar
-   ^:airtable/table
    {#inst "2020-12-21T13:19:25.742-00:00"
     {:calendar/sessions [#uuid "df8788c4-67db-4fb1-980b-b5f1ab5bb4ac"
                          #uuid "afa40006-5e4f-4f8a-b4f9-09886bbbaf36"]}}
 
    :sessions
-   ^:airtable/table
    {#uuid "df8788c4-67db-4fb1-980b-b5f1ab5bb4ac"
     #:session {:id          #uuid "df8788c4-67db-4fb1-980b-b5f1ab5bb4ac"
-               :start       #inst "2020-12-21T13:19:25.742-00:00"
-               :stop        #inst "2020-12-21T14:20:25.742-00:00"
+               :start       (t/instant #inst "2020-12-21T13:19:25.742-00:00")
+               :stop        (t/instant #inst "2020-12-21T14:20:25.742-00:00")
                :label       "my frist track"
                :color       (color "#ff00ff")                              ;; this is an ovveride
                :tags        [#uuid "26c24deb-c0b5-4b7a-8ef9-8dcf540f80d8"] ;; otherwise the color is derived from mixing colors of tags
@@ -85,14 +84,13 @@
 
     #uuid "afa40006-5e4f-4f8a-b4f9-09886bbbaf36"
     #:session {:id    #uuid "afa40006-5e4f-4f8a-b4f9-09886bbbaf36"
-               :start #inst "2020-12-21T13:19:20.742-00:00"
-               :stop  #inst "2020-12-21T13:21:25.742-00:00"
+               :start (t/instant #inst "2020-12-21T13:19:20.742-00:00")
+               :stop  (t/instant #inst "2020-12-21T13:21:25.742-00:00")
                :label "my first plan"
                :tags  [#uuid "26c24deb-c0b5-4b7a-8ef9-8dcf540f80d8"]
                :type  :session/plan}
 
     :tags
-    ^:airtable/table
     {#uuid "26c24deb-c0b5-4b7a-8ef9-8dcf540f80d8"
      #:tag  {:color (color  "#00ff00")
              :label "my first group"}}
