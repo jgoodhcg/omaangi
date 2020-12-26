@@ -11,17 +11,16 @@
 
 ;; TODO do I need this? (s/def ::uuid-indexed (s/and map? (s/every-kv uuid? some?)))
 
-;; t/instant for every minute of today
-(def time-set
-  (let [intvl (t/bounds (t/today))]
-    (->> (t/range
-           (t/beginning intvl)
-           (t/end intvl)
-           (t/new-duration 1 :minutes))
-         (map t/instant)
-         set)))
+(defn generate-time-point [_]
+  (->> (t/range (-> (t/yesterday) (t/bounds) (t/beginning))
+                (-> (t/tomorrow) (t/bounds) (t/end))
+                (t/new-duration 1 :minutes))
+       (rand-nth)
+       (t/instant)))
 
-(s/def ::time-point (s/with-gen t/instant? #(s/gen time-set)))
+(s/def ::time-point (s/with-gen t/instant? #(gen/fmap generate-time-point (s/gen int?))))
+
+;; (gen/generate (s/gen ::time-point))
 
 (defn start-before-stop [{:session/keys [start stop]}]
   (and (t/instant? start)
@@ -39,9 +38,10 @@
                                   (t/+ (t/new-duration random-minutes :minutes)))
                  :created     time-point
                  :last-edited time-point
-                 :label       (-> faker (j/get :random) (j/call :words))
                  :type        (if (> 0.5 (rand))
                                 :session/plan :session/track)}
+      (when (> 0.1 (rand))
+        #:session {:label (-> faker (j/get :random) (j/call :words))})
       (when (> 0.7 (rand))
         #:session {:color (-> faker (j/get :internet) (j/call :color) color)}))))
 
@@ -51,15 +51,22 @@
                       (-> faker (j/get :internet) (j/call :color) color))
                     (s/gen int?))))
 
-(def session-spec
-  (ds/spec {:spec #:session {:id             uuid?
-                             :created        ::time-point
-                             :last-edited    ::time-point
-                             :start          ::time-point
-                             :stop           ::time-point
-                             (ds/opt :label) string?
-                             (ds/opt :color) ::color}
-            :gen  #(gen/fmap generate-session (s/gen ::time-point))}))
+(def session-data-spec
+  (ds/spec {:name ::session-ds
+            :spec {(ds/req :session/id)          uuid?
+                   (ds/req :session/created)     ::time-point
+                   (ds/req :session/last-edited) ::time-point
+                   (ds/req :session/start)       ::time-point
+                   (ds/req :session/stop)        ::time-point
+                   (ds/req :session/type)        (s/spec #{:session/track :session/plan})
+                   (ds/opt :session/label)       string?
+                   (ds/opt :session/color)       ::color}}))
+
+(s/def ::session (s/with-gen session-data-spec #(gen/fmap generate-session (s/gen ::time-point))))
+
+;; (->> (gen/sample (s/gen ::session)) (map :session/label))
+
+;; TODO make a sessions spec similar to this https://github.com/jgoodhcg/time-align-mobile/blob/master/src/main/time_align_mobile/db.cljs#L93
 
 ;; TODO make a tag spec
 
