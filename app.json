@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "omaangi",
-    "slug": "omaangi",
+    "name": "umeng",
+    "slug": "umeng",
     "privacy": "public",
     "entryPoint": "./build/index.js",
     "platforms": [
