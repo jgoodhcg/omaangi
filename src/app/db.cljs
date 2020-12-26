@@ -1,6 +1,7 @@
 (ns app.db
   (:require
    ["color" :as color]
+   ["faker" :as faker]
    [applied-science.js-interop :as j]
    [clojure.spec.alpha :as s]
    [spec-tools.data-spec :as ds]
@@ -18,37 +19,35 @@
        (* 60)
        (* 1000)))
 
-;; (def time-range
-;;   (range (.valueOf (-> (js/Date.)))
-;;          (.valueOf (end-of-today (make-date) (get-default-timezone)))
-;;          hour-ms))
+(def min-in-hour 60)
 
-;; (def time-set
-;;   (set (->> time-range
-;;             (map #(new js/Date %)))))
+(def time-set
+  (let [intvl (t/bounds (t/today))]
+    (->> (t/range
+           (t/beginning intvl)
+           (t/end intvl)
+           (t/new-duration 1 :minutes))
+         (map t/instant)
+         set)))
 
-;; (s/def ::time-point (s/with-gen inst? #(s/gen time-set)))
+(s/def ::time-point (s/with-gen t/instant? #(s/gen time-set)))
 
 (defn start-before-stop [{:session/keys [start stop]}]
-  (if (and (some? start) (some? stop))
-    (> (.valueOf stop) (.valueOf start))
-    ;; Passes if it has no time stamps
-    true))
+  (and (t/instant? start)
+       (t/instant? stop)
+       (t/< start stop)))
 
 (defn generate-session [time-point]
-  (let [type-chance (> 0.5 (rand))
-        start       (.valueOf time-point)
-        stop        (->> start (+ (rand-int (* 2 hour-ms))))
-        stamps      {:start (new js/Date start)
-                     :stop  (new js/Date stop)}
-        type        (if type-chance :session/plan :session/track)]
-
-    (merge stamps
-           {:id          (random-uuid)
-            :created     time-point
-            :last-edited time-point
-            :label       "I'm auto generated!"
-            :type        type})))
+  #:session
+  {:id          (random-uuid)
+   :start       time-point
+   :stop        (t/+ time-point
+                     (t/new-duration (rand-int min-in-hour) :minutes))
+   :created     time-point
+   :last-edited time-point
+   :label       (-> faker (j/get :lorem) (j/call :words))
+   :type        (if (> 0.5 (rand))
+                  :session/plan :session/track)})
 
 ;; TODO make a tag spec
 
