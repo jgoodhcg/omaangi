@@ -7,11 +7,9 @@
    [spec-tools.data-spec :as ds]
    [spec-tools.core :as st]
    [tick.alpha.api :as t]
-   ))
+   [clojure.spec.gen.alpha :as gen]))
 
 ;; TODO do I need this? (s/def ::uuid-indexed (s/and map? (s/every-kv uuid? some?)))
-
-;; TODO port over period spec for sessions
 
 (def hour-ms
   (->> 1
@@ -38,17 +36,34 @@
        (t/< start stop)))
 
 (defn generate-session [time-point]
-  #:session
-  {:id          (random-uuid)
-   :start       time-point
-   :stop        (t/+ time-point
-                     (t/new-duration (rand-int min-in-hour) :minutes))
-   :created     time-point
-   :last-edited time-point
-   :label       (-> faker (j/get :lorem) (j/call :words))
-   :type        (if (> 0.5 (rand))
-                  :session/plan :session/track)})
+  (merge
+    #:session {:id          (random-uuid)
+               :start       time-point
+               :stop        (t/+ time-point
+                                 (t/new-duration (rand-int min-in-hour) :minutes))
+               :created     time-point
+               :last-edited time-point
+               :label       (-> faker (j/get :random) (j/call :words))
+               :type        (if (> 0.5 (rand))
+                              :session/plan :session/track)}
+    (when (> 0.7 (rand))
+      #:session {:color (-> faker (j/get :internet) (j/call :color) color)})))
 
+(s/def ::color (s/with-gen #(j/contains? % :color)
+                 #(gen/fmap
+                    (fn [_]
+                      (-> faker (j/get :internet) (j/call :color) color))
+                    (s/gen int?))))
+
+(def session-spec
+  (ds/spec {:spec #:session {:id          uuid?
+                             :created     ::time-point
+                             :last-edited ::time-point
+                             :start       ::time-point
+                             :stop        ::time-point
+                             :label       string?
+                             :color       ::color}
+            :gen  #(gen/fmap generate-session (s/gen ::time-point))}))
 ;; TODO make a tag spec
 
 (def app-db-spec
