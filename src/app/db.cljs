@@ -59,26 +59,44 @@
   (-> faker (j/get :internet) (j/call :color) color))
 
 (defn generate-session
-  ([] (generate-session {:within-day (t/date (generate-time-point))}))
-  ([{:keys [within-day]}]
-   (let [time-point     (-> within-day arbitrary-date-times rand-nth)
-         random-minutes (-> (t/new-duration 1 :hours)
+  "By default will make a session that is contained within a day.
+  The `:day` option allows you to choose the day.
+  When `:within` option is set to _false_ then there is a chance for `:session/start` xor `:session/stop` to be on the prev or next day respectively."
+  ([] (generate-session {:day    (t/date (generate-time-point))
+                         :within true}))
+  ([{:keys [day within] :or {day    (t/date (generate-time-point))
+                             within true}}]
+   (let [time-point     (-> day arbitrary-date-times rand-nth)
+         random-minutes (-> (t/new-duration 4 :hours)
                             (t/minutes)
-                            (rand-int))]
+                            (rand-int)
+                            (t/new-duration :minutes))
+         start          (if within
+                          time-point
+                          (t/- time-point random-minutes))
+         stop           (if within
+                          (-> time-point
+                              (t/+ random-minutes)
+                              (t/min (-> day (t/bounds) (t/end))))
+                          (-> time-point
+                              (t/+ random-minutes)))]
      (merge
        #:session {:id          (random-uuid)
-                  :start       time-point
-                  :stop        (-> time-point
-                                   (t/+ (t/new-duration random-minutes :minutes))
-                                   (t/min (-> within-day (t/bounds) (t/end))))
-                  :created     time-point
-                  :last-edited time-point
+                  :start       start
+                  :stop        stop
+                  :created     start
+                  :last-edited stop
                   :type        (if (chance :med)
                                  :session/plan :session/track)}
        (when (chance :med)
          #:session {:label (-> faker (j/get :random) (j/call :words))})
        (when (chance :low)
          #:session {:color (-> faker (j/get :internet) (j/call :color) color)})))))
+
+;; (-> {:day    (t/date (generate-time-point))
+;;      :within false}
+;;     generate-session
+;;     (select-keys [:session/start :session/stop]))
 
 (defn generate-tag []
   (merge #:tag {:id (random-uuid)}
