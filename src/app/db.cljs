@@ -112,8 +112,6 @@
 
 ;; TODO make a calendar spec
 
-;; TODO make a tag spec
-
 (def tag-data-spec
   (ds/spec {:name ::tag-ds
             :spec {:tag/id             uuid?
@@ -126,6 +124,16 @@
            #:tag {:color (generate-color)})))
 
 (s/def ::tag (s/with-gen tag-data-spec #(gen/fmap generate-tag (s/gen uuid?))))
+
+(defn generate-tags [n]
+  (generate-uuid-keyed
+    n
+    (fn [id] (-> (generate-tag)
+                 (merge {:tag/id id})))))
+
+(s/def ::tags (s/with-gen
+                (s/and map? (s/every-kv uuid? ::tag))
+                #(gen/fmap generate-tags (s/gen ::reasonable-number))))
 
 (defn generate-app-db []
   ;; make tags
