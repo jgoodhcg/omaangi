@@ -126,7 +126,7 @@
   (generate-indexed
     n
     random-uuid
-    (fn [id] (-> generate-session
+    (fn [id] (-> (generate-session)
                  (merge {:session/id id})))))
 
 (defn generate-tags [n]
