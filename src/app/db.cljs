@@ -3,6 +3,7 @@
    ["color" :as color]
    ["faker" :as faker]
    [applied-science.js-interop :as j]
+   [com.rpl.specter :as sp :refer [select select-one setval transform selected-any?]]
    [clojure.spec.alpha :as s]
    [spec-tools.data-spec :as ds]
    [spec-tools.core :as st]
@@ -46,8 +47,14 @@
        (t/instant? stop)
        (t/< start stop)))
 
+(defn touches [day stamp]
+  (not
+    (some?
+      (some #{:precedes :preceded-by} ;; checks that these are not the relation
+            [(t/relation stamp day)]))))
+
 ;;
-;; independent generator fns
+;; independent generators
 ;;
 
 (defn generate-time-point []
@@ -66,7 +73,7 @@
                          :within true}))
   ([{:keys [day within] :or {day    (t/date (generate-time-point))
                              within true}}]
-   (let [time-point     (-> day arbitrary-date-times rand-nth)
+   (let [time-point     (-> day arbitrary-date-times rand-nth t/instant)
          random-minutes (-> (t/new-duration 4 :hours)
                             (t/minutes)
                             (rand-int)
@@ -77,7 +84,7 @@
          stop           (if within
                           (-> time-point
                               (t/+ random-minutes)
-                              (t/min (-> day (t/bounds) (t/end))))
+                              (t/min (-> day (t/bounds) (t/end) (t/instant))))
                           (-> time-point
                               (t/+ random-minutes)))]
      (merge
@@ -93,26 +100,22 @@
        (when (chance :low)
          #:session {:color (-> faker (j/get :internet) (j/call :color) color)})))))
 
-;; (-> {:day    (t/date (generate-time-point))
-;;      :within false}
-;;     generate-session
-;;     (select-keys [:session/start :session/stop]))
+(comment (-> {:day    (t/date (generate-time-point))
+              :within false}
+             generate-session
+             (select-keys [:session/start :session/stop])))
 
 (defn generate-tag []
   (merge #:tag {:id (random-uuid)}
          (when (chance :high)
            #:tag {:color (generate-color)})))
 
-(defn generate-app-db []
-  ;; make tags
-  ;; make sessions
-  ;; randomly associate sessions / tags
-  ;; place sessions on calendar
-  nil
-  )
+(defn generate-calendar-val []
+  {:calendar/sessions []
+   :calendar/date     (t/date (generate-time-point))})
 
 ;;
-;; n generator functions
+;; coll generators
 ;;
 
 (defn generate-indexed [n index-fn gen-fn]
@@ -140,7 +143,68 @@
   (generate-indexed
     n
     generate-time-point
-    random-uuid))
+    (fn [d] {:calendar/sessions []
+             :calendar/date     (t/date d)})))
+
+;;
+;; relational generators
+;;
+
+(defn generate-app-db-core []
+  ;; TODO specmonstah would make this so much cleaner
+  (let [tags     (generate-tags 2)
+        sessions (generate-sessions 4)
+
+        sessions-with-tags
+        (->> sessions
+             (transform
+               [sp/MAP-VALS]
+               (fn [session]
+                 (merge session
+                        {:session/tags
+                         (->> tags
+                              (select [sp/MAP-VALS])
+                              (map :tag/id)
+                              (random-sample 0.5))}))))
+
+        days
+        (->> sessions
+             (select [sp/MAP-VALS
+                      (sp/transformed
+                        []
+                        (fn [{:session/keys [start stop]}]
+                          [(t/date start) (t/date stop)]))])
+             flatten
+             set
+             seq)
+
+        empty-calendar
+        (->> days count range
+             (map #(hash-map))
+             (interleave days)
+             (apply hash-map))
+
+        calendar
+        (->> empty-calendar
+             (transform
+               [sp/ALL]
+               (fn [[day obj]]
+                 [day (merge
+                        obj
+                        {:calendar/date day
+                         :calendar/sessions
+                         (->> sessions-with-tags
+                              (select [sp/MAP-VALS
+                                       (fn [{:session/keys [start stop]}]
+                                         (touches (->> (t/bounds day)
+                                                       (transform [sp/MAP-VALS] t/instant))
+                                                  {:tick/beginning start
+                                                   :tick/end       stop}))
+                                       :session/id]))})])))]
+
+    {:calendar calendar
+     :sessions sessions-with-tags
+     :tags     tags}))
 
 ;;
 ;; specs with gen
@@ -167,7 +231,7 @@
                    (ds/opt :session/label) string?
                    (ds/opt :session/color) ::color}}))
 
-(s/def ::session (s/with-gen session-data-spec #(gen/fmap generate-session (s/gen ::time-point))))
+(s/def ::session (s/with-gen session-data-spec #(gen/fmap generate-session (s/gen int?))))
 
 (s/def ::sessions (s/with-gen
                     (s/and map? (s/every-kv uuid? ::session))
@@ -185,23 +249,39 @@
                 (s/and map? (s/every-kv uuid? ::tag))
                 #(gen/fmap generate-tags (s/gen ::reasonable-number))))
 
+(def calendar-val-data-spec
+  (ds/spec {:name ::calendar-ds
+            :spec {:calendar/date     t/date?
+                   :calendar/sessions [uuid?]}}))
+
+(s/def ::calendar-val (s/with-gen calendar-val-data-spec #(gen/fmap generate-calendar-val (s/gen int?))))
+
 (s/def ::calendar (s/with-gen
-                    (s/and map? (s/every-kv ::time-point (s/coll-of uuid?)))
+                    (s/and map? (s/every-kv t/date? ::calendar-val))
                     #(gen/fmap generate-calendar (s/gen ::reasonable-number))))
 
 (def app-db-spec
-  (ds/spec {:spec {:settings {:theme (s/spec #{:light :dark})}
+  (ds/spec {:name ::app-db
+            :spec {:settings {:theme (s/spec #{:light :dark})}
                    :version  string?
-                   ;; TODO figure out how this works, probably need to create a separate spec
-                   ;;       :calendar (s/every-kv uuid? {:calendar/sessions [uuid?]})
-                   ;; TODO sessions and groups
-                   }
-            :name ::app-db}))
+                   :calendar ::calendar
+                   :sessions ::sessions
+                   :tags     ::tags}}))
+
+;; TODO get spec gen of app-db-spec run
+(comment
+  (gen/generate (s/gen app-db-spec)))
+
+(comment
+  (s/explain app-db-spec (merge {:settings {:theme :dark}
+                                 :version  "version-not-set"}
+                                (generate-app-db-core))))
 
 ;;
 ;; data
 ;;
 
+;; TODO make this conform then rename it example and have default be auto generated
 (def default-app-db
   {:settings {:theme :dark}
    :version  "version-not-set"
@@ -239,6 +319,3 @@
 
     }
    })
-
-;; (random-uuid)
-;; (-> default-app-db (get-in [:sessions #uuid "afa40006-5e4f-4f8a-b4f9-09886bbbaf36"]))
