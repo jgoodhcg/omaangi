@@ -61,14 +61,15 @@
 
 (def session-data-spec
   (ds/spec {:name ::session-ds
-            :spec {(ds/req :session/id)          uuid?
-                   (ds/req :session/created)     ::time-point
-                   (ds/req :session/last-edited) ::time-point
-                   (ds/req :session/start)       ::time-point
-                   (ds/req :session/stop)        ::time-point
-                   (ds/req :session/type)        (s/spec #{:session/track :session/plan})
-                   (ds/opt :session/label)       string?
-                   (ds/opt :session/color)       ::color}}))
+            :spec {:session/id             uuid?
+                   :session/created        ::time-point
+                   :session/last-edited    ::time-point
+                   :session/start          ::time-point
+                   :session/stop           ::time-point
+                   :session/type           (s/spec #{:session/track :session/plan})
+                   (ds/opt :session/tags)  [uuid?]
+                   (ds/opt :session/label) string?
+                   (ds/opt :session/color) ::color}}))
 
 (s/def ::session (s/with-gen session-data-spec #(gen/fmap generate-session (s/gen ::time-point))))
 
@@ -99,6 +100,8 @@
 ;; (->> (gen/generate (s/gen ::sessions))
 ;;      vals
 ;;      (map :session/label))
+
+;; TODO make a calendar spec
 
 ;; TODO make a tag spec
 
