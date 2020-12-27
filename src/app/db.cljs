@@ -11,13 +11,9 @@
    ;; needed to `gen/sample` or `gen/generate`
    [clojure.test.check.generators]))
 
-(defn chance [p]
-  (let [r (rand)]
-    (case p
-      :low  (-> r (< 0.2))
-      :med  (-> r (< 0.51))
-      :high (-> r (< 0.90))
-      (-> r (< 0.75)))))
+;;
+;; misc
+;;
 
 (def reasonable-date-times
   (memoize
@@ -28,19 +24,34 @@
                (-> (t/tomorrow) (t/bounds) (t/end))
                (t/new-duration 1 :minutes)))))
 
-(defn generate-time-point []
-  (->> (reasonable-date-times)
-       (rand-nth)
-       (t/instant)))
-
-(s/def ::time-point (s/with-gen t/instant? #(gen/fmap generate-time-point (s/gen int?))))
-
-;; (gen/generate (s/gen ::time-point))
+(defn chance [p]
+  (let [r (rand)]
+    (case p
+      :low  (-> r (< 0.2))
+      :med  (-> r (< 0.51))
+      :high (-> r (< 0.90))
+      (-> r (< 0.75)))))
 
 (defn start-before-stop [{:session/keys [start stop]}]
   (and (t/instant? start)
        (t/instant? stop)
        (t/< start stop)))
+
+;;
+;; independent generator fns
+;;
+
+(defn generate-uuid-keyed [n gen-fn]
+  (apply merge
+         (->> n
+              range
+              (map #(let [id (random-uuid)]
+                      {id (gen-fn id)})))))
+
+(defn generate-time-point []
+  (->> (reasonable-date-times)
+       (rand-nth)
+       (t/instant)))
 
 (defn generate-color []
   (-> faker (j/get :internet) (j/call :color) color))
@@ -64,6 +75,39 @@
       (when (chance :low)
         #:session {:color (-> faker (j/get :internet) (j/call :color) color)}))))
 
+(defn generate-sessions [n]
+  (generate-uuid-keyed
+    n
+    (fn [id] (-> generate-session
+                 (merge {:session/id id})))))
+
+(defn generate-tag []
+  (merge #:tag {:id (random-uuid)}
+         (when (chance :high)
+           #:tag {:color (generate-color)})))
+
+(defn generate-tags [n]
+  (generate-uuid-keyed
+    n
+    (fn [id] (-> (generate-tag)
+                 (merge {:tag/id id})))))
+
+(defn generate-app-db []
+  ;; make tags
+  ;; make sessions
+  ;; randomly associate sessions / tags
+  ;; place sessions on calendar
+  nil
+  )
+
+;;
+;; specs with gen
+;;
+
+(s/def ::reasonable-number (s/int-in 1 20))
+
+(s/def ::time-point (s/with-gen t/instant? #(gen/fmap generate-time-point (s/gen int?))))
+
 (s/def ::color (s/with-gen #(j/contains? % :color)
                  #(gen/fmap
                     generate-color
@@ -83,34 +127,9 @@
 
 (s/def ::session (s/with-gen session-data-spec #(gen/fmap generate-session (s/gen ::time-point))))
 
-(s/def ::reasonable-number (s/int-in 1 20))
-
-;; (->> (gen/sample (s/gen ::session)) (map :session/label))
-
-(defn generate-uuid-keyed [n gen-fn]
-  (apply merge
-         (->> n
-              range
-              (map #(let [id (random-uuid)]
-                      {id (gen-fn id)})))))
-
-(defn generate-sessions [n]
-  (generate-uuid-keyed
-    n
-    (fn [id] (-> generate-session
-                 (merge {:session/id id})))))
-
-;; (->> 100 generate-sessions vals (map :session/label))
-
 (s/def ::sessions (s/with-gen
                     (s/and map? (s/every-kv uuid? ::session))
                     #(gen/fmap generate-sessions (s/gen ::reasonable-number))))
-
-;; (->> (gen/generate (s/gen ::sessions))
-;;      vals
-;;      (map :session/label))
-
-;; TODO make a calendar spec
 
 (def tag-data-spec
   (ds/spec {:name ::tag-ds
@@ -118,30 +137,11 @@
                    (ds/opt :tag/color) ::color
                    (ds/opt :tag/label) string?}}))
 
-(defn generate-tag []
-  (merge #:tag {:id (random-uuid)}
-         (when (chance :high)
-           #:tag {:color (generate-color)})))
-
 (s/def ::tag (s/with-gen tag-data-spec #(gen/fmap generate-tag (s/gen uuid?))))
-
-(defn generate-tags [n]
-  (generate-uuid-keyed
-    n
-    (fn [id] (-> (generate-tag)
-                 (merge {:tag/id id})))))
 
 (s/def ::tags (s/with-gen
                 (s/and map? (s/every-kv uuid? ::tag))
                 #(gen/fmap generate-tags (s/gen ::reasonable-number))))
-
-(defn generate-app-db []
-  ;; make tags
-  ;; make sessions
-  ;; randomly associate sessions / tags
-  ;; place sessions on calendar
-  nil
-  )
 
 (def app-db-spec
   (ds/spec {:spec {:settings {:theme (s/spec #{:light :dark})}
@@ -151,6 +151,10 @@
                    ;; TODO sessions and groups
                    }
             :name ::app-db}))
+
+;;
+;; data
+;;
 
 (def default-app-db
   {:settings {:theme :dark}
