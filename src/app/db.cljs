@@ -7,7 +7,10 @@
    [spec-tools.data-spec :as ds]
    [spec-tools.core :as st]
    [tick.alpha.api :as t]
-   [clojure.spec.gen.alpha :as gen]))
+   [clojure.spec.gen.alpha :as gen]
+   ;; needed to `gen/sample` or `gen/generate`
+   [clojure.test.check.generators]
+   ))
 
 ;; TODO do I need this? (s/def ::uuid-indexed (s/and map? (s/every-kv uuid? some?)))
 
@@ -64,9 +67,24 @@
 
 (s/def ::session (s/with-gen session-data-spec #(gen/fmap generate-session (s/gen ::time-point))))
 
-;; (->> (gen/sample (s/gen ::session)) (map :session/label))
+(s/def ::reasonable-number (s/int-in 1 20))
 
-;; TODO make a sessions spec similar to this https://github.com/jgoodhcg/time-align-mobile/blob/master/src/main/time_align_mobile/db.cljs#L93
+;; (->> (gen/sample (s/gen ::session)) (map :session/label))
+(defn generate-sessions [n]
+  (apply merge (->> n
+                    range
+                    (map #(let [id (random-uuid)]
+                            {id (-> (generate-time-point nil)
+                                    generate-session
+                                    (merge {:session/id id}))})))))
+
+(s/def ::sessions (s/with-gen
+                    (s/and map? (s/every-kv uuid? ::session))
+                    #(gen/fmap generate-sessions (s/gen ::reasonable-number))))
+
+;; (->> (gen/generate (s/gen ::sessions))
+;;      vals
+;;      (map :session/label))
 
 ;; TODO make a tag spec
 
