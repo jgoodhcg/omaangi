@@ -3,13 +3,21 @@
    ["color" :as color]
    ["faker" :as faker]
    [applied-science.js-interop :as j]
+   [tick.alpha.api :as t]
+
+   ;; spec
    [clojure.spec.alpha :as s]
    [spec-tools.data-spec :as ds]
    [spec-tools.core :as st]
-   [tick.alpha.api :as t]
+
+   ;; gen
    [clojure.spec.gen.alpha :as gen]
    ;; needed to `gen/sample` or `gen/generate`
-   [clojure.test.check.generators]))
+   [clojure.test.check.generators]
+
+   ;; specmonstah
+   [reifyhealth.specmonstah.core :as sm]
+   [reifyhealth.specmonstah.spec-gen :as sg]))
 
 (def reasonable-date-times
   (memoize

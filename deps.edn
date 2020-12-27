@@ -7,6 +7,7 @@
          org.clojure/test.check              {:mvn/version "1.1.0"} ;; TODO dev dep?
          reagent/reagent                     {:mvn/version "1.0.0-alpha2"}
          re-frame/re-frame                   {:mvn/version "1.1.1"}
+         reifyhealth/specmonstah             {:mvn/version "2.0.0"}
          tick/tick                           {:mvn/version "0.4.27-alpha"}
          thheller/shadow-cljs                {:mvn/version "2.11.1"}
          }}
