@@ -11,20 +11,27 @@
    ;; needed to `gen/sample` or `gen/generate`
    [clojure.test.check.generators]))
 
+(defn chance [p]
+  (let [r (rand)]
+    (case p
+      :low  (-> r (< 0.2))
+      :med  (-> r (< 0.51))
+      :high (-> r (< 0.90))
+      (-> r (< 0.75)))))
+
 (def reasonable-date-times
   (memoize
-    ;; generating this range 1000 times is pretty costly so it's _cached_ with memoize
+    ;; generating this range repeatedly is costly so it's _cached_ with memoize
+    ;; not sure if this is actually useful or not
     (fn []
       (t/range (-> (t/yesterday) (t/bounds) (t/beginning))
                (-> (t/tomorrow) (t/bounds) (t/end))
                (t/new-duration 1 :minutes)))))
 
-(defn generate-time-point
-  ([] (->> (reasonable-date-times)
-           (rand-nth)
-           (t/instant)))
-  ;; this is for spec gen not sure if it is actually needed
-  ([_] (generate-time-point)))
+(defn generate-time-point []
+  (->> (reasonable-date-times)
+       (rand-nth)
+       (t/instant)))
 
 (s/def ::time-point (s/with-gen t/instant? #(gen/fmap generate-time-point (s/gen int?))))
 
@@ -35,8 +42,12 @@
        (t/instant? stop)
        (t/< start stop)))
 
-(defn generate-session [time-point]
-  (let [random-minutes (-> (t/new-duration 1 :hours)
+(defn generate-color []
+  (-> faker (j/get :internet) (j/call :color) color))
+
+(defn generate-session []
+  (let [time-point     (generate-time-point)
+        random-minutes (-> (t/new-duration 1 :hours)
                            (t/minutes)
                            (rand-int))]
     (merge
@@ -46,17 +57,16 @@
                                   (t/+ (t/new-duration random-minutes :minutes)))
                  :created     time-point
                  :last-edited time-point
-                 :type        (if (> 0.5 (rand))
+                 :type        (if (chance :med)
                                 :session/plan :session/track)}
-      (when (> 0.1 (rand))
+      (when (chance :med)
         #:session {:label (-> faker (j/get :random) (j/call :words))})
-      (when (> 0.7 (rand))
+      (when (chance :low)
         #:session {:color (-> faker (j/get :internet) (j/call :color) color)}))))
 
 (s/def ::color (s/with-gen #(j/contains? % :color)
                  #(gen/fmap
-                    (fn [_]
-                      (-> faker (j/get :internet) (j/call :color) color))
+                    generate-color
                     (s/gen int?))))
 
 (def session-data-spec
@@ -87,8 +97,7 @@
 (defn generate-sessions [n]
   (generate-uuid-keyed
     n
-    (fn [id] (-> (generate-time-point nil)
-                 generate-session
+    (fn [id] (-> generate-session
                  (merge {:session/id id})))))
 
 ;; (->> 100 generate-sessions vals (map :session/label))
@@ -104,6 +113,27 @@
 ;; TODO make a calendar spec
 
 ;; TODO make a tag spec
+
+(def tag-data-spec
+  (ds/spec {:name ::tag-ds
+            :spec {:tag/id             uuid?
+                   (ds/opt :tag/color) ::color
+                   (ds/opt :tag/label) string?}}))
+
+(defn generate-tag []
+  (merge #:tag {:id (random-uuid)}
+         (when (chance :high)
+           #:tag {:color (generate-color)})))
+
+(s/def ::tag (s/with-gen tag-data-spec #(gen/fmap generate-tag (s/gen uuid?))))
+
+(defn generate-app-db []
+  ;; make tags
+  ;; make sessions
+  ;; randomly associate sessions / tags
+  ;; place sessions on calendar
+  nil
+  )
 
 (def app-db-spec
   (ds/spec {:spec {:settings {:theme (s/spec #{:light :dark})}
@@ -145,7 +175,8 @@
 
     :tags
     {#uuid "26c24deb-c0b5-4b7a-8ef9-8dcf540f80d8"
-     #:tag  {:color (color  "#00ff00")
+     #:tag  {:id    #uuid "26c24deb-c0b5-4b7a-8ef9-8dcf540f80d8"
+             :color (color  "#00ff00")
              :label "my first group"}}
 
     }
