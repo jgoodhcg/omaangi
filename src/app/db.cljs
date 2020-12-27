@@ -9,17 +9,22 @@
    [tick.alpha.api :as t]
    [clojure.spec.gen.alpha :as gen]
    ;; needed to `gen/sample` or `gen/generate`
-   [clojure.test.check.generators]
-   ))
+   [clojure.test.check.generators]))
 
-;; TODO do I need this? (s/def ::uuid-indexed (s/and map? (s/every-kv uuid? some?)))
+(def reasonable-date-times
+  (memoize
+    ;; generating this range 1000 times is pretty costly so it's _cached_ with memoize
+    (fn []
+      (t/range (-> (t/yesterday) (t/bounds) (t/beginning))
+               (-> (t/tomorrow) (t/bounds) (t/end))
+               (t/new-duration 1 :minutes)))))
 
-(defn generate-time-point [_]
-  (->> (t/range (-> (t/yesterday) (t/bounds) (t/beginning))
-                (-> (t/tomorrow) (t/bounds) (t/end))
-                (t/new-duration 1 :minutes))
-       (rand-nth)
-       (t/instant)))
+(defn generate-time-point
+  ([] (->> (reasonable-date-times)
+           (rand-nth)
+           (t/instant)))
+  ;; this is for spec gen not sure if it is actually needed
+  ([_] (generate-time-point)))
 
 (s/def ::time-point (s/with-gen t/instant? #(gen/fmap generate-time-point (s/gen int?))))
 
@@ -70,13 +75,22 @@
 (s/def ::reasonable-number (s/int-in 1 20))
 
 ;; (->> (gen/sample (s/gen ::session)) (map :session/label))
+
+(defn generate-uuid-keyed [n gen-fn]
+  (apply merge
+         (->> n
+              range
+              (map #(let [id (random-uuid)]
+                      {id (gen-fn id)})))))
+
 (defn generate-sessions [n]
-  (apply merge (->> n
-                    range
-                    (map #(let [id (random-uuid)]
-                            {id (-> (generate-time-point nil)
-                                    generate-session
-                                    (merge {:session/id id}))})))))
+  (generate-uuid-keyed
+    n
+    (fn [id] (-> (generate-time-point nil)
+                 generate-session
+                 (merge {:session/id id})))))
+
+;; (->> 100 generate-sessions vals (map :session/label))
 
 (s/def ::sessions (s/with-gen
                     (s/and map? (s/every-kv uuid? ::session))
