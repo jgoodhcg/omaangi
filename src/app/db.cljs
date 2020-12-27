@@ -24,6 +24,15 @@
                (-> (t/tomorrow) (t/bounds) (t/end))
                (t/new-duration 1 :minutes)))))
 
+(def arbitrary-date-times
+  (memoize
+    ;; generating this range repeatedly is costly so it's _cached_ with memoize
+    ;; not sure if this is actually useful or not
+    (fn [d]
+      (t/range (-> d (t/bounds) (t/beginning))
+               (-> d (t/bounds) (t/end))
+               (t/new-duration 1 :minutes)))))
+
 (defn chance [p]
   (let [r (rand)]
     (case p
@@ -41,13 +50,6 @@
 ;; independent generator fns
 ;;
 
-(defn generate-uuid-keyed [n gen-fn]
-  (apply merge
-         (->> n
-              range
-              (map #(let [id (random-uuid)]
-                      {id (gen-fn id)})))))
-
 (defn generate-time-point []
   (->> (reasonable-date-times)
        (rand-nth)
@@ -56,41 +58,32 @@
 (defn generate-color []
   (-> faker (j/get :internet) (j/call :color) color))
 
-(defn generate-session []
-  (let [time-point     (generate-time-point)
-        random-minutes (-> (t/new-duration 1 :hours)
-                           (t/minutes)
-                           (rand-int))]
-    (merge
-      #:session {:id          (random-uuid)
-                 :start       time-point
-                 :stop        (-> time-point
-                                  (t/+ (t/new-duration random-minutes :minutes)))
-                 :created     time-point
-                 :last-edited time-point
-                 :type        (if (chance :med)
-                                :session/plan :session/track)}
-      (when (chance :med)
-        #:session {:label (-> faker (j/get :random) (j/call :words))})
-      (when (chance :low)
-        #:session {:color (-> faker (j/get :internet) (j/call :color) color)}))))
-
-(defn generate-sessions [n]
-  (generate-uuid-keyed
-    n
-    (fn [id] (-> generate-session
-                 (merge {:session/id id})))))
+(defn generate-session
+  ([] (generate-session {:within-day (t/date (generate-time-point))}))
+  ([{:keys [within-day]}]
+   (let [time-point     (-> within-day arbitrary-date-times rand-nth)
+         random-minutes (-> (t/new-duration 1 :hours)
+                            (t/minutes)
+                            (rand-int))]
+     (merge
+       #:session {:id          (random-uuid)
+                  :start       time-point
+                  :stop        (-> time-point
+                                   (t/+ (t/new-duration random-minutes :minutes))
+                                   (t/min (-> within-day (t/bounds) (t/end))))
+                  :created     time-point
+                  :last-edited time-point
+                  :type        (if (chance :med)
+                                 :session/plan :session/track)}
+       (when (chance :med)
+         #:session {:label (-> faker (j/get :random) (j/call :words))})
+       (when (chance :low)
+         #:session {:color (-> faker (j/get :internet) (j/call :color) color)})))))
 
 (defn generate-tag []
   (merge #:tag {:id (random-uuid)}
          (when (chance :high)
            #:tag {:color (generate-color)})))
-
-(defn generate-tags [n]
-  (generate-uuid-keyed
-    n
-    (fn [id] (-> (generate-tag)
-                 (merge {:tag/id id})))))
 
 (defn generate-app-db []
   ;; make tags
@@ -99,6 +92,37 @@
   ;; place sessions on calendar
   nil
   )
+
+;;
+;; n generator functions
+;;
+
+(defn generate-indexed [n index-fn gen-fn]
+  (apply merge
+         (->> n
+              range
+              (map #(let [index (index-fn)]
+                      {index (gen-fn index)})))))
+
+(defn generate-sessions [n]
+  (generate-indexed
+    n
+    random-uuid
+    (fn [id] (-> generate-session
+                 (merge {:session/id id})))))
+
+(defn generate-tags [n]
+  (generate-indexed
+    n
+    random-uuid
+    (fn [id] (-> (generate-tag)
+                 (merge {:tag/id id})))))
+
+(defn generate-calendar [n]
+  (generate-indexed
+    n
+    generate-time-point
+    random-uuid))
 
 ;;
 ;; specs with gen
@@ -137,11 +161,15 @@
                    (ds/opt :tag/color) ::color
                    (ds/opt :tag/label) string?}}))
 
-(s/def ::tag (s/with-gen tag-data-spec #(gen/fmap generate-tag (s/gen uuid?))))
+(s/def ::tag (s/with-gen tag-data-spec #(gen/fmap generate-tag (s/gen int?))))
 
 (s/def ::tags (s/with-gen
                 (s/and map? (s/every-kv uuid? ::tag))
                 #(gen/fmap generate-tags (s/gen ::reasonable-number))))
+
+(s/def ::calendar (s/with-gen
+                    (s/and map? (s/every-kv ::time-point (s/coll-of uuid?)))
+                    #(gen/fmap generate-calendar (s/gen ::reasonable-number))))
 
 (def app-db-spec
   (ds/spec {:spec {:settings {:theme (s/spec #{:light :dark})}
