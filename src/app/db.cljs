@@ -68,7 +68,7 @@
 (defn generate-session
   "By default will make a session that is contained within a day.
   The `:day` option allows you to choose the day.
-  When `:within` option is set to _false_ then there is a chance for `:session/start` xor `:session/stop` to be on the prev or next day respectively."
+  When `:within` option is set to _false_ then there is a chance for `:session/start` and/or `:session/stop` to be on the prev or next day respectively."
   ([] (generate-session {:day    (t/date (generate-time-point))
                          :within true}))
   ([{:keys [day within] :or {day    (t/date (generate-time-point))
@@ -163,9 +163,8 @@
                  (merge session
                         {:session/tags
                          (->> tags
-                              (select [sp/MAP-VALS])
-                              (map :tag/id)
-                              (random-sample 0.5))}))))
+                              (random-sample 0.5)
+                              (select [sp/MAP-VALS :tag/id]))}))))
 
         days
         (->> sessions
@@ -278,7 +277,7 @@
 ;; data
 ;;
 
-(def default-app-db
+(def example-app-db
   {:settings {:theme :dark}
    :version  "version-not-set"
 
@@ -302,3 +301,7 @@
           #:tag {:id    #uuid "db8cd4ac-dd6f-4147-b919-50c468d9e8bc"
                  :label "My first tag"
                  :color (color "#6f7662")}}})
+
+(def default-app-db (merge {:settings {:theme :dark}
+                            :version  "version-not-set"}
+                           (generate-calendar-tag-sessions)))
