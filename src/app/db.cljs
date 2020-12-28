@@ -150,7 +150,7 @@
 ;; relational generators
 ;;
 
-(defn generate-app-db-core []
+(defn generate-calendar-tag-sessions []
   ;; TODO specmonstah would make this so much cleaner
   (let [tags     (generate-tags 2)
         sessions (generate-sessions 4)
@@ -272,13 +272,13 @@
 (comment
   (s/explain app-db-spec (merge {:settings {:theme :dark}
                                  :version  "version-not-set"}
-                                (generate-app-db-core))))
+                                (generate-calendar-tag-sessions))))
 
 ;;
 ;; data
 ;;
 
-(def example-app-db
+(def default-app-db
   {:settings {:theme :dark}
    :version  "version-not-set"
 
@@ -293,13 +293,12 @@
                          :start       #time/instant "2020-12-28T15:44:19.549Z"
                          :stop        #time/instant "2020-12-28T15:49:19.549Z"
                          :type        :session/plan
-                         :tags        [] ;; TODO
+                         :tags        [#uuid "db8cd4ac-dd6f-4147-b919-50c468d9e8bc"]
                          :label       "My first plan"
                          ;; there could be a :color here
                          }}
 
    :tags {#uuid "db8cd4ac-dd6f-4147-b919-50c468d9e8bc"
-          #:tags {:id    #uuid "db8cd4ac-dd6f-4147-b919-50c468d9e8bc"
-                  :label "My first tag"
-                  :color (color "#6f7662")}}
-   })
+          #:tag {:id    #uuid "db8cd4ac-dd6f-4147-b919-50c468d9e8bc"
+                 :label "My first tag"
+                 :color (color "#6f7662")}}})
