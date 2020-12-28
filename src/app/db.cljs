@@ -142,7 +142,7 @@
 (defn generate-calendar [n]
   (generate-indexed
     n
-    generate-time-point
+    (fn [] (t/date (generate-time-point)))
     (fn [d] {:calendar/sessions []
              :calendar/date     (t/date d)})))
 
@@ -266,11 +266,8 @@
                    :version  string?
                    :calendar ::calendar
                    :sessions ::sessions
-                   :tags     ::tags}}))
-
-;; TODO get spec gen of app-db-spec run
-(comment
-  (gen/generate (s/gen app-db-spec)))
+                   :tags     ::tags
+                   }}))
 
 (comment
   (s/explain app-db-spec (merge {:settings {:theme :dark}
@@ -281,41 +278,28 @@
 ;; data
 ;;
 
-;; TODO make this conform then rename it example and have default be auto generated
-(def default-app-db
+(def example-app-db
   {:settings {:theme :dark}
    :version  "version-not-set"
 
-   :calendar
-   {#inst "2020-12-21T13:19:25.742-00:00"
-    {:calendar/sessions [#uuid "df8788c4-67db-4fb1-980b-b5f1ab5bb4ac"
-                         #uuid "afa40006-5e4f-4f8a-b4f9-09886bbbaf36"]}}
+   :calendar {#time/date "2020-12-28"
+              #:calendar  {:date     #time/date "2020-12-28"
+                           :sessions [#uuid "1757ba76-f644-4ea6-ab27-e74485187951"]}}
 
-   :sessions
-   {#uuid "df8788c4-67db-4fb1-980b-b5f1ab5bb4ac"
-    #:session {:id          #uuid "df8788c4-67db-4fb1-980b-b5f1ab5bb4ac"
-               :start       (t/instant #inst "2020-12-21T13:19:25.742-00:00")
-               :stop        (t/instant #inst "2020-12-21T14:20:25.742-00:00")
-               :label       "my frist track"
-               :color       (color "#ff00ff")                              ;; this is an ovveride
-               :tags        [#uuid "26c24deb-c0b5-4b7a-8ef9-8dcf540f80d8"] ;; otherwise the color is derived from mixing colors of tags
-               :type        :session/track
-               :copied-from #uuid "afa40006-5e4f-4f8a-b4f9-09886bbbaf36"
-               }
+   :sessions {#uuid "1757ba76-f644-4ea6-ab27-e74485187951"
+              #:session {:id          #uuid "1757ba76-f644-4ea6-ab27-e74485187951"
+                         :created     #time/instant "2020-12-28T15:44:19.549Z"
+                         :last-edited #time/instant "2020-12-28T15:44:19.549Z"
+                         :start       #time/instant "2020-12-28T15:44:19.549Z"
+                         :stop        #time/instant "2020-12-28T15:49:19.549Z"
+                         :type        :session/plan
+                         :tags        [] ;; TODO
+                         :label       "My first plan"
+                         ;; there could be a :color here
+                         }}
 
-    #uuid "afa40006-5e4f-4f8a-b4f9-09886bbbaf36"
-    #:session {:id    #uuid "afa40006-5e4f-4f8a-b4f9-09886bbbaf36"
-               :start (t/instant #inst "2020-12-21T13:19:20.742-00:00")
-               :stop  (t/instant #inst "2020-12-21T13:21:25.742-00:00")
-               :label "my first plan"
-               :tags  [#uuid "26c24deb-c0b5-4b7a-8ef9-8dcf540f80d8"]
-               :type  :session/plan}
-
-    :tags
-    {#uuid "26c24deb-c0b5-4b7a-8ef9-8dcf540f80d8"
-     #:tag  {:id    #uuid "26c24deb-c0b5-4b7a-8ef9-8dcf540f80d8"
-             :color (color  "#00ff00")
-             :label "my first group"}}
-
-    }
+   :tags {#uuid "db8cd4ac-dd6f-4147-b919-50c468d9e8bc"
+          #:tags {:id    #uuid "db8cd4ac-dd6f-4147-b919-50c468d9e8bc"
+                  :label "My first tag"
+                  :color (color "#6f7662")}}
    })
