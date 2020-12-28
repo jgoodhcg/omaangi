@@ -15,6 +15,7 @@
 ;;
 ;; misc
 ;;
+(defn reader-color-fn [c] (color c))
 
 (def reasonable-date-times
   (memoize
@@ -297,9 +298,10 @@
                          }}
 
    :tags {#uuid "db8cd4ac-dd6f-4147-b919-50c468d9e8bc"
-          #:tag {:id    #uuid "db8cd4ac-dd6f-4147-b919-50c468d9e8bc"
-                 :label "My first tag"
-                 :color (color "#6f7662")}}})
+          #:tags {:id    #uuid "db8cd4ac-dd6f-4147-b919-50c468d9e8bc"
+                  :label "My first tag"
+                  :color #color "#6f7662"}}
+   })
 
 (def default-app-db (merge {:settings {:theme :dark}
                             :version  "version-not-set"}
