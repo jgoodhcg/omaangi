@@ -18,7 +18,9 @@
    [app.subscriptions]
    [app.helpers :refer [<sub >evt]]
    [app.screens.day :as day]
-   [app.screens.settings :as settings]))
+   [app.screens.settings :as settings]
+   [app.screens.reports :as reports]
+   [app.screens.tags :as tags]))
 
 ;; must use defonce and must refresh full app so metro can fill these in
 ;; at live-reload time `require` does not exist and will cause errors
@@ -79,6 +81,10 @@
       [:> (navigator)
        (screen {:name      "Day"
                 :component (paper/withTheme day/screen)})
+       (screen {:name      "Reports"
+                :component (paper/withTheme reports/screen)})
+       (screen {:name      "Tags"
+                :component (paper/withTheme tags/screen)})
        (screen {:name      "Settings"
                 :component (paper/withTheme settings/screen)})]]]))
 
