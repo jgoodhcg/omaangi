@@ -48,10 +48,8 @@
        (t/< start stop)))
 
 (defn touches [day stamp]
-  (not
-    (some?
-      (some #{:precedes :preceded-by} ;; checks that these are not the relation
-            [(t/relation stamp day)]))))
+  (not (some? (some #{:precedes :preceded-by} ;; checks that these are not the relation
+                    [(t/relation stamp day)]))))
 
 ;;
 ;; independent generators
@@ -273,6 +271,7 @@
                                  :version  "version-not-set"}
                                 (generate-calendar-tag-sessions))))
 
+(comment (gen/generate (s/gen app-db-spec)))
 ;;
 ;; data
 ;;
