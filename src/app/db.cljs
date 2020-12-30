@@ -15,8 +15,6 @@
 ;;
 ;; misc
 ;;
-(defn reader-color-fn [c] (color c))
-
 (def reasonable-date-times
   (memoize
     ;; generating this range repeatedly is costly so it's _cached_ with memoize
@@ -300,7 +298,7 @@
    :tags {#uuid "db8cd4ac-dd6f-4147-b919-50c468d9e8bc"
           #:tags {:id    #uuid "db8cd4ac-dd6f-4147-b919-50c468d9e8bc"
                   :label "My first tag"
-                  :color #color "#6f7662"}}
+                  :color #umeng/color "#6f7662"}}
    })
 
 (def default-app-db (merge {:settings {:theme :dark}

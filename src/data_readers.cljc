@@ -1,1 +1,1 @@
-{color app.db/reader-color-fn}
+{umeng/color app.data-readers/read-color}
