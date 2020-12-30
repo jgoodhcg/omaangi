@@ -6,6 +6,7 @@
    ["react" :as react]
    ["@react-navigation/native" :as nav]
    ["@react-navigation/bottom-tabs" :as bottom-tabs]
+   ["@react-navigation/drawer" :as drawer]
    ["react-native-paper" :as paper]
    [applied-science.js-interop :as j]
    [camel-snake-kebab.core :as csk]
@@ -66,9 +67,11 @@
 
 (def tab (bottom-tabs/createBottomTabNavigator))
 
-(defn navigator [] (-> tab (j/get :Navigator)))
+(def drawer (drawer/createDrawerNavigator))
 
-(defn screen [props] [:> (-> tab (j/get :Screen)) props])
+(defn navigator [] (-> drawer (j/get :Navigator)))
+
+(defn screen [props] [:> (-> drawer (j/get :Screen)) props])
 
 (defn root []
   (let [theme           (<sub [:theme])
