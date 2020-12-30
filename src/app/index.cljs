@@ -5,7 +5,6 @@
    ["react-native" :as rn]
    ["react" :as react]
    ["@react-navigation/native" :as nav]
-   ["@react-navigation/bottom-tabs" :as bottom-tabs]
    ["@react-navigation/drawer" :as drawer]
    ["react-native-paper" :as paper]
    [applied-science.js-interop :as j]
@@ -64,8 +63,6 @@
                              :on-value-change #(>evt [:set-theme (if (= theme-selection :dark)
                                                                    :light
                                                                    :dark)])}]]]]]])))
-
-(def tab (bottom-tabs/createBottomTabNavigator))
 
 (def drawer (drawer/createDrawerNavigator))
 
