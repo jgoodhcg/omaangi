@@ -1,1 +1,1 @@
-{umeng/color app.data-readers/read-color}
+{umeng/color app.readers/read-color}
