@@ -16,7 +16,9 @@
    [app.fx]
    [app.handlers]
    [app.subscriptions]
-   [app.helpers :refer [<sub >evt]]))
+   [app.helpers :refer [<sub >evt]]
+   [app.screens.day :as day]
+   [app.screens.settings :as settings]))
 
 ;; must use defonce and must refresh full app so metro can fill these in
 ;; at live-reload time `require` does not exist and will cause errors
@@ -35,34 +37,11 @@
           (clj->js)
           (rn/StyleSheet.create)))
 
-(defn screen2 [props]
+(defn screen-settings [props]
   (r/as-element
     [:> paper/Surface {:style (-> styles (j/get :surface))}
      [:> rn/View
-      [:> paper/Title "Screen2"]]]))
-
-(defn screen1 [props]
-  (r/as-element
-    (let [version         (<sub [:version])
-          theme-selection (<sub [:theme])
-          theme           (-> props (j/get :theme))]
-      [:> paper/Surface {:style (-> styles (j/get :surface))}
-       [:> rn/View
-        [:> paper/Card
-         [:> paper/Card.Title {:title    "A nice template"
-                               :subtitle (str "Version: " version)}]
-         [:> paper/Card.Content
-          [:> paper/Paragraph "For quick project startup"]
-          [:> rn/View {:style (-> styles (j/get :themeSwitch))}
-           [:> paper/Text
-            {:style {:color (-> theme
-                                (j/get :colors)
-                                (j/get :accent))}}
-            "Dark mode"]
-           [:> paper/Switch {:value           (= theme-selection :dark)
-                             :on-value-change #(>evt [:set-theme (if (= theme-selection :dark)
-                                                                   :light
-                                                                   :dark)])}]]]]]])))
+      [:> paper/Title "Settings Screen"]]]))
 
 (def drawer (drawer/createDrawerNavigator))
 
@@ -98,10 +77,10 @@
                             (swap! !route-name-ref merge {:current current-route-name})))}
 
       [:> (navigator)
-       (screen {:name      "Screen1"
-                :component (paper/withTheme screen1)})
-       (screen {:name      "Screen2"
-                :component (paper/withTheme screen2)})]]]))
+       (screen {:name      "Day"
+                :component (paper/withTheme day/screen)})
+       (screen {:name      "Settings"
+                :component (paper/withTheme settings/screen)})]]]))
 
 (defn start
   {:dev/after-load true}
