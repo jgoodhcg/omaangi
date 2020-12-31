@@ -11,7 +11,7 @@
    [camel-snake-kebab.core :as csk]
    [camel-snake-kebab.extras :as cske]
    [reagent.core :as r]
-   [re-frame.core :refer [subscribe dispatch dispatch-sync]]
+   [re-frame.core :refer [dispatch-sync]]
    [shadow.expo :as expo]
    [app.fx]
    [app.handlers]

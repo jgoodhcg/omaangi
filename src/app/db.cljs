@@ -264,6 +264,7 @@
                    :calendar ::calendar
                    :sessions ::sessions
                    :tags     ::tags
+                   :view     {:view/selected-day t/date?}
                    }}))
 
 (comment
@@ -280,6 +281,7 @@
   {:settings {:theme :dark}
    :version  "version-not-set"
 
+   :view     #:view {:selected-day #time/date "2020-12-28"}
    :calendar {#time/date "2020-12-28"
               #:calendar  {:date     #time/date "2020-12-28"
                            :sessions [#uuid "1757ba76-f644-4ea6-ab27-e74485187951"]}}
@@ -301,6 +303,13 @@
                  :label "My first tag"
                  :color (color "#6f7662")}}})
 
-(def default-app-db (merge {:settings {:theme :dark}
-                            :version  "version-not-set"}
-                           (generate-calendar-tag-sessions)))
+(def default-app-db
+  (let [cal-tag-sessions (generate-calendar-tag-sessions)]
+    (merge
+      cal-tag-sessions
+      {:settings {:theme :dark}
+       :version  "version-not-set"
+       :view     {:view/selected-day (->> cal-tag-sessions
+                                          :calendar
+                                          keys
+                                          last)}})))
