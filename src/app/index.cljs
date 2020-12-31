@@ -73,7 +73,7 @@
                                 current-route-name (-> @!navigation-ref
                                                        (j/call :getCurrentRoute)
                                                        (j/get :name))]
-                            (if (not= prev-route-name current-route-name)
+                            (when (not= prev-route-name current-route-name)
                               ;; This is where you can do side effecty things like analytics
                               (>evt [:some-fx-example (str "New screen encountered " current-route-name)]))
                             (swap! !route-name-ref merge {:current current-route-name})))}
