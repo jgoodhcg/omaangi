@@ -91,7 +91,12 @@
 (defn start
   {:dev/after-load true}
   []
-  (expo/render-root (r/as-element [root])))
+  (expo/render-root
+    (r/as-element
+      [root
+       ;; this is to force a re-render on every save
+       ;; otherwise components nesteded withins screens don't get re-rendered
+       {:x (js/Date.now)}])))
 
 (def version (-> expo-constants
                  (j/get :default)

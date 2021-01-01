@@ -43,6 +43,8 @@
            (map #(get sessions %))
            vec))))
 
+(defn abbreviate [x] (->> x str (take 3) (clojure.string/join "")))
+
 (reg-sub
   :this-day
 
@@ -55,11 +57,9 @@
           now   (t/now)]
       {:day-of-week   (->> selected-day
                            t/day-of-week
-                           str
-                           (take 3)
-                           (clojure.string/join ""))
+                           abbreviate)
        :day-of-month  (t/day-of-month selected-day)
        :year          year
-       :month         month
+       :month         (->> month abbreviate)
        :display-year  (not= year (t/year now))
        :display-month (not= month (t/month now))})))
