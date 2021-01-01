@@ -16,13 +16,14 @@
                                    :flex-direction "column"}
                        :text      {:font-weight "bold"
                                    :text-align  "center"}}
-   :tracking-sessions {:container {:flex-grow       1
+   :tracking-sessions {:container {:display         "flex"
+                                   :flex-grow       1
                                    :justify-content "center"}}
-   :top-section       {:outer {:display        "flex"
-                               :height         145
-                               :flex-direction "row"
-                               :align-items    "stretch"}
-                       :inner {:flex-direction "column"
+   :top-section       {:outer {:height         140
+                               :display        "flex"
+                               :flex-direction "row"}
+                       :inner {:display        "flex"
+                               :flex-direction "column"
                                :align-items    "center"}}} )
 
 (defn date-indicator [{:keys [day-of-week
@@ -33,8 +34,10 @@
                               display-month]}]
   [:> rn/View {:style (-> styles :date-indicator :container)}
 
-   [:> paper/Text {:style (-> styles :date-indicator :text)} (when display-year year)]
-   [:> paper/Text {:style (-> styles :date-indicator :text)} (when display-month month)]
+   (when display-year
+     [:> paper/Text {:style (-> styles :date-indicator :text)} year])
+   (when display-month
+     [:> paper/Text {:style (-> styles :date-indicator :text)} month])
    [:> paper/Text {:style (-> styles :date-indicator :text)} day-of-week]
    [:> paper/Text {:style (-> styles :date-indicator :text)} day-of-month]])
 

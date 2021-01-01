@@ -1,11 +1,9 @@
 (ns app.components.menu
   (:require
-   ["react-native" :as rn]
-   ["react-native-paper" :as paper]
-   [reagent.core :as r]))
+   ["react-native-paper" :as paper]))
 
 (defn button [{:keys [button-color toggle-menu]}]
   [:> paper/IconButton {:icon     "menu"
                         :color    button-color
-                        :size     25
+                        :size     20
                         :on-press toggle-menu}])
