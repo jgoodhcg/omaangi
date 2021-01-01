@@ -9,9 +9,21 @@
    [app.helpers :refer [<sub >evt]]
    [app.components.menu :as menu]))
 
-
 (def styles
-  {:surface {:flex 1 :justify-content "flex-start"}} )
+  {:surface           {:flex 1 :justify-content "flex-start"}
+   :date-indicator    {:container {:width          40
+                                   :display        "flex"
+                                   :flex-direction "column"}
+                       :text      {:font-weight "bold"
+                                   :text-align  "center"}}
+   :tracking-sessions {:container {:flex-grow       1
+                                   :justify-content "center"}}
+   :top-section       {:outer {:display        "flex"
+                               :height         145
+                               :flex-direction "row"
+                               :align-items    "stretch"}
+                       :inner {:flex-direction "column"
+                               :align-items    "center"}}} )
 
 (defn date-indicator [{:keys [day-of-week
                               day-of-month
@@ -19,33 +31,23 @@
                               month
                               display-year
                               display-month]}]
-  [:> rn/View {:style {:width          40
-                       :display        "flex"
-                       :flex-direction "column"}}
+  [:> rn/View {:style (-> styles :date-indicator :container)}
 
-   [:> paper/Text {:style {:font-weight "bold"
-                           :text-align  "center"}} (when display-year year)]
-   [:> paper/Text {:style {:font-weight "bold"
-                           :text-align  "center"}} (when display-month month)]
-   [:> paper/Text {:style {:font-weight "bold"
-                           :text-align  "center"}} day-of-week]
-   [:> paper/Text {:style {:font-weight "bold"
-                           :text-align  "center"}} day-of-month]])
+   [:> paper/Text {:style (-> styles :date-indicator :text)} (when display-year year)]
+   [:> paper/Text {:style (-> styles :date-indicator :text)} (when display-month month)]
+   [:> paper/Text {:style (-> styles :date-indicator :text)} day-of-week]
+   [:> paper/Text {:style (-> styles :date-indicator :text)} day-of-month]])
 
 (defn tracking-sessions []
-  [:> g/ScrollView {:content-container-style {:flex-grow       1
-                                              :justify-content "center"}}
+  [:> g/ScrollView {:content-container-style
+                    (-> styles :tracking-sessions :container)}
    (for [i (range 50)]
      [:> paper/Text {:key i} (str "I'm the " i " th tracking session")])])
 
 (defn top-section [{:keys [menu-color toggle-drawer this-day]}]
-  [:> rn/View {:style {:display        "flex"
-                       :height         145
-                       :flex-direction "row"
-                       :align-items    "stretch"}}
+  [:> rn/View {:style (-> styles :top-section :outer)}
 
-   [:> rn/View {:style {:flex-direction "column"
-                        :align-items    "center"}}
+   [:> rn/View {:style (-> styles :top-section :inner)}
     [menu/button {:button-color menu-color
                   :toggle-menu  toggle-drawer}]
 
@@ -65,7 +67,7 @@
           sessions      (<sub [:sessions-for-this-day])
           this-day      (<sub [:this-day])]
 
-      [:> paper/Surface {:style (:surface styles)}
+      [:> paper/Surface {:style (-> styles :surface)}
        [:> rn/View
         [:> rn/StatusBar {:visibility "hidden"}]
 
