@@ -7,5 +7,5 @@
 (defn button [{:keys [button-color toggle-menu]}]
   [:> paper/IconButton {:icon     "menu"
                         :color    button-color
-                        :size     20
+                        :size     25
                         :on-press toggle-menu}])

@@ -59,7 +59,7 @@
                            t/day-of-week
                            abbreviate)
        :day-of-month  (t/day-of-month selected-day)
-       :year          year
+       :year          (str year)
        :month         (->> month abbreviate)
        :display-year  (not= year (t/year now))
        :display-month (not= month (t/month now))})))
