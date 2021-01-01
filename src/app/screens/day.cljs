@@ -5,6 +5,7 @@
    ["react-native-paper" :as paper]
    [applied-science.js-interop :as j]
    [reagent.core :as r]
+   [potpuri.core :as p]
    [app.helpers :refer [<sub >evt]]
    [app.components.menu :as menu]))
 
@@ -31,6 +32,27 @@
    [:> paper/Text {:style {:font-weight "bold"
                            :text-align  "center"}} day-of-month]])
 
+(defn tracking-sessions []
+  [:> g/ScrollView {:content-container-style {:flex-grow       1
+                                              :justify-content "center"}}
+   (for [i (range 50)]
+     [:> paper/Text {:key i} (str "I'm the " i " th tracking session")])])
+
+(defn top-section [{:keys [menu-color toggle-drawer this-day]}]
+  [:> rn/View {:style {:display        "flex"
+                       :height         145
+                       :flex-direction "row"
+                       :align-items    "stretch"}}
+
+   [:> rn/View {:style {:flex-direction "column"
+                        :align-items    "center"}}
+    [menu/button {:button-color menu-color
+                  :toggle-menu  toggle-drawer}]
+
+    [date-indicator this-day]]
+
+   [tracking-sessions]])
+
 (defn screen [props]
   (r/as-element
     (let [theme         (-> props (j/get :theme))
@@ -47,22 +69,7 @@
        [:> rn/View
         [:> rn/StatusBar {:visibility "hidden"}]
 
-        [:> rn/View {:style {:display        "flex"
-                             :height         145
-                             :flex-direction "row"
-                             :align-items    "stretch"}}
-
-         [:> rn/View {:style {:flex-direction "column"
-                              :align-items    "center"}}
-          [menu/button {:button-color menu-color
-                        :toggle-menu  toggle-drawer}]
-
-          [date-indicator this-day]]
-
-         [:> g/ScrollView {:content-container-style {:flex-grow       1
-                                                     :justify-content "center"}}
-          (for [i (range 25)]
-            [:> paper/Text {:key i} (str "I'm the " i " th tracking session")])]]
+        [top-section (p/map-of menu-color toggle-drawer this-day)]
 
         [:> g/ScrollView
          [:> paper/Title (str (count sessions))]]]])))
