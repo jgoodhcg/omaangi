@@ -19,8 +19,32 @@
                        :text      {:font-weight "bold"
                                    :text-align  "center"
                                    :margin      8}}
-   :tracking-sessions {:container {}
-                       :surface   {:padding 8}}
+   :tracking-sessions {:surface       {:padding 8}
+                       :container     {:width  "100%"
+                                       :height 32
+                                       :margin 4}
+                       :session       {:position "absolute"
+                                       :top      0
+                                       :left     0
+                                       :height   32}
+                       :indicator     {:position "absolute"
+                                       :top      0
+                                       :left     "50%"
+                                       :width    8
+                                       :height   32}
+                       :dbl-container {:position       "absolute"
+                                       :top            0
+                                       :right          16
+                                       :display        "flex"
+                                       :flex-direction "row"
+                                       :align-items    "center"
+                                       :width          8
+                                       :height         32}
+                       :button        {:position "absolute"
+                                       :left     0
+                                       :top      0
+                                       :height   32
+                                       :width    "100%"}}
    :top-section       {:outer {:max-height     256
                                :display        "flex"
                                :flex-direction "column"}
@@ -47,38 +71,22 @@
 (defn tracking-sessions []
   (let [theme  (<sub [:theme-js])
         tracks (<sub [:tracking])]
-    [:> g/ScrollView {:content-container-style
-                      (-> styles :tracking-sessions :container)}
-
+    [:> g/ScrollView
      [:> paper/Surface {:style (-> styles :tracking-sessions :surface)}
 
       (for [t tracks]
         [:> rn/View {:key   (random-uuid)
-                     :style {:width  "100%"
-                             :height 32
-                             :margin 4}}
-         [:> rn/View {:style {:position         "absolute"
-                              :top              0
-                              :left             0
-                              :width            (-> t :session/relative-width)
-                              :height           32
-                              :border-radius    (-> theme (j/get :roundness))
-                              :background-color (-> t :session/color-string)}}]
-         [:> rn/View {:style {:position         "absolute"
-                              :top              0
-                              :left             "50%"
-                              :width            8
-                              :height           32
-                              :background-color (-> t :indicator/color-string)}}]
+                     :style (-> styles :tracking-sessions :container)}
+         [:> rn/View {:style (merge
+                               (-> styles :tracking-sessions :session)
+                               {:width            (-> t :session/relative-width)
+                                :border-radius    (-> theme (j/get :roundness))
+                                :background-color (-> t :session/color-string)}) }]
+         [:> rn/View {:style (merge
+                               (-> styles :tracking-sessions :indicator)
+                               {:background-color (-> t :indicator/color-string)})}]
          (when (-> t :session/more-than-double)
-           [:> rn/View {:style {:position       "absolute"
-                                :top            0
-                                :right          16
-                                :display        "flex"
-                                :flex-direction "row"
-                                :align-items    "center"
-                                :width          8
-                                :height         32}}
+           [:> rn/View {:style (-> styles :tracking-sessions :dbl-container)}
             [:> paper/IconButton {:size  16
                                   :color (-> t :indicator/color-string)
                                   :icon  "stack-overflow"}]])
@@ -88,11 +96,7 @@
          ;; https://docs.swmansion.com/react-native-gesture-handler/docs/component-buttons/#activeopacity-ios-only
          [:> g/RectButton {:on-press     #(println "selected tracking item")
                            :ripple-color (-> t :ripple/color-string)
-                           :style        {:position "absolute"
-                                          :left     0
-                                          :top      0
-                                          :height   32
-                                          :width    "100%"}}]])]]))
+                           :style        (-> styles :tracking-sessions :button)}]])]]))
 
 (defn top-section [{:keys [menu-color toggle-drawer this-day]}]
   [:> rn/View {:style (-> styles :top-section :outer)}
