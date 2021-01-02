@@ -51,13 +51,27 @@
 
      [:> paper/Surface {:style (-> styles :tracking-sessions :surface)}
 
-      (for [i (range (max 1 (rand 10)))]
-        [:> g/RectButton {:key   i
-                          :style {:background-color (-> theme (j/get :colors) (j/get :accent))
-                                  :margin           4
-                                  :width            (str (-> (rand) (* 100)) "%")
-                                  :height           32
-                                  :border-radius    (-> theme (j/get :roundness))}}])]]))
+      (for [r [10 99 55 42]]
+        [:> g/RectButton {:key (random-uuid)}
+         [:> rn/View {:style {:width  "100%"
+                              :height 32
+                              :margin 4}}
+          [:> rn/View {:style {:position         "absolute"
+                               :top              0
+                               :left             0
+                               :width            (str r "%")
+                               :height           32
+                               :border-radius    (-> theme (j/get :roundness))
+                               :background-color (-> theme (j/get :colors) (j/get :accent))}}]
+          [:> rn/View {:style {:position         "absolute"
+                               :top              0
+                               :left             "50%"
+                               :width            8
+                               :height           32
+                               :background-color (-> theme (j/get :colors) (j/get :accent)
+                                                     color
+                                                     (j/call :darken 0.32)
+                                                     (j/call :hex))}}]]])]]))
 
 (defn top-section [{:keys [menu-color toggle-drawer this-day]}]
   [:> rn/View {:style (-> styles :top-section :outer)}
