@@ -1,6 +1,9 @@
 (ns app.subscriptions
   (:require
+   ["color" :as color]
+   ["faker" :as faker] ;; TODO remove when tracing is implemented
    ["react-native-paper" :as paper]
+   [applied-science.js-interop :as j]
    [re-frame.core :refer [reg-sub subscribe]]
    [com.rpl.specter :as sp :refer [select
                                    select-one
@@ -10,62 +13,71 @@
 (defn version [db _]
   (->> db
        (select-one! [:version])))
+(reg-sub :version version)
 
 (defn theme-js [db _]
+  ;; TODO inject paper from sub? to make testing easier?
   (let [theme-type (->> db
                         (select-one! [:settings :theme]))]
     (case theme-type
       :light paper/DefaultTheme
       :dark  paper/DarkTheme
       paper/DarkTheme)))
+(reg-sub :theme-js theme-js)
 
 (defn selected-day [db _]
   (->> db (select-one! [:view :view/selected-day])))
+(reg-sub :selected-day selected-day)
 
 (defn calendar [db _]
   (->> db (select-one! [:calendar])))
+(reg-sub :calendar calendar)
 
 (defn sessions [db _]
   (->> db (select-one! [:sessions])))
-
-(reg-sub :version version)
-(reg-sub :theme-js theme-js)
-
-(reg-sub :selected-day selected-day)
-(reg-sub :calendar calendar)
 (reg-sub :sessions sessions)
 
-(reg-sub
-  :sessions-for-this-day
+(defn sessions-for-this-day [[selected-day calendar sessions] _]
+  (let [this-day (get calendar selected-day)]
+    (->> this-day
+         :calendar/sessions
+         (map #(get sessions %))
+         vec)))
+(reg-sub :sessions-for-this-day
 
-  :<- [:selected-day]
-  :<- [:calendar]
-  :<- [:sessions]
+         :<- [:selected-day]
+         :<- [:calendar]
+         :<- [:sessions]
 
-  (fn [[selected-day calendar sessions] _]
-    (let [this-day (get calendar selected-day)]
-      (->> this-day
-           :calendar/sessions
-           (map #(get sessions %))
-           vec))))
+         sessions-for-this-day)
 
-(defn abbreviate [x] (->> x str (take 3) (clojure.string/join "")))
+(defn this-day [selected-day _]
+  (let [month (t/month selected-day)
+        year  (t/year selected-day)
+        now   (t/now)]
+    {:day-of-week   (->> selected-day
+                         t/day-of-week
+                         str)
+     :day-of-month  (t/day-of-month selected-day)
+     :year          (str year)
+     :month         (->> month str)
+     :display-year  (not= year (t/year now))
+     :display-month (not= month (t/month now))}))
+(reg-sub :this-day
 
-(reg-sub
-  :this-day
+         :<- [:selected-day]
 
-  :<- [:selected-day]
+         this-day)
 
-  ;; If there is only one signal sub then the inputs are not in a vector :O
-  (fn [selected-day _]
-    (let [month (t/month selected-day)
-          year  (t/year selected-day)
-          now   (t/now)]
-      {:day-of-week   (->> selected-day
-                           t/day-of-week
-                           str)
-       :day-of-month  (t/day-of-month selected-day)
-       :year          (str year)
-       :month         (->> month str)
-       :display-year  (not= year (t/year now))
-       :display-month (not= month (t/month now))})))
+(defn tracking [db _]
+  ;; TODO implement once tick event is in place
+  (for [x (-> 8 rand-int (max 1) range)]
+    (let [c                 (-> faker (j/get :internet) (j/call :color) color)
+          more-than-doubled (-> (rand) (> 0.50))]
+      {:session/color-string     (-> c (j/call :hex))
+       :session/more-than-double more-than-doubled
+       :indicator/color-string   (-> c (j/call :lighten 0.32) (j/call :hex))
+       :session/relative-width   (if more-than-doubled
+                                   "100%"
+                                   (-> (rand) (* 100) (str "%"))) })))
+(reg-sub :tracking tracking)

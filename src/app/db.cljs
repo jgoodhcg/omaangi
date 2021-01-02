@@ -261,6 +261,7 @@
   (ds/spec {:name ::app-db
             :spec {:settings {:theme (s/spec #{:light :dark})}
                    :version  string?
+                   :tracking [uuid?]
                    :calendar ::calendar
                    :sessions ::sessions
                    :tags     ::tags
@@ -281,7 +282,10 @@
   {:settings {:theme :dark}
    :version  "version-not-set"
 
-   :view     #:view {:selected-day #time/date "2020-12-28"}
+   :tracking [#uuid "2649ba76-f644-4ea6-ab27-e74485187e23"]
+
+   :view #:view {:selected-day #time/date "2020-12-28"}
+
    :calendar {#time/date "2020-12-28"
               #:calendar  {:date     #time/date "2020-12-28"
                            :sessions [#uuid "1757ba76-f644-4ea6-ab27-e74485187951"]}}
@@ -296,6 +300,17 @@
                          :tags        [#uuid "db8cd4ac-dd6f-4147-b919-50c468d9e8bc"]
                          :label       "My first plan"
                          ;; there could be a :color here
+                         }
+              #uuid "2649ba76-f644-4ea6-ab27-e74485187e23"
+              #:session {:id          #uuid "2649ba76-f644-4ea6-ab27-e74485187e23"
+                         :created     #time/instant "2020-12-28T15:44:19.549Z"
+                         :last-edited #time/instant "2020-12-28T15:44:19.549Z"
+                         :start       #time/instant "2020-12-28T15:44:19.549Z"
+                         :stop        #time/instant "2020-12-28T15:49:19.549Z"
+                         :type        :session/track
+                         :tags        [#uuid "db8cd4ac-dd6f-4147-b919-50c468d9e8bc"]
+                         :label       "My first track"
+                         ;; there could be a :color here
                          }}
 
    :tags {#uuid "db8cd4ac-dd6f-4147-b919-50c468d9e8bc"
@@ -309,7 +324,9 @@
       cal-tag-sessions
       {:settings {:theme :dark}
        :version  "version-not-set"
+       :tracking []
        :view     {:view/selected-day (->> cal-tag-sessions
                                           :calendar
                                           keys
                                           last)}})))
+

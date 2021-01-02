@@ -21,7 +21,7 @@
                                    :margin      8}}
    :tracking-sessions {:container {}
                        :surface   {:padding 8}}
-   :top-section       {:outer {:max-height     128
+   :top-section       {:outer {:max-height     256
                                :display        "flex"
                                :flex-direction "column"}
                        :inner {:display         "flex"
@@ -45,13 +45,14 @@
    [:> paper/Text {:style (-> styles :date-indicator :text)} day-of-month]])
 
 (defn tracking-sessions []
-  (let [theme (<sub [:theme-js])]
+  (let [theme  (<sub [:theme-js])
+        tracks (<sub [:tracking])]
     [:> g/ScrollView {:content-container-style
                       (-> styles :tracking-sessions :container)}
 
      [:> paper/Surface {:style (-> styles :tracking-sessions :surface)}
 
-      (for [r [10 99 55 42]]
+      (for [t tracks]
         [:> g/RectButton {:key (random-uuid)}
          [:> rn/View {:style {:width  "100%"
                               :height 32
@@ -59,19 +60,23 @@
           [:> rn/View {:style {:position         "absolute"
                                :top              0
                                :left             0
-                               :width            (str r "%")
+                               :width            (-> t :session/relative-width)
                                :height           32
                                :border-radius    (-> theme (j/get :roundness))
-                               :background-color (-> theme (j/get :colors) (j/get :accent))}}]
+                               :background-color (-> t :session/color-string)}}]
           [:> rn/View {:style {:position         "absolute"
                                :top              0
                                :left             "50%"
                                :width            8
                                :height           32
-                               :background-color (-> theme (j/get :colors) (j/get :accent)
-                                                     color
-                                                     (j/call :darken 0.32)
-                                                     (j/call :hex))}}]]])]]))
+                               :background-color (-> t :indicator/color-string)}}]
+          (when (-> t :session/more-than-double)
+            [:> rn/View {:style {:position         "absolute"
+                                 :top              0
+                                 :right            0
+                                 :width            8
+                                 :height           32
+                                 :background-color (-> t :indicator/color-string)}}])]])]]))
 
 (defn top-section [{:keys [menu-color toggle-drawer this-day]}]
   [:> rn/View {:style (-> styles :top-section :outer)}
