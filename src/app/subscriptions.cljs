@@ -71,9 +71,9 @@
 
 (defn tracking [db _]
   ;; TODO implement once tick event is in place
-  (for [x (-> 8 rand-int (max 1) range)]
+  (for [x (-> 4 rand-int (max 1) range)]
     (let [c                 (-> faker (j/get :internet) (j/call :color) color)
-          more-than-doubled (-> (rand) (> 0.30))]
+          more-than-doubled (-> (rand) (> 0.50))]
       {:session/color-string     (-> c (j/call :hex))
        :session/more-than-double more-than-doubled
        :indicator/color-string   (-> c (j/call :lighten 0.32) (j/call :hex))
