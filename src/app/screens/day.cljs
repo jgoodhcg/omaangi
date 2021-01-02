@@ -53,30 +53,48 @@
      [:> paper/Surface {:style (-> styles :tracking-sessions :surface)}
 
       (for [t tracks]
-        [:> g/RectButton {:key (random-uuid)}
-         [:> rn/View {:style {:width  "100%"
-                              :height 32
-                              :margin 4}}
-          [:> rn/View {:style {:position         "absolute"
-                               :top              0
-                               :left             0
-                               :width            (-> t :session/relative-width)
-                               :height           32
-                               :border-radius    (-> theme (j/get :roundness))
-                               :background-color (-> t :session/color-string)}}]
-          [:> rn/View {:style {:position         "absolute"
-                               :top              0
-                               :left             "50%"
-                               :width            8
-                               :height           32
-                               :background-color (-> t :indicator/color-string)}}]
-          (when (-> t :session/more-than-double)
-            [:> rn/View {:style {:position         "absolute"
-                                 :top              0
-                                 :right            0
-                                 :width            8
-                                 :height           32
-                                 :background-color (-> t :indicator/color-string)}}])]])]]))
+        [:> rn/View {:key   (random-uuid)
+                     :style {:width  "100%"
+                             :height 32
+                             :margin 4}}
+         [:> rn/View {:style {:position         "absolute"
+                              :top              0
+                              :left             0
+                              :width            (-> t :session/relative-width)
+                              :height           32
+                              :border-radius    (-> theme (j/get :roundness))
+                              :background-color (-> t :session/color-string)}}]
+         [:> rn/View {:style {:position         "absolute"
+                              :top              0
+                              :left             "50%"
+                              :width            8
+                              :height           32
+                              :background-color (-> t :indicator/color-string)}}]
+         (when (-> t :session/more-than-double)
+           [:> rn/View {:style {:position       "absolute"
+                                :top            0
+                                :right          16
+                                :display        "flex"
+                                :flex-direction "row"
+                                :align-items    "center"
+                                :width          8
+                                :height         32}}
+            [:> paper/IconButton {:size  16
+                                  :color (-> t :indicator/color-string)
+                                  :icon  "stack-overflow"}]])
+
+         ;; Button is place _over_ everything else so the ripple looks nice
+         ;; TODO figure out if it looks ok on ios --  might need to use a different prop https://docs.swmansion.com/react-native-gesture-handler/docs/component-buttons/#activeopacity-ios-only-1
+         [:> g/RectButton {:on-press     #(println "selected tracking item")
+                           :ripple-color (-> t :ripple/color-string)
+                           :style        {:position "absolute"
+                                          :left     0
+                                          :top      0
+                                          :height   32
+                                          :width    "100%"}}]
+         ]
+
+        )]]))
 
 (defn top-section [{:keys [menu-color toggle-drawer this-day]}]
   [:> rn/View {:style (-> styles :top-section :outer)}

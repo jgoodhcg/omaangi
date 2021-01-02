@@ -73,10 +73,11 @@
   ;; TODO implement once tick event is in place
   (for [x (-> 8 rand-int (max 1) range)]
     (let [c                 (-> faker (j/get :internet) (j/call :color) color)
-          more-than-doubled (-> (rand) (> 0.50))]
+          more-than-doubled (-> (rand) (> 0.30))]
       {:session/color-string     (-> c (j/call :hex))
        :session/more-than-double more-than-doubled
        :indicator/color-string   (-> c (j/call :lighten 0.32) (j/call :hex))
+       :ripple/color-string      (-> c (j/call :lighten 0.64) (j/call :hex))
        :session/relative-width   (if more-than-doubled
                                    "100%"
                                    (-> (rand) (* 100) (str "%"))) })))
