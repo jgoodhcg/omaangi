@@ -52,15 +52,12 @@
 (defn screen [props] [:> (-> drawer (j/get :Screen)) props])
 
 (defn root []
-  (let [theme           (<sub [:theme])
+  (let [theme           (<sub [:theme-js])
         !route-name-ref (clojure.core/atom {})
         !navigation-ref (clojure.core/atom {})]
 
     [:> paper/Provider
-     {:theme (case theme
-               :light paper/DefaultTheme
-               :dark  paper/DarkTheme
-               paper/DarkTheme)}
+     {:theme theme}
 
      [:> nav/NavigationContainer
       {:ref             (fn [el] (reset! !navigation-ref el))

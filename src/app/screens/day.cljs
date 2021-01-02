@@ -1,5 +1,6 @@
 (ns app.screens.day
   (:require
+   ["color" :as color]
    ["react-native" :as rn]
    ["react-native-gesture-handler" :as g]
    ["react-native-paper" :as paper]
@@ -11,20 +12,22 @@
 
 (def styles
   {:surface           {:flex 1 :justify-content "flex-start"}
-   :date-indicator    {:container {:width          40
-                                   :display        "flex"
-                                   :flex-direction "column"}
-                       :text      {:font-weight "bold"
-                                   :text-align  "center"}}
-   :tracking-sessions {:container {:display         "flex"
+   :date-indicator    {:container {:display         "flex"
                                    :flex-grow       1
-                                   :justify-content "center"}}
-   :top-section       {:outer {:height         140
+                                   :flex-direction  "row"
+                                   :justify-content "center"}
+                       :text      {:font-weight "bold"
+                                   :text-align  "center"
+                                   :margin      8}}
+   :tracking-sessions {:container {}
+                       :surface   {:padding 8}}
+   :top-section       {:outer {:max-height     128
                                :display        "flex"
-                               :flex-direction "row"}
-                       :inner {:display        "flex"
-                               :flex-direction "column"
-                               :align-items    "center"}}} )
+                               :flex-direction "column"}
+                       :inner {:display         "flex"
+                               :flex-direction  "row"
+                               :align-items     "center"
+                               :justify-content "flex-start"}}} )
 
 (defn date-indicator [{:keys [day-of-week
                               day-of-month
@@ -42,10 +45,19 @@
    [:> paper/Text {:style (-> styles :date-indicator :text)} day-of-month]])
 
 (defn tracking-sessions []
-  [:> g/ScrollView {:content-container-style
-                    (-> styles :tracking-sessions :container)}
-   (for [i (range 50)]
-     [:> paper/Text {:key i} (str "I'm the " i " th tracking session")])])
+  (let [theme (<sub [:theme-js])]
+    [:> g/ScrollView {:content-container-style
+                      (-> styles :tracking-sessions :container)}
+
+     [:> paper/Surface {:style (-> styles :tracking-sessions :surface)}
+
+      (for [i (range (max 1 (rand 10)))]
+        [:> g/RectButton {:key   i
+                          :style {:background-color (-> theme (j/get :colors) (j/get :accent))
+                                  :margin           4
+                                  :width            (str (-> (rand) (* 100)) "%")
+                                  :height           32
+                                  :border-radius    (-> theme (j/get :roundness))}}])]]))
 
 (defn top-section [{:keys [menu-color toggle-drawer this-day]}]
   [:> rn/View {:style (-> styles :top-section :outer)}
@@ -60,7 +72,7 @@
 
 (defn screen [props]
   (r/as-element
-    (let [theme         (-> props (j/get :theme))
+    (let [theme         (<sub [:theme-js])
           menu-color    (-> theme
                             (j/get :colors)
                             (j/get :text))
@@ -70,7 +82,8 @@
           sessions      (<sub [:sessions-for-this-day])
           this-day      (<sub [:this-day])]
 
-      [:> paper/Surface {:style (-> styles :surface)}
+      [:> paper/Surface {:style (-> styles :surface
+                                    (merge {:background-color (-> theme (j/get :colors) (j/get :background))}))}
        [:> rn/View
         [:> rn/StatusBar {:visibility "hidden"}]
 

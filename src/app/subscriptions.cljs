@@ -1,17 +1,23 @@
 (ns app.subscriptions
-  (:require [re-frame.core :refer [reg-sub subscribe]]
-            [com.rpl.specter :as sp :refer [select
-                                            select-one
-                                            select-one!]]
-            [tick.alpha.api :as t]))
+  (:require
+   ["react-native-paper" :as paper]
+   [re-frame.core :refer [reg-sub subscribe]]
+   [com.rpl.specter :as sp :refer [select
+                                   select-one
+                                   select-one!]]
+   [tick.alpha.api :as t]))
 
 (defn version [db _]
   (->> db
        (select-one! [:version])))
 
-(defn theme [db _]
-  (->> db
-       (select-one! [:settings :theme])))
+(defn theme-js [db _]
+  (let [theme-type (->> db
+                        (select-one! [:settings :theme]))]
+    (case theme-type
+      :light paper/DefaultTheme
+      :dark  paper/DarkTheme
+      paper/DarkTheme)))
 
 (defn selected-day [db _]
   (->> db (select-one! [:view :view/selected-day])))
@@ -23,7 +29,7 @@
   (->> db (select-one! [:sessions])))
 
 (reg-sub :version version)
-(reg-sub :theme theme)
+(reg-sub :theme-js theme-js)
 
 (reg-sub :selected-day selected-day)
 (reg-sub :calendar calendar)
@@ -57,9 +63,9 @@
           now   (t/now)]
       {:day-of-week   (->> selected-day
                            t/day-of-week
-                           abbreviate)
+                           str)
        :day-of-month  (t/day-of-month selected-day)
        :year          (str year)
-       :month         (->> month abbreviate)
+       :month         (->> month str)
        :display-year  (not= year (t/year now))
        :display-month (not= month (t/month now))})))
