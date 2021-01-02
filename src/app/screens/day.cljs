@@ -84,17 +84,15 @@
                                   :icon  "stack-overflow"}]])
 
          ;; Button is place _over_ everything else so the ripple looks nice
-         ;; TODO figure out if it looks ok on ios --  might need to use a different prop https://docs.swmansion.com/react-native-gesture-handler/docs/component-buttons/#activeopacity-ios-only-1
+         ;; TODO figure out if it looks ok on ios --  might need to use some more props
+         ;; https://docs.swmansion.com/react-native-gesture-handler/docs/component-buttons/#activeopacity-ios-only
          [:> g/RectButton {:on-press     #(println "selected tracking item")
                            :ripple-color (-> t :ripple/color-string)
                            :style        {:position "absolute"
                                           :left     0
                                           :top      0
                                           :height   32
-                                          :width    "100%"}}]
-         ]
-
-        )]]))
+                                          :width    "100%"}}]])]]))
 
 (defn top-section [{:keys [menu-color toggle-drawer this-day]}]
   [:> rn/View {:style (-> styles :top-section :outer)}
