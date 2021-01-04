@@ -37,11 +37,24 @@
   (->> db (select-one! [:sessions])))
 (reg-sub :sessions sessions)
 
+(defn truncate-session [day session]
+  (let [{:tick/keys [beginning end]} (t/bounds day)
+        {:session/keys [start stop]} session]
+    (merge
+      session
+      {:session/start-truncated (if (-> start (t/< (t/instant beginning)))
+                                  beginning
+                                  start)
+       :session/stop-truncated  (if (-> stop (t/> (t/instant end)))
+                                  end
+                                  stop)})))
+
 (defn sessions-for-this-day [[selected-day calendar sessions] _]
   (let [this-day (get calendar selected-day)]
     (->> this-day
          :calendar/sessions
          (map #(get sessions %))
+         (map #(truncate-session (:calendar/date this-day) %))
          vec)))
 (reg-sub :sessions-for-this-day
 
