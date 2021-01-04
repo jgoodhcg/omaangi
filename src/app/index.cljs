@@ -39,12 +39,6 @@
           (clj->js)
           (rn/StyleSheet.create)))
 
-(defn screen-settings [props]
-  (r/as-element
-    [:> paper/Surface {:style (-> styles (j/get :surface))}
-     [:> rn/View
-      [:> paper/Title "Settings Screen"]]]))
-
 (def drawer (drawer/createDrawerNavigator))
 
 (defn navigator [] (-> drawer (j/get :Navigator)))

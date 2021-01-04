@@ -75,28 +75,35 @@
      [:> paper/Surface {:style (-> styles :tracking-sessions :surface)}
 
       (for [t tracks]
+        ;; container
         [:> rn/View {:key   (random-uuid)
                      :style (-> styles :tracking-sessions :container)}
+
+         ;; session
          [:> rn/View {:style (merge
                                (-> styles :tracking-sessions :session)
                                {:width            (-> t :session/relative-width)
                                 :border-radius    (-> theme (j/get :roundness))
                                 :background-color (-> t :session/color-string)}) }]
+
+         ;; intended duration indication
          [:> rn/View {:style (merge
                                (-> styles :tracking-sessions :indicator)
                                {:background-color (-> t :indicator/color-string)})}]
+
+         ;; more than double indicator
          (when (-> t :session/more-than-double)
            [:> rn/View {:style (-> styles :tracking-sessions :dbl-container)}
             [:> paper/IconButton {:size  16
                                   :color (-> t :indicator/color-string)
                                   :icon  "stack-overflow"}]])
 
-         ;; Button is place _over_ everything else so the ripple looks nice
-         ;; TODO figure out if it looks ok on ios --  might need to use some more props
-         ;; https://docs.swmansion.com/react-native-gesture-handler/docs/component-buttons/#activeopacity-ios-only
-         [:> g/RectButton {:on-press     #(println "selected tracking item")
-                           :ripple-color (-> t :ripple/color-string)
-                           :style        (-> styles :tracking-sessions :button)}]])]]))
+         ;; selection button
+         [:> g/RectButton {:on-press       #(println "selected tracking item")
+                           :ripple-color   (-> t :ripple/color-string) ;; android
+                           :underlay-color (-> t :ripple/color-string) ;; ios
+                           :active-opacity 0.7                         ;; ios
+                           :style          (-> styles :tracking-sessions :button)}]])]]))
 
 (defn top-section [{:keys [menu-color toggle-drawer this-day]}]
   [:> rn/View {:style (-> styles :top-section :outer)}
@@ -121,12 +128,15 @@
           sessions      (<sub [:sessions-for-this-day])
           this-day      (<sub [:this-day])]
 
-      [:> paper/Surface {:style (-> styles :surface
-                                    (merge {:background-color (-> theme (j/get :colors) (j/get :background))}))}
-       [:> rn/View
-        [:> rn/StatusBar {:visibility "hidden"}]
+      [:> rn/SafeAreaView {:style {:display          "flex"
+                                   :flex             1
+                                   :background-color (-> theme (j/get :colors) (j/get :background))}}
+       [:> paper/Surface {:style (-> styles :surface
+                                     (merge {:background-color (-> theme (j/get :colors) (j/get :background))}))}
+        [:> rn/View
+         [:> rn/StatusBar {:visibility "hidden"}]
 
-        [top-section (p/map-of menu-color toggle-drawer this-day)]
+         [top-section (p/map-of menu-color toggle-drawer this-day)]
 
-        [:> g/ScrollView
-         [:> paper/Title (str (count sessions))]]]])))
+         [:> g/ScrollView
+          [:> paper/Title (str (count sessions))]]]]])))
