@@ -2,7 +2,6 @@
   (:require
    ["color" :as color]
    ["faker" :as faker] ;; TODO remove when tracing is implemented
-   ["react-native-paper" :as paper]
    [applied-science.js-interop :as j]
    [re-frame.core :refer [reg-sub subscribe]]
    [com.rpl.specter :as sp :refer [select
@@ -15,15 +14,15 @@
        (select-one! [:version])))
 (reg-sub :version version)
 
-(defn theme-js [db _]
+(defn theme [db _]
   ;; TODO inject paper from sub? to make testing easier?
   (let [theme-type (->> db
                         (select-one! [:settings :theme]))]
     (case theme-type
-      :light paper/DefaultTheme
-      :dark  paper/DarkTheme
-      paper/DarkTheme)))
-(reg-sub :theme-js theme-js)
+      :light :DefaultTheme
+      :dark  :DarkTheme
+      :DarkTheme)))
+(reg-sub :theme theme)
 
 (defn selected-day [db _]
   (->> db (select-one! [:view :view/selected-day])))
@@ -50,6 +49,16 @@
                                   stop)})))
 
 (defn sessions-for-this-day [[selected-day calendar sessions] _]
+  ;; TODO needs to return this structure
+  (comment [;; collision groups are an intermediate grouping not in sub result
+            #:session-render {:left      0         ;; collision group position and type
+                              :top       0         ;; start
+                              :elevation 1         ;; collision group position
+                              :height    10        ;; duration
+                              :color     "#ff00ff" ;; tags mix or :session/color
+                              :label     "label"   ;; session label and tags depending on settings
+                              }])
+
   (let [this-day (get calendar selected-day)]
     (->> this-day
          :calendar/sessions
@@ -67,15 +76,17 @@
 (defn this-day [selected-day _]
   (let [month (t/month selected-day)
         year  (t/year selected-day)
+        ;; TODO move this to injection form sub call or interceptor
         now   (t/now)]
     {:day-of-week   (->> selected-day
                          t/day-of-week
                          str)
-     :day-of-month  (t/day-of-month selected-day)
+     :day-of-month  (str (t/day-of-month selected-day))
      :year          (str year)
      :month         (->> month str)
      :display-year  (not= year (t/year now))
-     :display-month (not= month (t/month now))}))
+     :display-month (or (not= year (t/year now))
+                        (not= month (t/month now)))}))
 (reg-sub :this-day
 
          :<- [:selected-day]
@@ -83,7 +94,7 @@
          this-day)
 
 (defn tracking [db _]
-  ;; TODO implement once tick event is in place
+  ;; TODO implement once tick and track event is in place
   (for [x (-> 4 rand-int (max 1) range)]
     (let [c                 (-> faker (j/get :internet) (j/call :color) color)
           more-than-doubled (-> (rand) (> 0.50))]

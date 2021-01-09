@@ -7,7 +7,7 @@
    [applied-science.js-interop :as j]
    [reagent.core :as r]
    [potpuri.core :as p]
-   [app.helpers :refer [<sub >evt]]
+   [app.helpers :refer [<sub >evt get-theme]]
    [app.components.menu :as menu]))
 
 (def styles
@@ -69,7 +69,7 @@
    [:> paper/Text {:style (-> styles :date-indicator :text)} day-of-month]])
 
 (defn tracking-sessions []
-  (let [theme  (<sub [:theme-js])
+  (let [theme  (->> [:theme] <sub get-theme)
         tracks (<sub [:tracking])]
     [:> g/ScrollView
      [:> paper/Surface {:style (-> styles :tracking-sessions :surface)}
@@ -118,7 +118,7 @@
 
 (defn screen [props]
   (r/as-element
-    (let [theme         (<sub [:theme-js])
+    (let [theme         (->> [:theme] <sub get-theme)
           menu-color    (-> theme
                             (j/get :colors)
                             (j/get :text))

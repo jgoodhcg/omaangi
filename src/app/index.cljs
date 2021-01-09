@@ -16,7 +16,7 @@
    [app.fx]
    [app.handlers]
    [app.subscriptions]
-   [app.helpers :refer [<sub >evt]]
+   [app.helpers :refer [<sub >evt get-theme]]
    [app.screens.day :as day]
    [app.screens.settings :as settings]
    [app.screens.reports :as reports]
@@ -46,7 +46,7 @@
 (defn screen [props] [:> (-> drawer (j/get :Screen)) props])
 
 (defn root []
-  (let [theme           (<sub [:theme-js])
+  (let [theme           (->> [:theme] <sub get-theme)
         !route-name-ref (clojure.core/atom {})
         !navigation-ref (clojure.core/atom {})]
 
