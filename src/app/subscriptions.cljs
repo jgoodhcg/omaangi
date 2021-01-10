@@ -5,9 +5,11 @@
    [applied-science.js-interop :as j]
    [re-frame.core :refer [reg-sub subscribe]]
    [com.rpl.specter :as sp :refer [select
+                                   setval
                                    select-one
                                    select-one!]]
-   [tick.alpha.api :as t]))
+   [tick.alpha.api :as t]
+   [app.helpers :refer [touches]]))
 
 (defn version [db _]
   (->> db
@@ -48,6 +50,35 @@
                                   end
                                   stop)})))
 
+(defn session-overlaps-collision-group? [session c-group]
+  (some? (->> c-group
+              (some #(touches session %)))))
+
+(defn insert-into-collision-group [collision-groups session]
+  (let [collision-groups-with-trailing-empty
+        (if (empty? (last collision-groups))
+          collision-groups
+          (conj collision-groups []))]
+
+    (setval
+
+      (sp/cond-path
+        ;;put the session in the first group that collides
+        [sp/ALL (partial session-overlaps-collision-group? session)]
+        [sp/ALL (partial session-overlaps-collision-group? session) sp/AFTER-ELEM]
+
+        ;; otherwise put it in the first empty
+        [sp/ALL empty?]
+        [sp/ALL empty? sp/AFTER-ELEM])
+
+      session
+      collision-groups-with-trailing-empty)))
+
+(defn get-collision-groups [sessions]
+  (->> sessions
+       (reduce insert-into-collision-group [[]])
+       (remove empty?)))
+
 (defn sessions-for-this-day [[selected-day calendar sessions] _]
   ;; TODO needs to return this structure
   (comment [;; collision groups are an intermediate grouping not in sub result
@@ -62,9 +93,10 @@
   (let [this-day (get calendar selected-day)]
     (->> this-day
          :calendar/sessions
-         (map #(get sessions %))
-         (map #(truncate-session (:calendar/date this-day) %))
-         vec)))
+         (mapv #(get sessions %))
+         (mapv #(truncate-session (:calendar/date this-day) %))
+         get-collision-groups
+         )))
 (reg-sub :sessions-for-this-day
 
          :<- [:selected-day]

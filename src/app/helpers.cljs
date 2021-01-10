@@ -3,9 +3,10 @@
    ["react-native" :as rn]
    ["react-native-paper" :as paper]
    [applied-science.js-interop :as j]
-   [re-frame.core :refer [subscribe dispatch]]
    [camel-snake-kebab.core :as csk]
-   [camel-snake-kebab.extras :as cske]))
+   [camel-snake-kebab.extras :as cske]
+   [tick.alpha.api :as t]
+   [re-frame.core :refer [subscribe dispatch]]))
 
 (def <sub (comp deref subscribe))
 
@@ -19,3 +20,22 @@
           (rn/StyleSheet.create)))
 
 (defn get-theme [k] (j/get paper k))
+
+(defn interval? [x] (and (contains? x :tick/beginning)
+                         (contains? x :tick/end)))
+
+(defn make-session-interval [x]
+  (if (interval? x)
+    x ;; just return it if it is an interval
+    ;; otherwise make it a valid tick interval
+    (let [{:session/keys [start stop]} x]
+      (merge x {:tick/beginning start
+                :tick/end       stop}))))
+
+(defn touches [a b]
+  (if (and (some? a)
+           (some? b))
+    (not (some? (some #{:precedes :preceded-by} ;; checks that these are not the relation
+                      [(t/relation (make-session-interval a)
+                                   (make-session-interval b))])))
+    false))

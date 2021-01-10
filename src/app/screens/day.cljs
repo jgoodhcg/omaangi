@@ -139,7 +139,8 @@
          [top-section (p/map-of menu-color toggle-drawer this-day)]
 
          [:> g/ScrollView
-          (for [s sessions]
-            [:> paper/Title {:key (random-uuid)}
-             (str (:session/start-truncated s)
-                  " " (:session/stop-truncated s))])]]]])))
+          ;; (for [s sessions]
+          ;;   [:> paper/Title {:key (random-uuid)}
+          ;;    (str (:session/start-truncated s)
+          ;;         " " (:session/stop-truncated s))])
+          ]]]])))

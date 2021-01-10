@@ -10,7 +10,9 @@
    [tick.alpha.api :as t]
    [clojure.spec.gen.alpha :as gen]
    ;; needed to `gen/sample` or `gen/generate`
-   [clojure.test.check.generators]))
+   [clojure.test.check.generators]
+
+   [app.helpers :refer [touches]]))
 
 ;;
 ;; misc
@@ -47,9 +49,6 @@
        (t/instant? stop)
        (t/< start stop)))
 
-(defn touches [day stamp]
-  (not (some? (some #{:precedes :preceded-by} ;; checks that these are not the relation
-                    [(t/relation stamp day)]))))
 
 ;;
 ;; independent generators
