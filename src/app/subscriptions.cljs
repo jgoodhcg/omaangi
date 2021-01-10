@@ -54,27 +54,11 @@
   (some? (->> c-group
               (some #(touches session %)))))
 
-(def debugging-atom (atom {:count 0
-                           :args  {}}))
-
 (defn insert-into-collision-group [collision-groups session]
   (let [collision-groups-with-trailing-empty
         (if (empty? (last collision-groups))
           collision-groups
-          (conj collision-groups []))
-
-        collision-count (->> collision-groups
-                             (sp/transform [sp/ALL] count)
-                             (reduce +))]
-
-
-    (when (-> collision-count (- (:count @debugging-atom)) (> 1))
-      (tap> (:args @debugging-atom)))
-
-    (reset! debugging-atom {:count collision-count
-                            :args  [(->> collision-groups
-                                         (sp/transform [sp/ALL sp/ALL] #(select-keys % [:session/start :session/stop])))
-                                    (select-keys session [:session/start :session/stop])]})
+          (conj collision-groups []))]
 
     (setval
 
