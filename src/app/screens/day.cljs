@@ -139,8 +139,25 @@
          [top-section (p/map-of menu-color toggle-drawer this-day)]
 
          [:> g/ScrollView
-          ;; (for [s sessions]
-          ;;   [:> paper/Title {:key (random-uuid)}
-          ;;    (str (:session/start-truncated s)
-          ;;         " " (:session/stop-truncated s))])
+          ;; TODO height needs to adjust to zoom ratio
+          [:> rn/View {:style {:height (-> 1440)}}
+
+           (for [{:session-render/keys [left
+                                        top
+                                        height
+                                        elevation
+                                        label
+                                        color]
+                  :as                  s} sessions]
+
+             [:> g/RectButton {:key   (:session/id s)
+                               :style {:position         "absolute"
+                                       :top              top
+                                       :left             left
+                                       :height           height
+                                       :width            "30%"
+                                       :elevation        elevation
+                                       :background-color color}}
+              [:> paper/Text label]])
+           ]
           ]]]])))

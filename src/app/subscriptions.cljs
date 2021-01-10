@@ -6,6 +6,7 @@
    [re-frame.core :refer [reg-sub subscribe]]
    [com.rpl.specter :as sp :refer [select
                                    setval
+                                   transform
                                    select-one
                                    select-one!]]
    [tick.alpha.api :as t]
@@ -79,6 +80,48 @@
        (reduce insert-into-collision-group [[]])
        (remove empty?)))
 
+;; TODO move this to view state
+(def zoom-offset 1)
+
+(defn set-render-props [[collision-index
+                         {:session/keys [type
+                                         start
+                                         stop
+                                         color
+                                         label]
+                          :as           session}]]
+
+  (let [type-offset      (case type
+                           :session/plan  0
+                           :session/track 50
+                           10)
+        collision-offset (-> collision-index (* 5))
+        left             (str (-> type-offset
+                                  (+ collision-offset))
+                              "%")
+        elevation        (-> collision-index (* 2)) ;; pulled from old code idk
+        top              (-> start
+                             t/date
+                             t/bounds
+                             t/beginning
+                             (#(t/duration {:tick/beginning (t/date-time %)
+                                            :tick/end       (t/date-time start)}))
+                             t/minutes
+                             (* zoom-offset))
+        height           (-> (t/duration {:tick/beginning (t/date-time start)
+                                          :tick/end       (t/date-time stop)})
+                             t/minutes
+                             (* zoom-offset))]
+
+    [collision-index
+     (merge session {:session-render/elevation elevation
+                     :session-render/left      left
+                     :session-render/top       top
+                     :session-render/height    height
+                     :session-render/label     label
+                     ;; TODO finish when tags can be injected
+                     :session-render/color     (-> faker (j/get :internet) (j/call :color))})]))
+
 (defn sessions-for-this-day [[selected-day calendar sessions] _]
   ;; TODO needs to return this structure
   (comment [;; collision groups are an intermediate grouping not in sub result
@@ -96,6 +139,11 @@
          (mapv #(get sessions %))
          (mapv #(truncate-session (:calendar/date this-day) %))
          get-collision-groups
+         ;; (transform [sp/ALL] (partial sort
+         ;;                              (comparator (fn [s1 s2] (t/< (:session/start s1)
+         ;;                                                           (:session/start s2))))))
+         (transform [sp/ALL sp/INDEXED-VALS] set-render-props)
+         flatten
          )))
 (reg-sub :sessions-for-this-day
 
