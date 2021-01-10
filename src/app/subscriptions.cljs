@@ -54,22 +54,38 @@
   (some? (->> c-group
               (some #(touches session %)))))
 
+(def debugging-atom (atom {:count 0
+                           :args  {}}))
+
 (defn insert-into-collision-group [collision-groups session]
   (let [collision-groups-with-trailing-empty
         (if (empty? (last collision-groups))
           collision-groups
-          (conj collision-groups []))]
+          (conj collision-groups []))
+
+        collision-count (->> collision-groups
+                             (sp/transform [sp/ALL] count)
+                             (reduce +))]
+
+
+    (when (-> collision-count (- (:count @debugging-atom)) (> 1))
+      (tap> (:args @debugging-atom)))
+
+    (reset! debugging-atom {:count collision-count
+                            :args  [(->> collision-groups
+                                         (sp/transform [sp/ALL sp/ALL] #(select-keys % [:session/start :session/stop])))
+                                    (select-keys session [:session/start :session/stop])]})
 
     (setval
 
       (sp/cond-path
         ;;put the session in the first group that collides
-        [sp/ALL (partial session-overlaps-collision-group? session)]
-        [sp/ALL (partial session-overlaps-collision-group? session) sp/AFTER-ELEM]
+        [(sp/subselect sp/ALL (partial session-overlaps-collision-group? session)) sp/FIRST]
+        [(sp/subselect sp/ALL (partial session-overlaps-collision-group? session)) sp/FIRST sp/AFTER-ELEM]
 
         ;; otherwise put it in the first empty
-        [sp/ALL empty?]
-        [sp/ALL empty? sp/AFTER-ELEM])
+        [(sp/subselect sp/ALL empty?) sp/FIRST]
+        [(sp/subselect sp/ALL empty?) sp/FIRST sp/AFTER-ELEM])
 
       session
       collision-groups-with-trailing-empty)))
