@@ -84,25 +84,25 @@
                                (-> styles :tracking-sessions :session)
                                {:width            (-> t :session/relative-width)
                                 :border-radius    (-> theme (j/get :roundness))
-                                :background-color (-> t :session/color-string)}) }]
+                                :background-color (-> t :session/color-hex)}) }]
 
          ;; intended duration indication
          [:> rn/View {:style (merge
                                (-> styles :tracking-sessions :indicator)
-                               {:background-color (-> t :indicator/color-string)})}]
+                               {:background-color (-> t :indicator/color-hex)})}]
 
          ;; more than double indicator
          (when (-> t :session/more-than-double)
            [:> rn/View {:style (-> styles :tracking-sessions :dbl-container)}
             [:> paper/IconButton {:size  16
-                                  :color (-> t :indicator/color-string)
+                                  :color (-> t :indicator/color-hex)
                                   :icon  "stack-overflow"}]])
 
          ;; selection button
          [:> g/RectButton {:on-press       #(println "selected tracking item")
-                           :ripple-color   (-> t :ripple/color-string) ;; android
-                           :underlay-color (-> t :ripple/color-string) ;; ios
-                           :active-opacity 0.7                         ;; ios
+                           :ripple-color   (-> t :ripple/color-hex) ;; android
+                           :underlay-color (-> t :ripple/color-hex) ;; ios
+                           :active-opacity 0.7                      ;; ios
                            :style          (-> styles :tracking-sessions :button)}]])]]))
 
 (defn top-section [{:keys [menu-color toggle-drawer this-day]}]
@@ -126,7 +126,9 @@
                             (j/get :navigation)
                             (j/get :toggleDrawer))
           sessions      (<sub [:sessions-for-this-day])
-          this-day      (<sub [:this-day])]
+          this-day      (<sub [:this-day])
+          hours         (<sub [:hours])
+          zoom          (<sub [:zoom])]
 
       [:> rn/SafeAreaView {:style {:display          "flex"
                                    :flex             1
@@ -138,26 +140,52 @@
 
          [top-section (p/map-of menu-color toggle-drawer this-day)]
 
+         ;;
+         ;;
+         ;;
          [:> g/ScrollView
-          ;; TODO height needs to adjust to zoom ratio
-          [:> rn/View {:style {:height (-> 1440)}}
+          [:> rn/View {:style {:height        (-> 1440 (* zoom))
+                               :margin-bottom 128}}
 
-           (for [{:session-render/keys [left
-                                        top
-                                        height
-                                        elevation
-                                        label
-                                        color]
-                  :as                  s} sessions]
+           [:> rn/View
+            (for [{:keys [top val]} hours]
+              [:> rn/View {:key   (str (random-uuid))
+                           :style {:position    "absolute"
+                                   :top         top
+                                   :width       "100%"
+                                   :margin-left 4}}
+               [:> paper/Divider]
+               [:> paper/Text {:style {:color (-> theme
+                                                  (j/get :colors)
+                                                  (j/get :disabled))}}
+                val]])]
 
-             [:> g/RectButton {:key   (:session/id s)
-                               :style {:position         "absolute"
-                                       :top              top
-                                       :left             left
-                                       :height           height
-                                       :width            "30%"
-                                       :elevation        elevation
-                                       :background-color color}}
-              [:> paper/Text label]])
-           ]
+           [:> rn/View {:style {:margin-left 64}}
+            (for [{:session-render/keys [left
+                                         top
+                                         height
+                                         elevation
+                                         color-hex
+                                         ripple-color-hex
+                                         label]
+                   :as                  s} sessions]
+
+              [:> g/RectButton {:key            (:session/id s)
+                                :style          {:position         "absolute"
+                                                 :top              top
+                                                 :left             left
+                                                 :height           height
+                                                 :width            "30%"
+                                                 :elevation        elevation
+                                                 :background-color color-hex}
+                                :on-press       #(println "selected session item")
+                                :ripple-color   ripple-color-hex ;; android
+                                :underlay-color ripple-color-hex ;; ios
+                                :active-opacity 0.7              ;; ios
+                                }
+               [:> paper/Text label]])]]
+          ;;
+          ;;
+          ;;
+
           ]]]])))

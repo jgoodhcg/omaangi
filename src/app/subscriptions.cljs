@@ -13,8 +13,7 @@
    [app.helpers :refer [touches]]))
 
 (defn version [db _]
-  (->> db
-       (select-one! [:version])))
+  (->> db (select-one! [:version])))
 (reg-sub :version version)
 
 (defn theme [db _]
@@ -26,6 +25,10 @@
       :dark  :DarkTheme
       :DarkTheme)))
 (reg-sub :theme theme)
+
+(defn zoom [db _]
+  (->> db (select-one! [:view :view/zoom])))
+(reg-sub :zoom zoom)
 
 (defn selected-day [db _]
   (->> db (select-one! [:view :view/selected-day])))
@@ -41,6 +44,8 @@
 
 (defn truncate-session [day session]
   (let [{:tick/keys [beginning end]} (t/bounds day)
+        beginning                    (t/instant beginning)
+        end                          (t/instant end)
         {:session/keys [start stop]} session]
     (merge
       session
@@ -80,15 +85,13 @@
        (reduce insert-into-collision-group [[]])
        (remove empty?)))
 
-;; TODO move this to view state
-(def zoom-offset 1)
-
-(defn set-render-props [[collision-index
+(defn set-render-props [zoom
+                        [collision-index
                          {:session/keys [type
                                          start
                                          stop
-                                         color
                                          label]
+                          session-color :session/color
                           :as           session}]]
 
   (let [type-offset      (case type
@@ -107,30 +110,44 @@
                              (#(t/duration {:tick/beginning (t/date-time %)
                                             :tick/end       (t/date-time start)}))
                              t/minutes
-                             (* zoom-offset))
+                             (* zoom))
         height           (-> (t/duration {:tick/beginning (t/date-time start)
                                           :tick/end       (t/date-time stop)})
                              t/minutes
-                             (* zoom-offset))]
+                             (* zoom))
+        session-color    (-> faker (j/get :internet) (j/call :color) color)]
+
+    (tap> (merge session {:session-render/elevation        elevation
+                          :session-render/left             left
+                          :session-render/top              top
+                          :session-render/height           height
+                          :session-render/label            label
+                          ;; TODO finish when tags can be injected
+                          :session-render/color-hex        (-> session-color (j/call :hex))
+                          :session-render/ripple-color-hex (-> session-color (j/call :lighten 0.64) (j/call :hex))
+                          }))
 
     [collision-index
-     (merge session {:session-render/elevation elevation
-                     :session-render/left      left
-                     :session-render/top       top
-                     :session-render/height    height
-                     :session-render/label     label
+     (merge session {:session-render/elevation        elevation
+                     :session-render/left             left
+                     :session-render/top              top
+                     :session-render/height           height
+                     :session-render/label            label
                      ;; TODO finish when tags can be injected
-                     :session-render/color     (-> faker (j/get :internet) (j/call :color))})]))
+                     :session-render/color-hex        (-> session-color (j/call :hex))
+                     :session-render/ripple-color-hex (-> session-color (j/call :lighten 0.64) (j/call :hex))
+                     })]))
 
-(defn sessions-for-this-day [[selected-day calendar sessions] _]
+(defn sessions-for-this-day [[selected-day calendar sessions zoom] _]
   ;; TODO needs to return this structure
   (comment [;; collision groups are an intermediate grouping not in sub result
-            #:session-render {:left      0         ;; collision group position and type
-                              :top       0         ;; start
-                              :elevation 1         ;; collision group position
-                              :height    10        ;; duration
-                              :color     "#ff00ff" ;; tags mix or :session/color
-                              :label     "label"   ;; session label and tags depending on settings
+            #:session-render {:left             0         ;; collision group position and type
+                              :top              0         ;; start
+                              :elevation        1         ;; collision group position
+                              :height           10        ;; duration
+                              :color-hex        "#ff00ff" ;; tags mix or :session/color
+                              :ripple-color-hex "#ff00ff" ;; tags mix or :session/color lightened
+                              :label            "label"   ;; session label and tags depending on settings
                               }])
 
   (let [this-day (get calendar selected-day)]
@@ -138,18 +155,20 @@
          :calendar/sessions
          (mapv #(get sessions %))
          (mapv #(truncate-session (:calendar/date this-day) %))
+         (sort-by (fn [s] (->> s
+                               :session/start
+                               (t/new-interval (t/epoch))
+                               t/duration
+                               t/millis)))
          get-collision-groups
-         ;; (transform [sp/ALL] (partial sort
-         ;;                              (comparator (fn [s1 s2] (t/< (:session/start s1)
-         ;;                                                           (:session/start s2))))))
-         (transform [sp/ALL sp/INDEXED-VALS] set-render-props)
-         flatten
-         )))
+         (transform [sp/ALL sp/INDEXED-VALS] (partial set-render-props zoom))
+         flatten)))
 (reg-sub :sessions-for-this-day
 
          :<- [:selected-day]
          :<- [:calendar]
          :<- [:sessions]
+         :<- [:zoom]
 
          sessions-for-this-day)
 
@@ -178,11 +197,31 @@
   (for [x (-> 4 rand-int (max 1) range)]
     (let [c                 (-> faker (j/get :internet) (j/call :color) color)
           more-than-doubled (-> (rand) (> 0.50))]
-      {:session/color-string     (-> c (j/call :hex))
+      {:session/color-hex        (-> c (j/call :hex))
        :session/more-than-double more-than-doubled
-       :indicator/color-string   (-> c (j/call :lighten 0.32) (j/call :hex))
-       :ripple/color-string      (-> c (j/call :lighten 0.64) (j/call :hex))
+       :indicator/color-hex      (-> c (j/call :lighten 0.32) (j/call :hex))
+       :ripple/color-hex         (-> c (j/call :lighten 0.64) (j/call :hex))
        :session/relative-width   (if more-than-doubled
                                    "100%"
                                    (-> (rand) (* 100) (str "%"))) })))
 (reg-sub :tracking tracking)
+
+(defn hours [[selected-day zoom] _]
+  (->> (let [intvl (t/bounds selected-day)]
+         (t/range
+           (t/beginning intvl)
+           (t/end intvl)
+           (t/new-duration 1 :hours)))
+       (map (fn [h]
+              (let [hour (t/hour h)
+                    ;; TODO move zoom offset to sub graph
+                    y    (-> hour (* 60) (* zoom))]
+                {:top y
+                 :val hour})))))
+
+(reg-sub :hours
+
+         :<- [:selected-day]
+         :<- [:zoom]
+
+         hours)

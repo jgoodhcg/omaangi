@@ -256,6 +256,10 @@
                     (s/and map? (s/every-kv t/date? ::calendar-val))
                     #(gen/fmap generate-calendar (s/gen ::reasonable-number))))
 
+(s/def ::zoom (s/with-gen
+                (s/and float? pos?)
+                #(gen/fmap (fn [n] (* n 0.1)) (s/gen ::reasonable-number))))
+
 (def app-db-spec
   (ds/spec {:name ::app-db
             :spec {:settings {:theme (s/spec #{:light :dark})}
@@ -264,8 +268,8 @@
                    :calendar ::calendar
                    :sessions ::sessions
                    :tags     ::tags
-                   :view     {:view/selected-day t/date?}
-                   }}))
+                   :view     {:view/selected-day t/date?
+                              :view/zoom         ::zoom}}}))
 
 (comment
   (s/explain app-db-spec (merge {:settings {:theme :dark}
@@ -273,6 +277,7 @@
                                 (generate-calendar-tag-sessions))))
 
 (comment (gen/generate (s/gen app-db-spec)))
+
 ;;
 ;; data
 ;;
@@ -283,7 +288,8 @@
 
    :tracking [#uuid "2649ba76-f644-4ea6-ab27-e74485187e23"]
 
-   :view #:view {:selected-day #time/date "2020-12-28"}
+   :view #:view {:selected-day #time/date "2020-12-28"
+                 :zoom         1.0}
 
    :calendar {#time/date "2020-12-28"
               #:calendar  {:date     #time/date "2020-12-28"
@@ -317,6 +323,8 @@
                  :label "My first tag"
                  :color (color "#6f7662")}}})
 
+(comment (s/valid? app-db-spec example-app-db))
+
 (def default-app-db
   (let [cal-tag-sessions (generate-calendar-tag-sessions)]
     (merge
@@ -327,5 +335,5 @@
        :view     {:view/selected-day (->> cal-tag-sessions
                                           :calendar
                                           keys
-                                          last)}})))
-
+                                          last)
+                  :view/zoom         1.0}})))
