@@ -102,7 +102,7 @@
         left             (str (-> type-offset
                                   (+ collision-offset))
                               "%")
-        elevation        (-> collision-index (* 2)) ;; pulled from old code idk
+        elevation        (-> collision-index (* 2)) ;; pulled from old code idk why it works
         top              (-> start
                              t/date
                              t/bounds
