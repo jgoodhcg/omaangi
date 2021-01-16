@@ -1,7 +1,7 @@
 (ns app.subscriptions
   (:require
    ["color" :as color]
-   ["faker" :as faker] ;; TODO remove when tracing is implemented
+   ["faker" :as faker] ;; TODO remove when tracking is implemented
    [applied-science.js-interop :as j]
    [re-frame.core :refer [reg-sub subscribe]]
    [com.rpl.specter :as sp :refer [select
@@ -10,6 +10,7 @@
                                    select-one
                                    select-one!]]
    [tick.alpha.api :as t]
+   [app.colors :refer [material-500-hexes]]
    [app.helpers :refer [touches]]))
 
 (defn version [db _]
@@ -115,7 +116,7 @@
                                           :tick/end       (t/date-time stop)})
                              t/minutes
                              (* zoom))
-        session-color    (-> faker (j/get :internet) (j/call :color) color)]
+        session-color    (-> material-500-hexes rand-nth color)]
 
     (tap> (merge session {:session-render/elevation        elevation
                           :session-render/left             left
@@ -195,7 +196,7 @@
 (defn tracking [db _]
   ;; TODO implement once tick and track event is in place
   (for [x (-> 4 rand-int (max 1) range)]
-    (let [c                 (-> faker (j/get :internet) (j/call :color) color)
+    (let [c                 (-> material-500-hexes rand-nth color)
           more-than-doubled (-> (rand) (> 0.50))]
       {:session/color-hex        (-> c (j/call :hex))
        :session/more-than-double more-than-doubled

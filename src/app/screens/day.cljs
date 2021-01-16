@@ -19,7 +19,8 @@
                        :text      {:font-weight "bold"
                                    :text-align  "center"
                                    :margin      8}}
-   :tracking-sessions {:surface       {:padding 8}
+   :tracking-sessions {:surface       {:padding       8
+                                       :margin-bottom 4}
                        :container     {:width  "100%"
                                        :height 32
                                        :margin 4}
@@ -103,7 +104,8 @@
                            :ripple-color   (-> t :ripple/color-hex) ;; android
                            :underlay-color (-> t :ripple/color-hex) ;; ios
                            :active-opacity 0.7                      ;; ios
-                           :style          (-> styles :tracking-sessions :button)}]])]]))
+                           :style          (-> styles :tracking-sessions :button
+                                               (merge {:border-radius (-> theme (j/get :roundness))}))}]])]]))
 
 (defn top-section [{:keys [menu-color toggle-drawer this-day]}]
   [:> rn/View {:style (-> styles :top-section :outer)}
@@ -177,7 +179,8 @@
                                                  :height           height
                                                  :width            "30%"
                                                  :elevation        elevation
-                                                 :background-color color-hex}
+                                                 :background-color color-hex
+                                                 :border-radius    (-> theme (j/get :roundness))}
                                 :on-press       #(println "selected session item")
                                 :ripple-color   ripple-color-hex ;; android
                                 :underlay-color ripple-color-hex ;; ios
