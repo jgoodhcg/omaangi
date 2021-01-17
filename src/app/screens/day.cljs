@@ -113,29 +113,46 @@
                            :style          (-> styles :tracking-sessions :button
                                                (merge {:border-radius (-> theme (j/get :roundness))}))}]])]]))
 
-(defn top-section [{:keys [menu-color toggle-drawer this-day]}]
-  [:> rn/View {:style (-> styles :top-section :outer)}
+(defn top-section [props]
+  (let [this-day      (<sub [:this-day])
+        theme         (->> [:theme] <sub get-theme)
+        menu-color    (-> theme
+                          (j/get :colors)
+                          (j/get :text))
+        toggle-drawer (-> props
+                          (j/get :navigation)
+                          (j/get :toggleDrawer))]
 
-   [:> rn/View {:style (-> styles :top-section :inner)}
-    [menu/button {:button-color menu-color
-                  :toggle-menu  toggle-drawer}]
+    [:> rn/View {:style (-> styles :top-section :outer)}
 
-    [date-indicator this-day]]
+     [:> rn/View {:style (-> styles :top-section :inner)}
+      [menu/button {:button-color menu-color
+                    :toggle-menu  toggle-drawer}]
 
-   [tracking-sessions]])
+      [date-indicator this-day]]
+
+     [tracking-sessions]]))
+
+(defn time-indicators []
+  (let [theme (->> [:theme] <sub get-theme)
+        hours (<sub [:hours])]
+    [:> rn/View
+     (for [{:keys [top val]} hours]
+       [:> rn/View {:key   (str (random-uuid))
+                    :style {:position    "absolute"
+                            :top         top
+                            :width       "100%"
+                            :margin-left 4}}
+        [:> paper/Divider]
+        [:> paper/Text {:style {:color (-> theme
+                                           (j/get :colors)
+                                           (j/get :disabled))}}
+         val]])]))
 
 (defn screen [props]
   (r/as-element
     (let [theme         (->> [:theme] <sub get-theme)
-          menu-color    (-> theme
-                            (j/get :colors)
-                            (j/get :text))
-          toggle-drawer (-> props
-                            (j/get :navigation)
-                            (j/get :toggleDrawer))
           sessions      (<sub [:sessions-for-this-day])
-          this-day      (<sub [:this-day])
-          hours         (<sub [:hours])
           zoom          (<sub [:zoom])
           now-indicator (<sub [:now-indicator])]
 
@@ -147,25 +164,14 @@
         [:> rn/View
          [:> rn/StatusBar {:visibility "hidden"}]
 
-         [top-section (p/map-of menu-color toggle-drawer this-day)]
+         [top-section props]
 
          [:> g/ScrollView
           [:> rn/View {:style {:height        (-> 1440 (* zoom))
                                :margin-bottom 128}}
 
            ;; time indicators
-           [:> rn/View
-            (for [{:keys [top val]} hours]
-              [:> rn/View {:key   (str (random-uuid))
-                           :style {:position    "absolute"
-                                   :top         top
-                                   :width       "100%"
-                                   :margin-left 4}}
-               [:> paper/Divider]
-               [:> paper/Text {:style {:color (-> theme
-                                                  (j/get :colors)
-                                                  (j/get :disabled))}}
-                val]])]
+           [time-indicators]
 
            ;; sessions
            [:> rn/View {:style {:margin-left 64}}
