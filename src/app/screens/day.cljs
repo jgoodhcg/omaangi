@@ -136,7 +136,8 @@
           sessions      (<sub [:sessions-for-this-day])
           this-day      (<sub [:this-day])
           hours         (<sub [:hours])
-          zoom          (<sub [:zoom])]
+          zoom          (<sub [:zoom])
+          now-indicator (<sub [:now-indicator])]
 
       [:> rn/SafeAreaView {:style {:display          "flex"
                                    :flex             1
@@ -148,13 +149,11 @@
 
          [top-section (p/map-of menu-color toggle-drawer this-day)]
 
-         ;;
-         ;;
-         ;;
          [:> g/ScrollView
           [:> rn/View {:style {:height        (-> 1440 (* zoom))
                                :margin-bottom 128}}
 
+           ;; time indicators
            [:> rn/View
             (for [{:keys [top val]} hours]
               [:> rn/View {:key   (str (random-uuid))
@@ -168,6 +167,7 @@
                                                   (j/get :disabled))}}
                 val]])]
 
+           ;; sessions
            [:> rn/View {:style {:margin-left 64}}
             (for [{:session-render/keys [left
                                          top
@@ -197,4 +197,19 @@
                                     :width    "100%"
                                     :overflow "hidden"
                                     :padding  4}}
-                [:> paper/Text {:style {:color text-color-hex}} label]]])]]]]]])))
+                [:> paper/Text {:style {:color text-color-hex}} label]]])]
+
+           ;; now indicator
+           (let [{:now-indicator-render/keys
+                  [position
+                   label
+                   display-indicator]} now-indicator]
+             (when true ;; TODO display-indicator
+               [:> rn/View {:style {:position "absolute"
+                                    :top      position
+                                    :left     64
+                                    :width    "100%"}}
+                [:> rn/View {:style {:width            "100%"
+                                     :height           2
+                                     :background-color (-> theme (j/get :colors) (j/get :text))}}]
+                [:> paper/Text label]]))]]]]])))

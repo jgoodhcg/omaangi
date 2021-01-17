@@ -89,6 +89,16 @@
        (remove empty?)
        vec))
 
+(defn instant->top-position [i zoom]
+  (-> i
+      t/date
+      t/bounds
+      t/beginning
+      (#(t/duration {:tick/beginning (t/date-time %)
+                     :tick/end       (t/date-time i)}))
+      t/minutes
+      (* zoom)))
+
 (defn set-render-props [zoom
                         [collision-index
                          {:session/keys [type
@@ -109,14 +119,7 @@
                              (- collision-offset)
                              (str "%"))
         elevation        (-> collision-index (* 2)) ;; pulled from old code idk why it works
-        top              (-> start
-                             t/date
-                             t/bounds
-                             t/beginning
-                             (#(t/duration {:tick/beginning (t/date-time %)
-                                            :tick/end       (t/date-time start)}))
-                             t/minutes
-                             (* zoom))
+        top              (instant->top-position start zoom)
         height           (-> (t/duration {:tick/beginning (t/date-time start)
                                           :tick/end       (t/date-time stop)})
                              t/minutes
@@ -131,16 +134,6 @@
                                     (#(if % (-> faker (j/get :random) (j/call :words))
                                           "")))))
         label            (str label "\n" (join "\n" tag-labels))]
-
-    ;; (tap> (merge session {:session-render/elevation        elevation
-    ;;                       :session-render/left             left
-    ;;                       :session-render/top              top
-    ;;                       :session-render/height           height
-    ;;                       :session-render/label            label
-    ;;                       ;; TODO finish when tags can be injected
-    ;;                       :session-render/color-hex        (-> session-color (j/call :hex))
-    ;;                       :session-render/ripple-color-hex (-> session-color (j/call :lighten 0.64) (j/call :hex))
-    ;;                       }))
 
     [collision-index
      (merge session {:session-render/elevation        elevation
@@ -256,10 +249,21 @@
                     y    (-> hour (* 60) (* zoom))]
                 {:top y
                  :val hour})))))
-
 (reg-sub :hours
 
          :<- [:selected-day]
          :<- [:zoom]
 
          hours)
+
+(defn now-indicator [[zoom selected-day] _]
+  (let [now (t/now)]
+    #:now-indicator-render {:position          (instant->top-position now zoom)
+                            :display-indicator (= (t/date now) (t/date selected-day))
+                            :label             (str (t/hour now) "-" (t/minute now))}))
+(reg-sub :now-indicator
+
+         :<- [:zoom]
+         :<- [:selected-day]
+
+         now-indicator)
