@@ -42,7 +42,6 @@
        (t/instant? stop)
        (t/< start stop)))
 
-
 ;;
 ;; independent generators
 ;;
