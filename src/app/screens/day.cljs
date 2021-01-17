@@ -184,11 +184,27 @@
                              :padding  4}}
          [:> paper/Text {:style {:color text-color-hex}} label]]])]))
 
+(defn now-indicator-component []
+  (let [theme                 (->> [:theme] <sub get-theme)
+        {:now-indicator-render/keys
+         [position
+          label
+          display-indicator]} (<sub [:now-indicator])]
+
+    (when true ;; TODO display-indicator
+      [:> rn/View {:style {:position "absolute"
+                           :top      position
+                           :left     64
+                           :width    "100%"}}
+       [:> rn/View {:style {:width            "100%"
+                            :height           2
+                            :background-color (-> theme (j/get :colors) (j/get :text))}}]
+       [:> paper/Text label]])))
+
 (defn screen [props]
   (r/as-element
-    (let [theme         (->> [:theme] <sub get-theme)
-          zoom          (<sub [:zoom])
-          now-indicator (<sub [:now-indicator])]
+    (let [theme (->> [:theme] <sub get-theme)
+          zoom  (<sub [:zoom])]
 
       [:> rn/SafeAreaView {:style {:display          "flex"
                                    :flex             1
@@ -201,24 +217,12 @@
          [top-section props]
 
          [:> g/ScrollView
-          [:> rn/View {:style {:height        (-> 1440 (* zoom))
-                               :margin-bottom 128}}
+          [:> rn/View
+           {:style {:height        (-> 1440 (* zoom))
+                    :margin-bottom 128}}
 
            [time-indicators]
 
            [sessions-component]
 
-           ;; now indicator
-           (let [{:now-indicator-render/keys
-                  [position
-                   label
-                   display-indicator]} now-indicator]
-             (when true ;; TODO display-indicator
-               [:> rn/View {:style {:position "absolute"
-                                    :top      position
-                                    :left     64
-                                    :width    "100%"}}
-                [:> rn/View {:style {:width            "100%"
-                                     :height           2
-                                     :background-color (-> theme (j/get :colors) (j/get :text))}}]
-                [:> paper/Text label]]))]]]]])))
+           [now-indicator-component]]]]]])))
