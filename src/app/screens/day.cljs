@@ -95,16 +95,17 @@
                                {:width            relative-width
                                 :border-radius    (-> theme (j/get :roundness))
                                 :background-color color-hex})}
+
+          ;; intended duration indication
+          (when show-indicator
+            [:> rn/View {:style (merge
+                                  (-> styles :tracking-sessions :indicator)
+                                  {:left             indicator-position
+                                   :background-color indicator-color-hex})}])
+
           [:> paper/Text {:style {:color text-color-hex}} label]]
 
-         ;; intended duration indication
-         (when show-indicator
-           [:> rn/View {:style (merge
-                                 (-> styles :tracking-sessions :indicator)
-                                 {:left             indicator-position
-                                  :background-color indicator-color-hex})}])
-
-         ;; selection button
+         ;; selection button needs to go "over" everything
          [:> g/RectButton {:on-press       #(println "selected tracking item")
                            :ripple-color   ripple-color-hex
                            :underlay-color ripple-color-hex

@@ -13,7 +13,7 @@
    [clojure.test.check.generators]
 
    [app.colors :refer [material-500-hexes]]
-   [app.helpers :refer [touches]]))
+   [app.helpers :refer [touches chance]]))
 
 ;;
 ;; misc
@@ -36,14 +36,6 @@
       (t/range (-> d (t/bounds) (t/beginning))
                (-> d (t/bounds) (t/end))
                (t/new-duration 1 :minutes)))))
-
-(defn chance [p]
-  (let [r (rand)]
-    (case p
-      :low  (-> r (< 0.2))
-      :med  (-> r (< 0.51))
-      :high (-> r (< 0.90))
-      (-> r (< 0.75)))))
 
 (defn start-before-stop [{:session/keys [start stop]}]
   (and (t/instant? start)

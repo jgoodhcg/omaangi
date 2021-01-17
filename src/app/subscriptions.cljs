@@ -2,8 +2,10 @@
   (:require
    ["color" :as color]
    ["faker" :as faker] ;; TODO remove when tracking is implemented
+   ["node-emoji" :as emoji]
    [applied-science.js-interop :as j]
    [re-frame.core :refer [reg-sub subscribe]]
+   [clojure.string :refer [join]]
    [com.rpl.specter :as sp :refer [select
                                    setval
                                    transform
@@ -11,7 +13,7 @@
                                    select-one!]]
    [tick.alpha.api :as t]
    [app.colors :refer [material-500-hexes white black]]
-   [app.helpers :refer [touches]]))
+   [app.helpers :refer [touches chance]]))
 
 (defn version [db _]
   (->> db (select-one! [:version])))
@@ -211,7 +213,18 @@
           relative-width     (if surpassed
                                "100%"
                                (-> duration (/ intended-duration) (* 100) (str "%")))
-          indicator-position (-> intended-duration (/ duration) (* 100) (str "%"))]
+          indicator-position (-> intended-duration (/ duration) (* 100) (str "%"))
+          session-label      (-> :med chance
+                                 (#(if % (-> faker (j/get :random) (j/call :words))
+                                       "")))
+          tag-labels         (for [_ (range (rand-int 10))]
+                               (str (-> :high chance
+                                        (#(if % (-> emoji (j/call :random) (j/get :emoji))
+                                              "")))
+                                    (-> :low chance
+                                        (#(if % (-> faker (j/get :random) (j/call :words))
+                                              "")))))
+          label              (str session-label " " (join " " tag-labels))]
 
       #:tracking-render {:color-hex           (-> c (j/call :hex))
                          :indicator-color-hex (-> c (j/call :lighten 0.32) (j/call :hex))
@@ -219,7 +232,7 @@
                          :show-indicator      surpassed
                          :ripple-color-hex    (-> c (j/call :lighten 0.64) (j/call :hex))
                          :relative-width      relative-width
-                         :label               (-> faker (j/get :random) (j/call :words))
+                         :label               label
                          :text-color-hex      (-> c (j/call :isLight) (#(if % black white)))})))
 (reg-sub :tracking tracking)
 

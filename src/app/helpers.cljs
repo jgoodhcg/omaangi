@@ -39,3 +39,11 @@
                       [(t/relation (make-session-interval a)
                                    (make-session-interval b))])))
     false))
+
+(defn chance [p]
+  (let [r (rand)]
+    (case p
+      :low  (-> r (< 0.2))
+      :med  (-> r (< 0.51))
+      :high (-> r (< 0.90))
+      (-> r (< 0.75)))))
