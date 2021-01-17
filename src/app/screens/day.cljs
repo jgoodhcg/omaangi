@@ -11,49 +11,62 @@
    [app.components.menu :as menu]))
 
 (def styles
-  {:surface           {:flex 1 :justify-content "flex-start"}
-   :date-indicator    {:container {:display         "flex"
-                                   :flex-grow       1
-                                   :flex-direction  "row"
-                                   :justify-content "center"}
-                       :text      {:font-weight "bold"
-                                   :text-align  "center"
-                                   :margin      8}}
-   :tracking-sessions {:surface       {:padding       8
-                                       :margin-bottom 4}
-                       :container     {:width  "100%"
-                                       :height 32
-                                       :margin 4}
-                       :session       {:position "absolute"
-                                       :top      0
-                                       :left     0
-                                       :height   32
-                                       :padding  4
-                                       :overflow "hidden"}
-                       :indicator     {:position "absolute"
-                                       :top      0
-                                       :width    8
-                                       :height   32}
-                       :dbl-container {:position       "absolute"
-                                       :top            0
-                                       :right          16
-                                       :display        "flex"
-                                       :flex-direction "row"
-                                       :align-items    "center"
-                                       :width          8
-                                       :height         32}
-                       :button        {:position "absolute"
-                                       :left     0
-                                       :top      0
-                                       :height   32
-                                       :width    "100%"}}
-   :top-section       {:outer {:max-height     256
-                               :display        "flex"
-                               :flex-direction "column"}
-                       :inner {:display         "flex"
-                               :flex-direction  "row"
-                               :align-items     "center"
-                               :justify-content "flex-start"}}} )
+  {:surface                 {:flex 1 :justify-content "flex-start"}
+   :date-indicator          {:container {:display         "flex"
+                                         :flex-grow       1
+                                         :flex-direction  "row"
+                                         :justify-content "center"}
+                             :text      {:font-weight "bold"
+                                         :text-align  "center"
+                                         :margin      8}}
+   :tracking-sessions       {:surface       {:padding       8
+                                             :margin-bottom 4}
+                             :container     {:width  "100%"
+                                             :height 32
+                                             :margin 4}
+                             :session       {:position "absolute"
+                                             :top      0
+                                             :left     0
+                                             :height   32
+                                             :padding  4
+                                             :overflow "hidden"}
+                             :indicator     {:position "absolute"
+                                             :top      0
+                                             :width    8
+                                             :height   32}
+                             :dbl-container {:position       "absolute"
+                                             :top            0
+                                             :right          16
+                                             :display        "flex"
+                                             :flex-direction "row"
+                                             :align-items    "center"
+                                             :width          8
+                                             :height         32}
+                             :button        {:position "absolute"
+                                             :left     0
+                                             :top      0
+                                             :height   32
+                                             :width    "100%"}}
+   :top-section             {:outer {:max-height     256
+                                     :display        "flex"
+                                     :flex-direction "column"}
+                             :inner {:display         "flex"
+                                     :flex-direction  "row"
+                                     :align-items     "center"
+                                     :justify-content "flex-start"}}
+   :time-indicators         {:container {:position    "absolute"
+                                         :width       "100%"
+                                         :margin-left 4}}
+   :sessions-component      {:button          {:position "absolute"}
+                             :label-container {:height   "100%"
+                                               :width    "100%"
+                                               :overflow "hidden"
+                                               :padding  4}}
+   :now-indicator-component {:outer {:position "absolute"
+                                     :left     64
+                                     :width    "100%"}
+                             :inner {:width  "100%"
+                                     :height 2}}})
 
 (defn date-indicator [{:keys [day-of-week
                               day-of-month
@@ -139,10 +152,8 @@
     [:> rn/View
      (for [{:keys [top val]} hours]
        [:> rn/View {:key   (str (random-uuid))
-                    :style {:position    "absolute"
-                            :top         top
-                            :width       "100%"
-                            :margin-left 4}}
+                    :style (-> styles :time-indicators :container
+                               (merge {:top top}))}
         [:> paper/Divider]
         [:> paper/Text {:style {:color (-> theme
                                            (j/get :colors)
@@ -166,22 +177,19 @@
             :as                  s} sessions]
 
        [:> g/RectButton {:key            (:session/id s)
-                         :style          {:position         "absolute"
-                                          :top              top
-                                          :left             left
-                                          :height           height
-                                          :width            width
-                                          :elevation        elevation
-                                          :background-color color-hex
-                                          :border-radius    (-> theme (j/get :roundness))}
+                         :style          (-> styles :sessions-component :button
+                                             (merge {:top              top
+                                                     :left             left
+                                                     :height           height
+                                                     :width            width
+                                                     :elevation        elevation
+                                                     :background-color color-hex
+                                                     :border-radius    (-> theme (j/get :roundness))}))
                          :on-press       #(println "selected session item")
                          :ripple-color   ripple-color-hex
                          :underlay-color ripple-color-hex
                          :active-opacity 0.7}
-        [:> rn/View {:style {:height   "100%"
-                             :width    "100%"
-                             :overflow "hidden"
-                             :padding  4}}
+        [:> rn/View {:style (-> styles :sessions-component :label-container)}
          [:> paper/Text {:style {:color text-color-hex}} label]]])]))
 
 (defn now-indicator-component []
@@ -192,13 +200,10 @@
           display-indicator]} (<sub [:now-indicator])]
 
     (when true ;; TODO display-indicator
-      [:> rn/View {:style {:position "absolute"
-                           :top      position
-                           :left     64
-                           :width    "100%"}}
-       [:> rn/View {:style {:width            "100%"
-                            :height           2
-                            :background-color (-> theme (j/get :colors) (j/get :text))}}]
+      [:> rn/View {:style (-> styles :now-indicator-component :outer
+                              (merge {:top position})) }
+       [:> rn/View {:style (-> styles :now-indicator-component :inner
+                               (merge {:background-color (-> theme (j/get :colors) (j/get :text))}))}]
        [:> paper/Text label]])))
 
 (defn screen [props]
