@@ -27,7 +27,9 @@
                        :session       {:position "absolute"
                                        :top      0
                                        :left     0
-                                       :height   32}
+                                       :height   32
+                                       :padding  4
+                                       :overflow "hidden"}
                        :indicator     {:position "absolute"
                                        :top      0
                                        :left     "50%"
@@ -75,7 +77,13 @@
     [:> g/ScrollView
      [:> paper/Surface {:style (-> styles :tracking-sessions :surface)}
 
-      (for [t tracks]
+      (for [{:tracking-render/keys [relative-width
+                                    color-hex
+                                    text-color-hex
+                                    indicator-color-hex
+                                    more-than-double
+                                    ripple-color-hex
+                                    label]} tracks]
         ;; container
         [:> rn/View {:key   (random-uuid)
                      :style (-> styles :tracking-sessions :container)}
@@ -83,27 +91,28 @@
          ;; session
          [:> rn/View {:style (merge
                                (-> styles :tracking-sessions :session)
-                               {:width            (-> t :session/relative-width)
+                               {:width            relative-width
                                 :border-radius    (-> theme (j/get :roundness))
-                                :background-color (-> t :session/color-hex)}) }]
+                                :background-color color-hex})}
+          [:> paper/Text {:style {:color text-color-hex}} label]]
 
          ;; intended duration indication
          [:> rn/View {:style (merge
                                (-> styles :tracking-sessions :indicator)
-                               {:background-color (-> t :indicator/color-hex)})}]
+                               {:background-color indicator-color-hex})}]
 
          ;; more than double indicator
-         (when (-> t :session/more-than-double)
+         (when more-than-double
            [:> rn/View {:style (-> styles :tracking-sessions :dbl-container)}
             [:> paper/IconButton {:size  16
-                                  :color (-> t :indicator/color-hex)
+                                  :color indicator-color-hex
                                   :icon  "stack-overflow"}]])
 
          ;; selection button
          [:> g/RectButton {:on-press       #(println "selected tracking item")
-                           :ripple-color   (-> t :ripple/color-hex) ;; android
-                           :underlay-color (-> t :ripple/color-hex) ;; ios
-                           :active-opacity 0.7                      ;; ios
+                           :ripple-color   ripple-color-hex
+                           :underlay-color ripple-color-hex
+                           :active-opacity 0.7
                            :style          (-> styles :tracking-sessions :button
                                                (merge {:border-radius (-> theme (j/get :roundness))}))}]])]]))
 
@@ -191,9 +200,4 @@
                                     :width    "100%"
                                     :overflow "hidden"
                                     :padding  4}}
-                [:> paper/Text {:style {:color text-color-hex}} label]]])]]
-          ;;
-          ;;
-          ;;
-
-          ]]]])))
+                [:> paper/Text {:style {:color text-color-hex}} label]]])]]]]]])))
