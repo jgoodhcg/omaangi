@@ -122,7 +122,15 @@
                              t/minutes
                              (* zoom))
         session-color    (-> material-500-hexes rand-nth color)
-        text-color-hex   (-> session-color (j/call :isLight) (#(if % black white)))]
+        text-color-hex   (-> session-color (j/call :isLight) (#(if % black white)))
+        tag-labels       (for [_ (range (rand-int 10))]
+                           (str (-> :high chance
+                                    (#(if % (-> emoji (j/call :random) (j/get :emoji))
+                                          "")))
+                                (-> :low chance
+                                    (#(if % (-> faker (j/get :random) (j/call :words))
+                                          "")))))
+        label            (str label "\n" (join "\n" tag-labels))]
 
     ;; (tap> (merge session {:session-render/elevation        elevation
     ;;                       :session-render/left             left
