@@ -204,15 +204,21 @@
 (defn tracking [db _]
   ;; TODO implement once tick and track event is in place
   (for [x (-> 4 rand-int (max 1) range)]
-    (let [c                 (-> material-500-hexes rand-nth color)
-          more-than-doubled (-> (rand) (> 0.50))]
+    (let [c                  (-> material-500-hexes rand-nth color)
+          intended-duration  (rand)
+          duration           (rand)
+          surpassed          (-> duration (> intended-duration))
+          relative-width     (if surpassed
+                               "100%"
+                               (-> duration (/ intended-duration) (* 100) (str "%")))
+          indicator-position (-> intended-duration (/ duration) (* 100) (str "%"))]
+
       #:tracking-render {:color-hex           (-> c (j/call :hex))
-                         :more-than-double    more-than-doubled
                          :indicator-color-hex (-> c (j/call :lighten 0.32) (j/call :hex))
+                         :indicator-position  indicator-position
+                         :show-indicator      surpassed
                          :ripple-color-hex    (-> c (j/call :lighten 0.64) (j/call :hex))
-                         :relative-width      (if more-than-doubled
-                                                          "100%"
-                                                          (-> (rand) (* 100) (str "%")))
+                         :relative-width      relative-width
                          :label               (-> faker (j/get :random) (j/call :words))
                          :text-color-hex      (-> c (j/call :isLight) (#(if % black white)))})))
 (reg-sub :tracking tracking)

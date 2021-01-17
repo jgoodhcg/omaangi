@@ -32,7 +32,6 @@
                                        :overflow "hidden"}
                        :indicator     {:position "absolute"
                                        :top      0
-                                       :left     "50%"
                                        :width    8
                                        :height   32}
                        :dbl-container {:position       "absolute"
@@ -77,13 +76,15 @@
     [:> g/ScrollView
      [:> paper/Surface {:style (-> styles :tracking-sessions :surface)}
 
-      (for [{:tracking-render/keys [relative-width
-                                    color-hex
-                                    text-color-hex
-                                    indicator-color-hex
-                                    more-than-double
-                                    ripple-color-hex
-                                    label]} tracks]
+      (for [{:tracking-render/keys
+             [relative-width
+              color-hex
+              text-color-hex
+              indicator-color-hex
+              indicator-position
+              show-indicator
+              ripple-color-hex
+              label] :as t} tracks]
         ;; container
         [:> rn/View {:key   (random-uuid)
                      :style (-> styles :tracking-sessions :container)}
@@ -97,16 +98,11 @@
           [:> paper/Text {:style {:color text-color-hex}} label]]
 
          ;; intended duration indication
-         [:> rn/View {:style (merge
-                               (-> styles :tracking-sessions :indicator)
-                               {:background-color indicator-color-hex})}]
-
-         ;; more than double indicator
-         (when more-than-double
-           [:> rn/View {:style (-> styles :tracking-sessions :dbl-container)}
-            [:> paper/IconButton {:size  16
-                                  :color indicator-color-hex
-                                  :icon  "stack-overflow"}]])
+         (when show-indicator
+           [:> rn/View {:style (merge
+                                 (-> styles :tracking-sessions :indicator)
+                                 {:left             indicator-position
+                                  :background-color indicator-color-hex})}])
 
          ;; selection button
          [:> g/RectButton {:on-press       #(println "selected tracking item")
