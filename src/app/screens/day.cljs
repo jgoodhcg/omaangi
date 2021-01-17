@@ -149,10 +149,44 @@
                                            (j/get :disabled))}}
          val]])]))
 
+(defn sessions-component []
+  (let [theme    (->> [:theme] <sub get-theme)
+        sessions (<sub [:sessions-for-this-day])]
+
+    [:> rn/View {:style {:margin-left 64}}
+     (for [{:session-render/keys [left
+                                  top
+                                  height
+                                  width
+                                  elevation
+                                  color-hex
+                                  ripple-color-hex
+                                  text-color-hex
+                                  label]
+            :as                  s} sessions]
+
+       [:> g/RectButton {:key            (:session/id s)
+                         :style          {:position         "absolute"
+                                          :top              top
+                                          :left             left
+                                          :height           height
+                                          :width            width
+                                          :elevation        elevation
+                                          :background-color color-hex
+                                          :border-radius    (-> theme (j/get :roundness))}
+                         :on-press       #(println "selected session item")
+                         :ripple-color   ripple-color-hex
+                         :underlay-color ripple-color-hex
+                         :active-opacity 0.7}
+        [:> rn/View {:style {:height   "100%"
+                             :width    "100%"
+                             :overflow "hidden"
+                             :padding  4}}
+         [:> paper/Text {:style {:color text-color-hex}} label]]])]))
+
 (defn screen [props]
   (r/as-element
     (let [theme         (->> [:theme] <sub get-theme)
-          sessions      (<sub [:sessions-for-this-day])
           zoom          (<sub [:zoom])
           now-indicator (<sub [:now-indicator])]
 
@@ -170,40 +204,9 @@
           [:> rn/View {:style {:height        (-> 1440 (* zoom))
                                :margin-bottom 128}}
 
-           ;; time indicators
            [time-indicators]
 
-           ;; sessions
-           [:> rn/View {:style {:margin-left 64}}
-            (for [{:session-render/keys [left
-                                         top
-                                         height
-                                         width
-                                         elevation
-                                         color-hex
-                                         ripple-color-hex
-                                         text-color-hex
-                                         label]
-                   :as                  s} sessions]
-
-              [:> g/RectButton {:key            (:session/id s)
-                                :style          {:position         "absolute"
-                                                 :top              top
-                                                 :left             left
-                                                 :height           height
-                                                 :width            width
-                                                 :elevation        elevation
-                                                 :background-color color-hex
-                                                 :border-radius    (-> theme (j/get :roundness))}
-                                :on-press       #(println "selected session item")
-                                :ripple-color   ripple-color-hex
-                                :underlay-color ripple-color-hex
-                                :active-opacity 0.7}
-               [:> rn/View {:style {:height   "100%"
-                                    :width    "100%"
-                                    :overflow "hidden"
-                                    :padding  4}}
-                [:> paper/Text {:style {:color text-color-hex}} label]]])]
+           [sessions-component]
 
            ;; now indicator
            (let [{:now-indicator-render/keys
