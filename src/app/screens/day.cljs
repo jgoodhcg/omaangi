@@ -166,9 +166,11 @@
             (for [{:session-render/keys [left
                                          top
                                          height
+                                         width
                                          elevation
                                          color-hex
                                          ripple-color-hex
+                                         text-color-hex
                                          label]
                    :as                  s} sessions]
 
@@ -177,16 +179,19 @@
                                                  :top              top
                                                  :left             left
                                                  :height           height
-                                                 :width            "30%"
+                                                 :width            width
                                                  :elevation        elevation
                                                  :background-color color-hex
                                                  :border-radius    (-> theme (j/get :roundness))}
                                 :on-press       #(println "selected session item")
-                                :ripple-color   ripple-color-hex ;; android
-                                :underlay-color ripple-color-hex ;; ios
-                                :active-opacity 0.7              ;; ios
-                                }
-               [:> paper/Text label]])]]
+                                :ripple-color   ripple-color-hex
+                                :underlay-color ripple-color-hex
+                                :active-opacity 0.7}
+               [:> rn/View {:style {:height   "100%"
+                                    :width    "100%"
+                                    :overflow "hidden"
+                                    :padding  4}}
+                [:> paper/Text {:style {:color text-color-hex}} label]]])]]
           ;;
           ;;
           ;;

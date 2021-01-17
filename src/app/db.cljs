@@ -12,6 +12,7 @@
    ;; needed to `gen/sample` or `gen/generate`
    [clojure.test.check.generators]
 
+   [app.colors :refer [material-500-hexes]]
    [app.helpers :refer [touches]]))
 
 ;;
@@ -60,7 +61,8 @@
        (t/instant)))
 
 (defn generate-color []
-  (-> faker (j/get :internet) (j/call :color) color))
+  ;; (-> faker (j/get :internet) (j/call :color) color)
+  (-> material-500-hexes rand-nth color))
 
 (defn generate-session
   "By default will make a session that is contained within a day.
@@ -336,4 +338,4 @@
                                           :calendar
                                           keys
                                           last)
-                  :view/zoom         1.0}})))
+                  :view/zoom         1.25}})))

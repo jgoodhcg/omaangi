@@ -10,7 +10,7 @@
                                    select-one
                                    select-one!]]
    [tick.alpha.api :as t]
-   [app.colors :refer [material-500-hexes]]
+   [app.colors :refer [material-500-hexes white black]]
    [app.helpers :refer [touches]]))
 
 (defn version [db _]
@@ -84,7 +84,8 @@
 (defn get-collision-groups [sessions]
   (->> sessions
        (reduce insert-into-collision-group [[]])
-       (remove empty?)))
+       (remove empty?)
+       vec))
 
 (defn set-render-props [zoom
                         [collision-index
@@ -100,9 +101,11 @@
                            :session/track 50
                            10)
         collision-offset (-> collision-index (* 5))
-        left             (str (-> type-offset
-                                  (+ collision-offset))
-                              "%")
+        total-offset     (-> type-offset (+ collision-offset))
+        left             (str total-offset "%")
+        width            (-> 45                   ;; starting width percentage
+                             (- collision-offset)
+                             (str "%"))
         elevation        (-> collision-index (* 2)) ;; pulled from old code idk why it works
         top              (-> start
                              t/date
@@ -116,27 +119,30 @@
                                           :tick/end       (t/date-time stop)})
                              t/minutes
                              (* zoom))
-        session-color    (-> material-500-hexes rand-nth color)]
+        session-color    (-> material-500-hexes rand-nth color)
+        text-color-hex   (-> session-color (j/call :isLight) (#(if % black white)))]
 
-    (tap> (merge session {:session-render/elevation        elevation
-                          :session-render/left             left
-                          :session-render/top              top
-                          :session-render/height           height
-                          :session-render/label            label
-                          ;; TODO finish when tags can be injected
-                          :session-render/color-hex        (-> session-color (j/call :hex))
-                          :session-render/ripple-color-hex (-> session-color (j/call :lighten 0.64) (j/call :hex))
-                          }))
+    ;; (tap> (merge session {:session-render/elevation        elevation
+    ;;                       :session-render/left             left
+    ;;                       :session-render/top              top
+    ;;                       :session-render/height           height
+    ;;                       :session-render/label            label
+    ;;                       ;; TODO finish when tags can be injected
+    ;;                       :session-render/color-hex        (-> session-color (j/call :hex))
+    ;;                       :session-render/ripple-color-hex (-> session-color (j/call :lighten 0.64) (j/call :hex))
+    ;;                       }))
 
     [collision-index
      (merge session {:session-render/elevation        elevation
                      :session-render/left             left
                      :session-render/top              top
                      :session-render/height           height
+                     :session-render/width            width
                      :session-render/label            label
                      ;; TODO finish when tags can be injected
                      :session-render/color-hex        (-> session-color (j/call :hex))
                      :session-render/ripple-color-hex (-> session-color (j/call :lighten 0.64) (j/call :hex))
+                     :session-render/text-color-hex   text-color-hex
                      })]))
 
 (defn sessions-for-this-day [[selected-day calendar sessions zoom] _]
@@ -161,8 +167,10 @@
                                (t/new-interval (t/epoch))
                                t/duration
                                t/millis)))
-         get-collision-groups
-         (transform [sp/ALL sp/INDEXED-VALS] (partial set-render-props zoom))
+         (group-by :session/type)
+         (transform [sp/MAP-VALS] get-collision-groups)
+         (transform [sp/MAP-VALS sp/ALL sp/INDEXED-VALS] (partial set-render-props zoom))
+         (select [sp/MAP-VALS])
          flatten)))
 (reg-sub :sessions-for-this-day
 

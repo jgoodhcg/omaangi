@@ -263,3 +263,7 @@
        keys
        (filter #(re-find #"500" (name %)))
        (map #(get material %))))
+
+(def black (:black material))
+
+(def white (:white material))
