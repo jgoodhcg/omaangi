@@ -102,8 +102,8 @@
 (defn set-render-props [zoom
                         [collision-index
                          {:session/keys [type
-                                         start
-                                         stop
+                                         start-truncated
+                                         stop-truncated
                                          label]
                           session-color :session/color
                           :as           session}]]
@@ -112,27 +112,28 @@
                            :session/plan  0
                            :session/track 50
                            10)
-        collision-offset (-> collision-index (* 5))
+        collision-offset (-> collision-index (* 4))
         total-offset     (-> type-offset (+ collision-offset))
         left             (str total-offset "%")
         width            (-> 45                   ;; starting width percentage
                              (- collision-offset)
                              (str "%"))
         elevation        (-> collision-index (* 2)) ;; pulled from old code idk why it works
-        top              (instant->top-position start zoom)
-        height           (-> (t/duration {:tick/beginning (t/date-time start)
-                                          :tick/end       (t/date-time stop)})
+        top              (instant->top-position start-truncated zoom)
+        height           (-> (t/duration {:tick/beginning (t/date-time start-truncated)
+                                          :tick/end       (t/date-time stop-truncated)})
                              t/minutes
                              (* zoom))
         session-color    (-> material-500-hexes rand-nth color)
         text-color-hex   (-> session-color (j/call :isLight) (#(if % black white)))
-        tag-labels       (for [_ (range (rand-int 10))]
-                           (str (-> :high chance
-                                    (#(if % (-> emoji (j/call :random) (j/get :emoji))
-                                          "")))
-                                (-> :low chance
-                                    (#(if % (-> faker (j/get :random) (j/call :words))
-                                          "")))))
+        tag-labels       (remove nil?
+                                 (for [_ (range (rand-int 10))]
+                                   (str (-> :high chance
+                                            (#(if % (-> emoji (j/call :random) (j/get :emoji))
+                                                  nil)))
+                                        (-> :low chance
+                                            (#(if % (-> faker (j/get :random) (j/call :words))
+                                                  nil))))))
         label            (str label "\n" (join "\n" tag-labels))]
 
     [collision-index
