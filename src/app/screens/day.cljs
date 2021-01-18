@@ -244,5 +244,26 @@
            :border-radius 10
            :render-content
            #(r/as-element
-              [:> paper/Surface {:style {:height "100%"}}
-               [:> paper/Text "hello"]])}]]]])))
+              [:> paper/Surface {:style {:height  "100%"
+                                         :padding 8}}
+               [:> rn/View {:style {:display        "flex"
+                                    :flex-direction "column"}}
+                [:> rn/View {:style {:display        "flex"
+                                     :flex-direction "row"}}
+
+                 [:> rn/View {:style {:display   "flex"
+                                      :flex-grow 1}}
+                  [:> paper/IconButton {:icon  "camera"
+                                        :color (-> theme :colors :text)
+                                        :size  20}]]
+                 [:> paper/Button {:icon "camera"
+                                   :mode "contained"}
+                  "Start"]
+                 [:> paper/IconButton {:icon  "camera"
+                                       :color (-> theme :colors :text)
+                                       :size  20}]
+                 ]
+                [:> rn/View {:style {:display        "flex"
+                                     :flex-direction "row"}}
+
+                 ]]])}]]]])))
