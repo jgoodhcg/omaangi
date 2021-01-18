@@ -166,8 +166,6 @@
   (let [theme    (->> [:theme] <sub get-theme)
         sessions (<sub [:sessions-for-this-day])]
 
-    (tap> sessions)
-
     [:> rn/View {:style {:margin-left 64}}
      (for [{:session-render/keys [left
                                   top
@@ -236,34 +234,4 @@
 
            [sessions-component]
 
-           [now-indicator-component]]]
-
-         [:> (j/get bottom-sheet :default)
-          {:ref           sheet-ref
-           :snap-points   #js [512 256 128]
-           :border-radius 10
-           :render-content
-           #(r/as-element
-              [:> paper/Surface {:style {:height  "100%"
-                                         :padding 8}}
-               [:> rn/View {:style {:display        "flex"
-                                    :flex-direction "column"}}
-                [:> rn/View {:style {:display        "flex"
-                                     :flex-direction "row"}}
-
-                 [:> rn/View {:style {:display   "flex"
-                                      :flex-grow 1}}
-                  [:> paper/IconButton {:icon  "camera"
-                                        :color (-> theme :colors :text)
-                                        :size  20}]]
-                 [:> paper/Button {:icon "camera"
-                                   :mode "contained"}
-                  "Start"]
-                 [:> paper/IconButton {:icon  "camera"
-                                       :color (-> theme :colors :text)
-                                       :size  20}]
-                 ]
-                [:> rn/View {:style {:display        "flex"
-                                     :flex-direction "row"}}
-
-                 ]]])}]]]])))
+           [now-indicator-component]]]]]])))
