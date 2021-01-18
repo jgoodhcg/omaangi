@@ -1,9 +1,11 @@
 (ns app.screens.day
   (:require
    ["color" :as color]
+   ["react" :as react]
    ["react-native" :as rn]
    ["react-native-gesture-handler" :as g]
    ["react-native-paper" :as paper]
+   ["reanimated-bottom-sheet" :as bottom-sheet]
    [applied-science.js-interop :as j]
    [reagent.core :as r]
    [potpuri.core :as p]
@@ -208,6 +210,8 @@
                                (merge {:background-color (-> theme (j/get :colors) (j/get :text))}))}]
        [:> paper/Text label]])))
 
+(def sheet-ref (j/call react :createRef))
+
 (defn screen [props]
   (r/as-element
     (let [theme (->> [:theme] <sub get-theme)
@@ -232,4 +236,13 @@
 
            [sessions-component]
 
-           [now-indicator-component]]]]]])))
+           [now-indicator-component]]]
+
+         [:> (j/get bottom-sheet :default)
+          {:ref           sheet-ref
+           :snap-points   #js [512 256 128]
+           :border-radius 10
+           :render-content
+           #(r/as-element
+              [:> paper/Surface {:style {:height "100%"}}
+               [:> paper/Text "hello"]])}]]]])))
