@@ -68,7 +68,18 @@
                                      :left     32
                                      :width    "100%"}
                              :inner {:width  "100%"
-                                     :height 2}}})
+                                     :height 2}}
+   :zoom-buttons            {:container {:position "absolute"
+                                         :opacity  0.25
+                                         :right    0
+                                         :width    40
+                                         :height   "75%"}
+                             :zoom-in   {:position "absolute"
+                                         :margin   0
+                                         :top      128}
+                             :zoom-out  {:position "absolute"
+                                         :margin   0
+                                         :top      192}}})
 
 (defn date-indicator [{:keys [day-of-week
                               day-of-month
@@ -202,11 +213,27 @@
           display-indicator]} (<sub [:now-indicator])]
 
     (when true ;; TODO display-indicator
-      [:> rn/View {:style (-> styles :now-indicator-component :outer
-                              (merge {:top position})) }
+      [:> rn/View {:elevation 99 ;; otherwise the second session in a collision group covers it
+                   ;; Theoritically enough items in a collision group will get past this but it isn't practical
+                   :style     (-> styles :now-indicator-component :outer
+                                  (merge {:top position})) }
        [:> rn/View {:style (-> styles :now-indicator-component :inner
                                (merge {:background-color (-> theme (j/get :colors) (j/get :text))}))}]
        [:> paper/Text label]])))
+
+(defn zoom-buttons []
+  [:> rn/View {:style (-> styles :zoom-buttons :container)}
+   [:> paper/IconButton
+    {:icon     "magnify-plus-outline"
+     :size     32
+     :on-press #(tap> "zoom in")
+     :style    (-> styles :zoom-buttons :zoom-in)}]
+
+   [:> paper/IconButton
+    {:icon     "magnify-minus-outline"
+     :size     32
+     :on-press #(tap> "zoom out")
+     :style    (-> styles :zoom-buttons :zoom-out)}]])
 
 (def sheet-ref (j/call react :createRef))
 
@@ -225,13 +252,18 @@
 
          [top-section props]
 
-         [:> g/ScrollView
-          [:> rn/View
-           {:style {:height        (-> 1440 (* zoom))
-                    :margin-bottom 128}}
+         [:> rn/View ;; This allows for zoom buttons to be positioned below top section but _over_ scroll view of sessions
 
-           [time-indicators]
+          [:> g/ScrollView
+           [:> rn/View
+            {:style {:height        (-> 1440 (* zoom))
+                     :margin-bottom 256}}
 
-           [sessions-component]
+            [time-indicators]
 
-           [now-indicator-component]]]]]])))
+            [sessions-component]
+
+            [now-indicator-component]]]
+
+          [zoom-buttons]]
+         ]]])))
