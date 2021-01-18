@@ -123,6 +123,7 @@
         height           (-> (t/duration {:tick/beginning (t/date-time start-truncated)
                                           :tick/end       (t/date-time stop-truncated)})
                              t/minutes
+                             (max 1)
                              (* zoom))
         session-color    (-> material-500-hexes rand-nth color)
         text-color-hex   (-> session-color (j/call :isLight) (#(if % black white)))

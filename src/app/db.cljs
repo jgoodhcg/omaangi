@@ -328,5 +328,5 @@
        :view     {:view/selected-day (->> cal-tag-sessions
                                           :calendar
                                           keys
-                                          last)
+                                          rand-nth)
                   :view/zoom         1.25}})))

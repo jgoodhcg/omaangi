@@ -107,8 +107,7 @@
                               (>evt [:some-fx-example (str "New screen encountered " current-route-name)]))
                             (swap! !route-name-ref merge {:current current-route-name})))}
 
-      [:> (navigator) {:open-by-default        true
-                       :drawer-content         custom-drawer
+      [:> (navigator) {:drawer-content         custom-drawer
                        :drawer-style           drawer-style
                        :drawer-content-options {:active-tint-color   (-> theme (j/get :colors) (j/get :accent))
                                                 :inactive-tint-color (-> theme (j/get :colors) (j/get :text))}}
