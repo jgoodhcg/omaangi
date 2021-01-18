@@ -143,7 +143,7 @@
 (defn generate-calendar-tag-sessions []
   ;; TODO specmonstah would make this so much cleaner
   (let [tags     (generate-tags 2)
-        sessions (generate-sessions 40)
+        sessions (generate-sessions 70)
 
         sessions-with-tags
         (->> sessions

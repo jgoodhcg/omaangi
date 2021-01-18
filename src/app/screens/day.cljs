@@ -63,7 +63,7 @@
                                                :overflow "hidden"
                                                :padding  4}}
    :now-indicator-component {:outer {:position "absolute"
-                                     :left     64
+                                     :left     32
                                      :width    "100%"}
                              :inner {:width  "100%"
                                      :height 2}}})
@@ -163,6 +163,8 @@
 (defn sessions-component []
   (let [theme    (->> [:theme] <sub get-theme)
         sessions (<sub [:sessions-for-this-day])]
+
+    (tap> sessions)
 
     [:> rn/View {:style {:margin-left 64}}
      (for [{:session-render/keys [left
