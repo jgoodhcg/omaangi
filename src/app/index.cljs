@@ -129,6 +129,8 @@
                                                                  :headerTitleStyle
                                                                  #js {:display "none"}
                                                                  :headerStyle
+                                                                 ;; for some reason the :surface color comes out the same as :background when used on paper/Surface
+                                                                 ;; when using :background here it has a weird opacity issue or something
                                                                  #js {:backgroundColor (-> theme
                                                                                            (j/get :colors)
                                                                                            (j/get :surface))}}
