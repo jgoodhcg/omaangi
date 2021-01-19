@@ -5,7 +5,8 @@
    [applied-science.js-interop :as j]
    [reagent.core :as r]
    [app.helpers :refer [<sub >evt get-theme]]
-   [potpuri.core :as p]))
+   [potpuri.core :as p]
+   [tick.alpha.api :as t]))
 
 (def styles
   {:surface
@@ -36,8 +37,7 @@
                           :mode     "contained"
                           :color    "red"
                           :on-press #(tap> (str "deleting " id))}
-         (str "Delete tag: " label)]]]]]
-    ))
+         (str "Delete tag: " label)]]]]]))
 
 (defn tag-add-modal []
   (let [all-tags [{:label "tag0" :color "#ff00ff" :id #uuid "732825de-6ffb-4cb7-a02c-04dbeb3500fb"}
@@ -97,6 +97,37 @@
 
      [tag-add-modal]]))
 
+(defn time-stamps-component []
+  (let [now   (t/now)
+        later (t/+ now (t/new-duration 5 :hours))
+        {:time-stamps/keys [start-date-label
+                            start-time-label
+                            stop-date-label
+                            stop-time-label]}
+        #:time-stamps {:start-date-label (-> now t/date str)
+                       :start-time-label (-> now t/time (#(str (t/hour now) "-" (t/minute now))))
+                       :start-value      (-> now t/inst)
+                       :stop-date-label  (-> later t/date str)
+                       :stop-time-label  (-> later t/time (#(str (t/hour later) "-" (t/minute later))))
+                       :stop-value       (-> later t/inst)}]
+
+    [:> rn/View {:style {:display        "flex"
+                         :flex-direction "column"}}
+
+     ;; start
+     [:> rn/View {:style {:display        "flex"
+                          :flex-direction "row"}}
+
+      [:> paper/Button {:mode "contained"} start-date-label]
+      [:> paper/Button {:mode "contained"} start-time-label]]
+
+     ;; end
+     [:> rn/View {:style {:display        "flex"
+                          :flex-direction "row"}}
+
+      [:> paper/Button {:mode "contained"} stop-date-label]
+      [:> paper/Button {:mode "contained"} stop-time-label]]]))
+
 (defn screen [props]
   (r/as-element
     [(fn [props]
@@ -105,10 +136,16 @@
          [:> paper/Surface {:style (-> styles :surface
                                        (merge {:background-color (-> theme (j/get :colors) (j/get :background))}))}
 
-          [:> rn/View {:style {:padding 8}}
+          [:> rn/View {:style {:padding         8
+                               :display         "flex"
+                               :flex            1
+                               :flex-direction  "column"
+                               :justify-content "space-around"}}
 
            [label-component]
 
            [tags-component]
+
+           [time-stamps-component]
 
            ]]))]))
