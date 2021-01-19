@@ -40,20 +40,24 @@
 
 (defn initialize-db [_ _]
   default-app-db)
+(reg-event-db :initialize-db [base-interceptors] initialize-db)
 
 (defn set-theme [db [_ theme]]
   (->> db
        (setval [:settings :theme] theme)))
+(reg-event-db :set-theme [base-interceptors] set-theme)
 
 (defn set-version [db [_ version]]
   (->> db
        (setval [:version] version)))
+(reg-event-db :set-version [base-interceptors] set-version)
 
 (defn some-fx-example [cofx [_ x]]
   {:db              (:db cofx)
    :some-fx-example x})
-
-(reg-event-db :initialize-db [base-interceptors] initialize-db)
-(reg-event-db :set-theme [base-interceptors] set-theme)
-(reg-event-db :set-version [base-interceptors] set-version)
 (reg-event-fx :some-fx-example [base-interceptors] some-fx-example)
+
+(defn navigate [cofx [_ screen-name]]
+  {:db       (:db cofx)
+   :navigate screen-name})
+(reg-event-fx :navigate [base-interceptors] navigate)

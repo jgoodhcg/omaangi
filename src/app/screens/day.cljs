@@ -5,10 +5,10 @@
    ["react-native" :as rn]
    ["react-native-gesture-handler" :as g]
    ["react-native-paper" :as paper]
-   ["reanimated-bottom-sheet" :as bottom-sheet]
    [applied-science.js-interop :as j]
    [reagent.core :as r]
    [potpuri.core :as p]
+   [app.screens.core :refer [screens]]
    [app.helpers :refer [<sub >evt get-theme]]
    [app.components.menu :as menu]))
 
@@ -198,7 +198,7 @@
                                                      :elevation        elevation
                                                      :background-color color-hex
                                                      :border-radius    (-> theme (j/get :roundness))}))
-                         :on-press       #(println "selected session item")
+                         :on-press       #(>evt [:navigate (:session screens)])
                          :ripple-color   ripple-color-hex
                          :underlay-color ripple-color-hex
                          :active-opacity 0.7}

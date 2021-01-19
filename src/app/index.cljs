@@ -7,6 +7,7 @@
    ["react" :as react]
    ["@react-navigation/native" :as nav]
    ["@react-navigation/drawer" :as d]
+   ["@react-navigation/stack" :as s]
    ["react-native-paper" :as paper]
    [applied-science.js-interop :as j]
    [camel-snake-kebab.core :as csk]
@@ -14,10 +15,11 @@
    [reagent.core :as r]
    [re-frame.core :refer [dispatch-sync]]
    [shadow.expo :as expo]
-   [app.fx]
+   [app.fx :refer [!navigation-ref]]
    [app.handlers]
    [app.subscriptions]
    [app.helpers :refer [<sub >evt get-theme]]
+   [app.screens.core :refer [screens]]
    [app.screens.day :as day]
    [app.screens.settings :as settings]
    [app.screens.session :as session]
@@ -43,9 +45,15 @@
 
 (def drawer (d/createDrawerNavigator))
 
-(defn navigator [] (-> drawer (j/get :Navigator)))
+(def stack (s/createStackNavigator))
 
-(defn screen [props] [:> (-> drawer (j/get :Screen)) props])
+(defn drawer-navigator [] (-> drawer (j/get :Navigator)))
+
+(defn stack-navigator [] (-> stack (j/get :Navigator)))
+
+(defn drawer-screen [props] [:> (-> drawer (j/get :Screen)) props])
+
+(defn stack-screen [props] [:> (-> stack (j/get :Screen)) props])
 
 (defn drawer-icon
   ([icon] (drawer-icon icon nil))
@@ -59,14 +67,10 @@
 
 (defn custom-drawer [props]
   (let [theme          (->> [:theme] <sub get-theme)
-        text-color-hex (-> theme (j/get :colors) (j/get :text))
-        hidden-screens #{"Session"}
-        new-routes     (-> props (j/get :state) (j/get :routes)
-                           (->> (remove #(some? (some hidden-screens [(j/get % :name)]))))
-                           clj->js)]
+        text-color-hex (-> theme (j/get :colors) (j/get :text))]
 
     (r/as-element
-      [:> d/DrawerContentScrollView (js->clj (-> props (j/assoc-in! [:state :routes] new-routes)))
+      [:> d/DrawerContentScrollView (js->clj props)
        [:> d/DrawerItemList (js->clj props)]
        [:> d/DrawerItem {:label       "Share"
                          :label-style {:color text-color-hex}
@@ -80,7 +84,6 @@
 (defn root []
   (let [theme           (->> [:theme] <sub get-theme)
         !route-name-ref (clojure.core/atom {})
-        !navigation-ref (clojure.core/atom {})
         drawer-style    {:background-color (-> theme
                                                (j/get :colors)
                                                (j/get :surface)
@@ -107,25 +110,29 @@
                               (>evt [:some-fx-example (str "New screen encountered " current-route-name)]))
                             (swap! !route-name-ref merge {:current current-route-name})))}
 
-      [:> (navigator) {:drawer-content         custom-drawer
-                       :drawer-style           drawer-style
-                       :drawer-content-options {:active-tint-color   (-> theme (j/get :colors) (j/get :accent))
-                                                :inactive-tint-color (-> theme (j/get :colors) (j/get :text))}}
-       (screen {:name      "Day"
-                :options   {:drawerIcon (drawer-icon "hamburger")}
-                :component (paper/withTheme day/screen)})
-       (screen {:name      "Reports"
-                :options   {:drawerIcon (drawer-icon "hamburger")}
-                :component (paper/withTheme reports/screen)})
-       (screen {:name      "Tags"
-                :options   {:drawerIcon (drawer-icon "hamburger")}
-                :component (paper/withTheme tags/screen)})
-       (screen {:name      "Settings"
-                :options   {:drawerIcon (drawer-icon "hamburger")}
-                :component (paper/withTheme settings/screen)})
-       (screen {:name      "Session"
-                :options   {:drawerIcon (drawer-icon "hamburger")}
-                :component (paper/withTheme session/screen)})]]]))
+      [:> (drawer-navigator) {:drawer-content         custom-drawer
+                              :drawer-style           drawer-style
+                              :initial-route-name     "Day"
+                              :drawer-content-options {:active-tint-color   (-> theme (j/get :colors) (j/get :accent))
+                                                       :inactive-tint-color (-> theme (j/get :colors) (j/get :text))}}
+       (drawer-screen {:name      (:day screens)
+                       :options   {:drawerIcon (drawer-icon "hamburger")}
+                       :component #(r/as-element
+                                     [:> (stack-navigator)
+                                      (stack-screen {:name      (:day screens)
+                                                     :component (paper/withTheme day/screen)
+                                                     :options   {:headerShown false}})
+                                      (stack-screen {:name      (:session screens)
+                                                     :component (paper/withTheme session/screen)})])})
+       (drawer-screen {:name      (:reports screens)
+                       :options   {:drawerIcon (drawer-icon "hamburger")}
+                       :component (paper/withTheme reports/screen)})
+       (drawer-screen {:name      (:tags screens)
+                       :options   {:drawerIcon (drawer-icon "hamburger")}
+                       :component (paper/withTheme tags/screen)})
+       (drawer-screen {:name      (:settings screens)
+                       :options   {:drawerIcon (drawer-icon "hamburger")}
+                       :component (paper/withTheme settings/screen)})]]]))
 
 (defn start
   {:dev/after-load true}
