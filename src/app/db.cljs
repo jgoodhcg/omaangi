@@ -262,7 +262,10 @@
                    :sessions ::sessions
                    :tags     ::tags
                    :view     {:view/selected-day t/date?
-                              :view/zoom         ::zoom}}}))
+                              :view/zoom         ::zoom
+                              :view/tag-removal  {:tag-removal/id      (ds/maybe uuid?)
+                                                  :tag-removal/visible boolean?
+                                                  :tag-removal/label   (ds/maybe string?)}}}}))
 
 (comment
   (s/explain app-db-spec (merge {:settings {:theme :dark}
@@ -282,7 +285,10 @@
    :tracking [#uuid "2649ba76-f644-4ea6-ab27-e74485187e23"]
 
    :view #:view {:selected-day #time/date "2020-12-28"
-                 :zoom         1.0}
+                 :zoom         1.0
+                 :tag-removal  #:tag-removal {:id      nil
+                                              :visible false
+                                              :label   nil}}
 
    :calendar {#time/date "2020-12-28"
               #:calendar  {:date     #time/date "2020-12-28"
@@ -329,4 +335,7 @@
                                           :calendar
                                           keys
                                           rand-nth)
-                  :view/zoom         1.25}})))
+                  :view/zoom         1.25
+                  :view/tag-removal  {:tag-removal/id      nil
+                                      :tag-removal/visible false
+                                      :tag-removal/label   nil}}})))

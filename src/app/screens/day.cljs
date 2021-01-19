@@ -239,31 +239,32 @@
 
 (defn screen [props]
   (r/as-element
-    (let [theme (->> [:theme] <sub get-theme)
-          zoom  (<sub [:zoom])]
+    [(fn [props]
+       (let [theme (->> [:theme] <sub get-theme)
+             zoom  (<sub [:zoom])]
 
-      [:> rn/SafeAreaView {:style {:display          "flex"
-                                   :flex             1
-                                   :background-color (-> theme (j/get :colors) (j/get :background))}}
-       [:> paper/Surface {:style (-> styles :surface
-                                     (merge {:background-color (-> theme (j/get :colors) (j/get :background))}))}
-        [:> rn/View
-         [:> rn/StatusBar {:visibility "hidden"}]
-
-         [top-section props]
-
-         [:> rn/View ;; This allows for zoom buttons to be positioned below top section but _over_ scroll view of sessions
-
-          [:> g/ScrollView
+         [:> rn/SafeAreaView {:style {:display          "flex"
+                                      :flex             1
+                                      :background-color (-> theme (j/get :colors) (j/get :background))}}
+          [:> paper/Surface {:style (-> styles :surface
+                                        (merge {:background-color (-> theme (j/get :colors) (j/get :background))}))}
            [:> rn/View
-            {:style {:height        (-> 1440 (* zoom))
-                     :margin-bottom 256}}
+            [:> rn/StatusBar {:visibility "hidden"}]
 
-            [time-indicators]
+            [top-section props]
 
-            [sessions-component]
+            [:> rn/View ;; This allows for zoom buttons to be positioned below top section but _over_ scroll view of sessions
 
-            [now-indicator-component]]]
+             [:> g/ScrollView
+              [:> rn/View
+               {:style {:height        (-> 1440 (* zoom))
+                        :margin-bottom 256}}
 
-          [zoom-buttons]]
-         ]]])))
+               [time-indicators]
+
+               [sessions-component]
+
+               [now-indicator-component]]]
+
+             [zoom-buttons]]
+            ]]]))]))

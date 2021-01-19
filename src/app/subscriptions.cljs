@@ -269,3 +269,17 @@
          :<- [:selected-day]
 
          now-indicator)
+
+(defn view [db _]
+  (->> db (select [:view])))
+(reg-sub :view view)
+
+(defn tag-removal [view _]
+  (tap> {:sub               "subscription"
+         :tag-removal-state (->> view (select-one [:view/tag-removal]))})
+  (->> view (select-one [:view/tag-removal])))
+(reg-sub :tag-removal
+
+         :<- [:view]
+
+         tag-removal)
