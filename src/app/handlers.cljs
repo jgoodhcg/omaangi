@@ -62,11 +62,11 @@
    :navigate screen-name})
 (reg-event-fx :navigate [base-interceptors] navigate)
 
-(defn set-tag-removal [db [_ tag-removal-state]]
-  (tap> {:sub                        "handler"
-         :tag-removal-state-incoming tag-removal-state
-         :db-state-b4                (->> db (select-one [:view :view/tag-removal]))
-         :db-state-after             (->> (->> db (setval [:view :view/tag-removal] tag-removal-state))
-                                          (select-one [:view :view/tag-removal]))})
-  (->> db (setval [:view :view/tag-removal] tag-removal-state)))
-(reg-event-db :set-tag-removal set-tag-removal)
+(defn set-tag-remove-modal [db [_ new-state]]
+  (tap> {:new-state new-state})
+  (->> db (setval [:view :view/tag-remove-modal] new-state)))
+(reg-event-db :set-tag-remove-modal set-tag-remove-modal)
+
+(defn set-tag-add-modal [db [_ new-state]]
+  (->> db (setval [:view :view/tag-add-modal] new-state)))
+(reg-event-db :set-tag-add-modal set-tag-add-modal)

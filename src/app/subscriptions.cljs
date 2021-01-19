@@ -271,15 +271,24 @@
          now-indicator)
 
 (defn view [db _]
-  (->> db (select [:view])))
+  (->> db (select-one [:view])))
 (reg-sub :view view)
 
-(defn tag-removal [view _]
-  (tap> {:sub               "subscription"
-         :tag-removal-state (->> view (select-one [:view/tag-removal]))})
-  (->> view (select-one [:view/tag-removal])))
-(reg-sub :tag-removal
+(defn tag-removal-modal [view _]
+  (tap> {:remove-modal-state (->> view (select-one [:view/tag-remove-modal]))
+         :view               view})
+  (->> view (select-one [:view/tag-remove-modal])))
+(reg-sub :tag-remove-modal
 
          :<- [:view]
 
-         tag-removal)
+         tag-removal-modal)
+
+(defn tag-add-modal [view _]
+  (tap> {:add-modal-state (->> view (select-one [:view/tag-add-modal]))})
+  (->> view (select-one [:view/tag-add-modal])))
+(reg-sub :tag-add-modal
+
+         :<- [:view]
+
+         tag-add-modal)

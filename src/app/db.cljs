@@ -261,11 +261,12 @@
                    :calendar ::calendar
                    :sessions ::sessions
                    :tags     ::tags
-                   :view     {:view/selected-day t/date?
-                              :view/zoom         ::zoom
-                              :view/tag-removal  {:tag-removal/id      (ds/maybe uuid?)
-                                                  :tag-removal/visible boolean?
-                                                  :tag-removal/label   (ds/maybe string?)}}}}))
+                   :view     {:view/selected-day     t/date?
+                              :view/zoom             ::zoom
+                              :view/tag-remove-modal {:tag-remove-modal/id      (ds/maybe uuid?)
+                                                      :tag-remove-modal/visible boolean?
+                                                      :tag-remove-modal/label   (ds/maybe string?)}
+                              :view/tag-add-modal    {:tag-add-modal/visible boolean?}}}}))
 
 (comment
   (s/explain app-db-spec (merge {:settings {:theme :dark}
@@ -278,52 +279,6 @@
 ;; data
 ;;
 
-(def example-app-db
-  {:settings {:theme :dark}
-   :version  "version-not-set"
-
-   :tracking [#uuid "2649ba76-f644-4ea6-ab27-e74485187e23"]
-
-   :view #:view {:selected-day #time/date "2020-12-28"
-                 :zoom         1.0
-                 :tag-removal  #:tag-removal {:id      nil
-                                              :visible false
-                                              :label   nil}}
-
-   :calendar {#time/date "2020-12-28"
-              #:calendar  {:date     #time/date "2020-12-28"
-                           :sessions [#uuid "1757ba76-f644-4ea6-ab27-e74485187951"]}}
-
-   :sessions {#uuid "1757ba76-f644-4ea6-ab27-e74485187951"
-              #:session {:id          #uuid "1757ba76-f644-4ea6-ab27-e74485187951"
-                         :created     #time/instant "2020-12-28T15:44:19.549Z"
-                         :last-edited #time/instant "2020-12-28T15:44:19.549Z"
-                         :start       #time/instant "2020-12-28T15:44:19.549Z"
-                         :stop        #time/instant "2020-12-28T15:49:19.549Z"
-                         :type        :session/plan
-                         :tags        [#uuid "db8cd4ac-dd6f-4147-b919-50c468d9e8bc"]
-                         :label       "My first plan"
-                         ;; there could be a :color here
-                         }
-              #uuid "2649ba76-f644-4ea6-ab27-e74485187e23"
-              #:session {:id          #uuid "2649ba76-f644-4ea6-ab27-e74485187e23"
-                         :created     #time/instant "2020-12-28T15:44:19.549Z"
-                         :last-edited #time/instant "2020-12-28T15:44:19.549Z"
-                         :start       #time/instant "2020-12-28T15:44:19.549Z"
-                         :stop        #time/instant "2020-12-28T15:49:19.549Z"
-                         :type        :session/track
-                         :tags        [#uuid "db8cd4ac-dd6f-4147-b919-50c468d9e8bc"]
-                         :label       "My first track"
-                         ;; there could be a :color here
-                         }}
-
-   :tags {#uuid "db8cd4ac-dd6f-4147-b919-50c468d9e8bc"
-          #:tag {:id    #uuid "db8cd4ac-dd6f-4147-b919-50c468d9e8bc"
-                 :label "My first tag"
-                 :color (color "#6f7662")}}})
-
-(comment (s/valid? app-db-spec example-app-db))
-
 (def default-app-db
   (let [cal-tag-sessions (generate-calendar-tag-sessions)]
     (merge
@@ -331,11 +286,12 @@
       {:settings {:theme :dark}
        :version  "version-not-set"
        :tracking []
-       :view     {:view/selected-day (->> cal-tag-sessions
-                                          :calendar
-                                          keys
-                                          rand-nth)
-                  :view/zoom         1.25
-                  :view/tag-removal  {:tag-removal/id      nil
-                                      :tag-removal/visible false
-                                      :tag-removal/label   nil}}})))
+       :view     {:view/selected-day     (->> cal-tag-sessions
+                                              :calendar
+                                              keys
+                                              rand-nth)
+                  :view/zoom             1.25
+                  :view/tag-remove-modal {:tag-remove-modal/id      nil
+                                          :tag-remove-modal/visible false
+                                          :tag-remove-modal/label   nil}
+                  :view/tag-add-modal    {:tag-add-modal/visible false}}})))
