@@ -63,10 +63,13 @@
 (reg-event-fx :navigate [base-interceptors] navigate)
 
 (defn set-tag-remove-modal [db [_ new-state]]
-  (tap> {:new-state new-state})
   (->> db (setval [:view :view/tag-remove-modal] new-state)))
 (reg-event-db :set-tag-remove-modal set-tag-remove-modal)
 
 (defn set-tag-add-modal [db [_ new-state]]
   (->> db (setval [:view :view/tag-add-modal] new-state)))
 (reg-event-db :set-tag-add-modal set-tag-add-modal)
+
+(defn set-date-time-picker [db [_ new-state]]
+  (->> db (setval [:view :view/date-time-picker] new-state)))
+(reg-event-db :set-date-time-picker set-date-time-picker)

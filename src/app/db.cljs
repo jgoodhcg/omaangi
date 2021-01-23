@@ -266,7 +266,12 @@
                               :view/tag-remove-modal {:tag-remove-modal/id      (ds/maybe uuid?)
                                                       :tag-remove-modal/visible boolean?
                                                       :tag-remove-modal/label   (ds/maybe string?)}
-                              :view/tag-add-modal    {:tag-add-modal/visible boolean?}}}}))
+                              :view/tag-add-modal    {:tag-add-modal/visible boolean?}
+                              :view/date-time-picker {:date-time-picker/visible    boolean?
+                                                      :date-time-picker/value      (ds/maybe? inst?)
+                                                      :date-time-picker/mode       (ds/maybe? (s/spec #{"date" "time"}))
+                                                      :date-time-picker/session-id (ds/maybe? uuid?)
+                                                      :date-time-picker/field-key  (ds/maybe? keyword?)}}}}))
 
 (comment
   (s/explain app-db-spec (merge {:settings {:theme :dark}
@@ -294,4 +299,9 @@
                   :view/tag-remove-modal {:tag-remove-modal/id      nil
                                           :tag-remove-modal/visible false
                                           :tag-remove-modal/label   nil}
-                  :view/tag-add-modal    {:tag-add-modal/visible false}}})))
+                  :view/tag-add-modal    {:tag-add-modal/visible false}
+                  :view/date-time-picker {:date-time-picker/visible    false
+                                          :date-time-picker/value      nil
+                                          :date-time-picker/mode       nil
+                                          :date-time-picker/session-id nil
+                                          :date-time-picker/field-key  nil}}})))

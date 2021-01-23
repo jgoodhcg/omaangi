@@ -2,6 +2,7 @@
   (:require
    ["react-native" :as rn]
    ["react-native-paper" :as paper]
+   ["@react-native-community/datetimepicker" :default DateTimePicker]
    [applied-science.js-interop :as j]
    [reagent.core :as r]
    [app.helpers :refer [<sub >evt get-theme]]
@@ -11,7 +12,11 @@
 (def styles
   {:surface
    {:flex            1
-    :justify-content "flex-start"}})
+    :justify-content "flex-start"}
+
+   :time-stamps-component
+   {:button {:margin-right 8
+             :margin-top   16}}})
 
 (defn label-component []
   [:> paper/TextInput {:label          "Label"
@@ -44,9 +49,7 @@
                   {:label "tag1" :color "#af0cff" :id #uuid "989b4f81-6f57-4f00-98dd-fedf7a6648fd"}
                   {:label "tag2" :color "#cb2111" :id #uuid "e2100a73-8dd2-45ad-84b2-d7770aa6f7a2"}]
 
-        {:tag-add-modal/keys [visible] :as tag-add} (<sub [:tag-add-modal])]
-
-    (tap> tag-add)
+        {:tag-add-modal/keys [visible]} (<sub [:tag-add-modal])]
 
     [:> paper/Portal
      [:> paper/Modal {:visible    visible
@@ -98,35 +101,89 @@
      [tag-add-modal]]))
 
 (defn time-stamps-component []
-  (let [now   (t/now)
-        later (t/+ now (t/new-duration 5 :hours))
+  (let [session-id (random-uuid)
+        now        (t/now)
+        later      (t/+ now (t/new-duration 5 :hours))
         {:time-stamps/keys [start-date-label
                             start-time-label
+                            start-value
                             stop-date-label
-                            stop-time-label]}
+                            stop-time-label
+                            stop-value]}
         #:time-stamps {:start-date-label (-> now t/date str)
                        :start-time-label (-> now t/time (#(str (t/hour now) "-" (t/minute now))))
                        :start-value      (-> now t/inst)
                        :stop-date-label  (-> later t/date str)
                        :stop-time-label  (-> later t/time (#(str (t/hour later) "-" (t/minute later))))
-                       :stop-value       (-> later t/inst)}]
+                       :stop-value       (-> later t/inst)}
+
+        {:date-time-picker/keys [value mode visible field-key]
+         picker-session-id      :date-time-picker/session-id} (<sub [:date-time-picker])]
 
     [:> rn/View {:style {:display        "flex"
                          :flex-direction "column"}}
+
+     (when visible
+       [:> DateTimePicker {:value     value :mode mode
+                           :on-change #(do (tap> (str "Update " field-key " for " picker-session-id " as "
+                                                      (-> %
+                                                          (j/get :nativeEvent)
+                                                          (j/get :timestamp)
+                                                          t/instant)))
+                                           (>evt [:set-date-time-picker
+                                                  #:date-time-picker
+                                                  {:value      nil
+                                                   :mode       nil
+                                                   :session-id nil
+                                                   :field-key  nil
+                                                   :visible    false}]))}])
 
      ;; start
      [:> rn/View {:style {:display        "flex"
                           :flex-direction "row"}}
 
-      [:> paper/Button {:mode "contained"} start-date-label]
-      [:> paper/Button {:mode "contained"} start-time-label]]
+      [:> paper/Button {:mode     "contained"
+                        :style    (-> styles :time-stamps-component :button)
+                        :on-press #(>evt [:set-date-time-picker
+                                          #:date-time-picker
+                                          {:value      start-value
+                                           :mode       "date"
+                                           :session-id session-id
+                                           :field-key  :session/start
+                                           :visible    true}])} start-date-label]
+
+      [:> paper/Button {:mode     "contained"
+                        :style    (-> styles :time-stamps-component :button)
+                        :on-press #(>evt [:set-date-time-picker
+                                          #:date-time-picker
+                                          {:value      start-value
+                                           :mode       "time"
+                                           :session-id session-id
+                                           :field-key  :session/start
+                                           :visible    true}])} start-time-label]]
 
      ;; end
      [:> rn/View {:style {:display        "flex"
                           :flex-direction "row"}}
 
-      [:> paper/Button {:mode "contained"} stop-date-label]
-      [:> paper/Button {:mode "contained"} stop-time-label]]]))
+      [:> paper/Button {:mode     "contained"
+                        :style    (-> styles :time-stamps-component :button)
+                        :on-press #(>evt [:set-date-time-picker
+                                          #:date-time-picker
+                                          {:value      stop-value
+                                           :mode       "date"
+                                           :session-id session-id
+                                           :field-key  :session/stop
+                                           :visible    true}])} stop-date-label]
+      [:> paper/Button {:mode     "contained"
+                        :style    (-> styles :time-stamps-component :button)
+                        :on-press #(>evt [:set-date-time-picker
+                                          #:date-time-picker
+                                          {:value      stop-value
+                                           :mode       "time"
+                                           :session-id session-id
+                                           :field-key  :session/stop
+                                           :visible    true}])} stop-time-label]]]))
 
 (defn screen [props]
   (r/as-element

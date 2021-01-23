@@ -275,8 +275,6 @@
 (reg-sub :view view)
 
 (defn tag-removal-modal [view _]
-  (tap> {:remove-modal-state (->> view (select-one [:view/tag-remove-modal]))
-         :view               view})
   (->> view (select-one [:view/tag-remove-modal])))
 (reg-sub :tag-remove-modal
 
@@ -285,10 +283,17 @@
          tag-removal-modal)
 
 (defn tag-add-modal [view _]
-  (tap> {:add-modal-state (->> view (select-one [:view/tag-add-modal]))})
   (->> view (select-one [:view/tag-add-modal])))
 (reg-sub :tag-add-modal
 
          :<- [:view]
 
          tag-add-modal)
+
+(defn date-time-picker [view _]
+  (->> view (select-one [:view/date-time-picker])))
+(reg-sub :date-time-picker
+
+         :<- [:view]
+
+         date-time-picker)
