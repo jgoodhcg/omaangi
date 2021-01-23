@@ -47,3 +47,8 @@
       :med  (-> r (< 0.51))
       :high (-> r (< 0.90))
       (-> r (< 0.75)))))
+
+(defn prepend-zero [n]
+  (if (= 1 (count (str n)))
+    (str 0 n)
+    (str n)))

@@ -118,7 +118,7 @@
        (drawer-screen {:name      (:day screens)
                        :options   {:drawerIcon (drawer-icon "hamburger")}
                        :component #(r/as-element
-                                     [:> (stack-navigator) {:initial-route-name (:session screens)}
+                                     [:> (stack-navigator) {:initial-route-name (:day screens)}
                                       (stack-screen {:name      (:day screens)
                                                      :component (paper/withTheme day/screen)
                                                      :options   {:headerShown false}})

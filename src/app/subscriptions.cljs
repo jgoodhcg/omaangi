@@ -13,7 +13,7 @@
                                    select-one!]]
    [tick.alpha.api :as t]
    [app.colors :refer [material-500-hexes white black]]
-   [app.helpers :refer [touches chance]]))
+   [app.helpers :refer [touches chance prepend-zero]]))
 
 (defn version [db _]
   (->> db (select-one! [:version])))
@@ -246,11 +246,13 @@
            (t/end intvl)
            (t/new-duration 1 :hours)))
        (map (fn [h]
-              (let [hour (t/hour h)
+              (let [hour     (-> h
+                                 t/hour)
                     ;; TODO move zoom offset to sub graph
-                    y    (-> hour (* 60) (* zoom))]
+                    y        (-> hour (* 60) (* zoom))
+                    hour-str (prepend-zero hour)]
                 {:top y
-                 :val hour})))))
+                 :val hour-str})))))
 (reg-sub :hours
 
          :<- [:selected-day]
@@ -262,7 +264,9 @@
   (let [now (t/now)]
     #:now-indicator-render {:position          (instant->top-position now zoom)
                             :display-indicator (= (t/date now) (t/date selected-day))
-                            :label             (str (t/hour now) "-" (t/minute now))}))
+                            :label             (str (prepend-zero (t/hour now))
+                                                    "-"
+                                                    (prepend-zero (t/minute now)))}))
 (reg-sub :now-indicator
 
          :<- [:zoom]

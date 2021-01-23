@@ -5,81 +5,14 @@
    ["react-native" :as rn]
    ["react-native-gesture-handler" :as g]
    ["react-native-paper" :as paper]
+
    [applied-science.js-interop :as j]
    [reagent.core :as r]
-   [potpuri.core :as p]
-   [app.screens.core :refer [screens]]
-   [app.helpers :refer [<sub >evt get-theme]]
-   [app.components.menu :as menu]))
 
-(def styles
-  {:surface                 {:flex 1 :justify-content "flex-start"}
-   :date-indicator          {:container {:display         "flex"
-                                         :flex-grow       1
-                                         :flex-direction  "row"
-                                         :justify-content "center"}
-                             :text      {:font-weight "bold"
-                                         :text-align  "center"
-                                         :margin      8}}
-   :tracking-sessions       {:surface       {:padding       8
-                                             :margin-bottom 4}
-                             :container     {:width  "100%"
-                                             :height 32
-                                             :margin 4}
-                             :session       {:position "absolute"
-                                             :top      0
-                                             :left     0
-                                             :height   32
-                                             :padding  4
-                                             :overflow "hidden"}
-                             :indicator     {:position "absolute"
-                                             :top      0
-                                             :width    8
-                                             :height   32}
-                             :dbl-container {:position       "absolute"
-                                             :top            0
-                                             :right          16
-                                             :display        "flex"
-                                             :flex-direction "row"
-                                             :align-items    "center"
-                                             :width          8
-                                             :height         32}
-                             :button        {:position "absolute"
-                                             :left     0
-                                             :top      0
-                                             :height   32
-                                             :width    "100%"}}
-   :top-section             {:outer {:max-height     256
-                                     :display        "flex"
-                                     :flex-direction "column"}
-                             :inner {:display         "flex"
-                                     :flex-direction  "row"
-                                     :align-items     "center"
-                                     :justify-content "flex-start"}}
-   :time-indicators         {:container {:position    "absolute"
-                                         :width       "100%"
-                                         :margin-left 4}}
-   :sessions-component      {:button          {:position "absolute"}
-                             :label-container {:height   "100%"
-                                               :width    "100%"
-                                               :overflow "hidden"
-                                               :padding  4}}
-   :now-indicator-component {:outer {:position "absolute"
-                                     :left     32
-                                     :width    "100%"}
-                             :inner {:width  "100%"
-                                     :height 2}}
-   :zoom-buttons            {:container {:position "absolute"
-                                         :opacity  0.25
-                                         :right    0
-                                         :width    40
-                                         :height   "75%"}
-                             :zoom-in   {:position "absolute"
-                                         :margin   0
-                                         :top      128}
-                             :zoom-out  {:position "absolute"
-                                         :margin   0
-                                         :top      192}}})
+   [app.components.menu :as menu]
+   [app.helpers :refer [<sub >evt get-theme]]
+   [app.screens.core :refer [screens]]
+   [app.tailwind :refer [tw]]))
 
 (defn date-indicator [{:keys [day-of-week
                               day-of-month
@@ -87,20 +20,20 @@
                               month
                               display-year
                               display-month]}]
-  [:> rn/View {:style (-> styles :date-indicator :container)}
+  [:> rn/View {:style (tw "flex flex-1 flex-row justify-center")}
 
    (when display-year
-     [:> paper/Text {:style (-> styles :date-indicator :text)} year])
+     [:> paper/Text {:style (tw "font-bold text-center m-2")} year])
    (when display-month
-     [:> paper/Text {:style (-> styles :date-indicator :text)} month])
-   [:> paper/Text {:style (-> styles :date-indicator :text)} day-of-week]
-   [:> paper/Text {:style (-> styles :date-indicator :text)} day-of-month]])
+     [:> paper/Text {:style (tw "font-bold text-center m-2")} month])
+   [:> paper/Text {:style (tw "font-bold text-center m-2")} day-of-week]
+   [:> paper/Text {:style (tw "font-bold text-center m-2")} day-of-month]])
 
 (defn tracking-sessions []
   (let [theme  (->> [:theme] <sub get-theme)
         tracks (<sub [:tracking])]
     [:> g/ScrollView
-     [:> paper/Surface {:style (-> styles :tracking-sessions :surface)}
+     [:> paper/Surface {:style (tw "p-2 mb-2")}
 
       (for [{:tracking-render/keys
              [relative-width
@@ -111,22 +44,29 @@
               show-indicator
               ripple-color-hex
               label] :as t} tracks]
-        ;; container
+
         [:> rn/View {:key   (random-uuid)
-                     :style (-> styles :tracking-sessions :container)}
+                     :style (merge (tw "w-full max-h-32 m-2")
+                                   ;; TODO justin 2020-01-23 Add to custom tailwind theme
+                                   {:min-height 32}) }
 
          ;; session
          [:> rn/View {:style (merge
-                               (-> styles :tracking-sessions :session)
-                               {:width            relative-width
+                               (tw "absolute h-8 p-1")
+                               {:position         "absolute"
+                                :top              0
+                                :left             0
+                                :overflow         "hidden"
+                                :width            relative-width
                                 :border-radius    (-> theme (j/get :roundness))
                                 :background-color color-hex})}
 
           ;; intended duration indication
           (when show-indicator
             [:> rn/View {:style (merge
-                                  (-> styles :tracking-sessions :indicator)
-                                  {:left             indicator-position
+                                  (tw "absolute w-2 h-8")
+                                  {:top              0
+                                   :left             indicator-position
                                    :background-color indicator-color-hex})}])
 
           [:> paper/Text {:style {:color text-color-hex}} label]]
@@ -136,8 +76,10 @@
                            :ripple-color   ripple-color-hex
                            :underlay-color ripple-color-hex
                            :active-opacity 0.7
-                           :style          (-> styles :tracking-sessions :button
-                                               (merge {:border-radius (-> theme (j/get :roundness))}))}]])]]))
+                           :style          (-> (tw "absolute h-8 w-full")
+                                               (merge {:top           0
+                                                       :left          0
+                                                       :border-radius (-> theme (j/get :roundness))}))}]])]]))
 
 (defn top-section [props]
   (let [this-day      (<sub [:this-day])
@@ -149,9 +91,9 @@
                           (j/get :navigation)
                           (j/get :toggleDrawer))]
 
-    [:> rn/View {:style (-> styles :top-section :outer)}
+    [:> rn/View {:style (tw "flex flex-col max-h-72")}
 
-     [:> rn/View {:style (-> styles :top-section :inner)}
+     [:> rn/View {:style (tw "flex flex-row items-center")}
       [menu/button {:button-color menu-color
                     :toggle-menu  toggle-drawer}]
 
@@ -165,7 +107,7 @@
     [:> rn/View
      (for [{:keys [top val]} hours]
        [:> rn/View {:key   (str (random-uuid))
-                    :style (-> styles :time-indicators :container
+                    :style (-> (tw "absolute w-full ml-1")
                                (merge {:top top}))}
         [:> paper/Divider]
         [:> paper/Text {:style {:color (-> theme
@@ -177,7 +119,7 @@
   (let [theme    (->> [:theme] <sub get-theme)
         sessions (<sub [:sessions-for-this-day])]
 
-    [:> rn/View {:style {:margin-left 64}}
+    [:> rn/View {:style (tw "ml-20")}
      (for [{:session-render/keys [left
                                   top
                                   height
@@ -190,7 +132,7 @@
             :as                  s} sessions]
 
        [:> g/RectButton {:key            (:session/id s)
-                         :style          (-> styles :sessions-component :button
+                         :style          (-> (tw "absolute")
                                              (merge {:top              top
                                                      :left             left
                                                      :height           height
@@ -202,7 +144,7 @@
                          :ripple-color   ripple-color-hex
                          :underlay-color ripple-color-hex
                          :active-opacity 0.7}
-        [:> rn/View {:style (-> styles :sessions-component :label-container)}
+        [:> rn/View {:style (tw "h-full w-full overflow-hidden p-1")}
          [:> paper/Text {:style {:color text-color-hex}} label]]])]))
 
 (defn now-indicator-component []
@@ -215,25 +157,26 @@
     (when true ;; TODO display-indicator
       [:> rn/View {:elevation 99 ;; otherwise the second session in a collision group covers it
                    ;; Theoritically enough items in a collision group will get past this but it isn't practical
-                   :style     (-> styles :now-indicator-component :outer
-                                  (merge {:top position})) }
-       [:> rn/View {:style (-> styles :now-indicator-component :inner
+                   :style     (-> (tw "absolute w-full")
+                                  (merge {:top  position
+                                          :left 32})) }
+       [:> rn/View {:style (-> (tw "w-full h-1")
                                (merge {:background-color (-> theme (j/get :colors) (j/get :text))}))}]
        [:> paper/Text label]])))
 
 (defn zoom-buttons []
-  [:> rn/View {:style (-> styles :zoom-buttons :container)}
+  [:> rn/View {:style (tw "absolute top-0 right-0 opacity-25 w-12 h-3/4")}
    [:> paper/IconButton
     {:icon     "magnify-plus-outline"
      :size     32
      :on-press #(tap> "zoom in")
-     :style    (-> styles :zoom-buttons :zoom-in)}]
+     :style    (tw "absolute top-80")}]
 
    [:> paper/IconButton
     {:icon     "magnify-minus-outline"
      :size     32
      :on-press #(tap> "zoom out")
-     :style    (-> styles :zoom-buttons :zoom-out)}]])
+     :style    (tw "absolute top-96")}]])
 
 (def sheet-ref (j/call react :createRef))
 
@@ -243,10 +186,9 @@
        (let [theme (->> [:theme] <sub get-theme)
              zoom  (<sub [:zoom])]
 
-         [:> rn/SafeAreaView {:style {:display          "flex"
-                                      :flex             1
-                                      :background-color (-> theme (j/get :colors) (j/get :background))}}
-          [:> paper/Surface {:style (-> styles :surface
+         [:> rn/SafeAreaView {:style (merge (tw "flex flex-1")
+                                            {:background-color (-> theme (j/get :colors) (j/get :background))})}
+          [:> paper/Surface {:style (-> (tw "flex flex-1")
                                         (merge {:background-color (-> theme (j/get :colors) (j/get :background))}))}
            [:> rn/View
             [:> rn/StatusBar {:visibility "hidden"}]
