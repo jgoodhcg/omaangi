@@ -3,11 +3,15 @@
    ["react-native" :as rn]
    ["react-native-paper" :as paper]
    ["@react-native-community/datetimepicker" :default DateTimePicker]
+
    [applied-science.js-interop :as j]
-   [reagent.core :as r]
-   [app.helpers :refer [<sub >evt get-theme]]
    [potpuri.core :as p]
-   [tick.alpha.api :as t]))
+   [reagent.core :as r]
+   [tick.alpha.api :as t]
+
+   [app.helpers :refer [<sub >evt get-theme]]
+   [app.colors :refer [material-500-hexes]]
+   ))
 
 (def styles
   {:surface
@@ -20,6 +24,7 @@
 
 (defn label-component []
   [:> paper/TextInput {:label          "Label"
+                       :style          {:margin-bottom 32}
                        :on-change-text #(tap> %)}])
 
 (defn tag-remove-modal []
@@ -70,19 +75,22 @@
            label])]]]]))
 
 (defn tags-component []
-  (let [tags [{:label "tag0" :color "#ff00ff" :id #uuid "732825de-6ffb-4cb7-a02c-04dbeb3500fb"}
-              {:label "tag1" :color "#af0cff" :id #uuid "989b4f81-6f57-4f00-98dd-fedf7a6648fd"}
-              {:label "tag2" :color "#cb2111" :id #uuid "e2100a73-8dd2-45ad-84b2-d7770aa6f7a2"}]]
+  (let [tags (for [i (range 20)]
+               {:label (str "tag " i)
+                :color (-> material-500-hexes rand-nth)
+                :id    (random-uuid)}) ]
 
     [:> rn/View {:style {:flex-direction "row"
+                         :flex-wrap      "wrap"
                          :align-items    "center"
-                         :margin-top     64}}
+                         :margin-bottom  32}}
 
      (for [{:keys [label color id]} tags]
        [:> paper/Button
         {:mode     "contained"
          :key      id
-         :style    {:margin-right 16}
+         :style    {:margin-right  8
+                    :margin-bottom 8}
          :color    color
          :on-press #(>evt [:set-tag-remove-modal
                            #:tag-remove-modal
@@ -121,7 +129,8 @@
          picker-session-id      :date-time-picker/session-id} (<sub [:date-time-picker])]
 
     [:> rn/View {:style {:display        "flex"
-                         :flex-direction "column"}}
+                         :flex-direction "column"
+                         :margin-bottom  32}}
 
      (when visible
        [:> DateTimePicker {:value     value :mode mode
@@ -142,7 +151,7 @@
      [:> rn/View {:style {:display        "flex"
                           :flex-direction "row"}}
 
-      [:> paper/Button {:mode     "contained"
+      [:> paper/Button {:mode     "outlined"
                         :style    (-> styles :time-stamps-component :button)
                         :on-press #(>evt [:set-date-time-picker
                                           #:date-time-picker
@@ -152,7 +161,7 @@
                                            :field-key  :session/start
                                            :visible    true}])} start-date-label]
 
-      [:> paper/Button {:mode     "contained"
+      [:> paper/Button {:mode     "outlined"
                         :style    (-> styles :time-stamps-component :button)
                         :on-press #(>evt [:set-date-time-picker
                                           #:date-time-picker
@@ -166,7 +175,7 @@
      [:> rn/View {:style {:display        "flex"
                           :flex-direction "row"}}
 
-      [:> paper/Button {:mode     "contained"
+      [:> paper/Button {:mode     "outlined"
                         :style    (-> styles :time-stamps-component :button)
                         :on-press #(>evt [:set-date-time-picker
                                           #:date-time-picker
@@ -175,7 +184,7 @@
                                            :session-id session-id
                                            :field-key  :session/stop
                                            :visible    true}])} stop-date-label]
-      [:> paper/Button {:mode     "contained"
+      [:> paper/Button {:mode     "outlined"
                         :style    (-> styles :time-stamps-component :button)
                         :on-press #(>evt [:set-date-time-picker
                                           #:date-time-picker
@@ -193,16 +202,16 @@
          [:> paper/Surface {:style (-> styles :surface
                                        (merge {:background-color (-> theme (j/get :colors) (j/get :background))}))}
 
-          [:> rn/View {:style {:padding         8
-                               :display         "flex"
-                               :flex            1
-                               :flex-direction  "column"
-                               :justify-content "space-around"}}
+          [:> rn/View {:style {:padding        8
+                               :display        "flex"
+                               :flex           1
+                               :flex-direction "column"}}
 
            [label-component]
 
+           [time-stamps-component]
+
            [tags-component]
 
-           [time-stamps-component]
 
            ]]))]))
