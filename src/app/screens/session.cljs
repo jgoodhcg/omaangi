@@ -34,11 +34,11 @@
                                                 #:tag-remove-modal {:visible false
                                                                     :id      nil
                                                                     :label   nil}])}]
-        [:> paper/Button {:icon     "delete"
+        [:> paper/Button {:icon     "close"
                           :mode     "contained"
                           :color    "red"
                           :on-press #(tap> (str "deleting " id))}
-         (str "Delete tag: " label)]]]]]))
+         (str "remove tag: " label)]]]]]))
 
 (defn tag-add-modal []
   (let [all-tags (for [i (range 25)]
