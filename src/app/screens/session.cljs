@@ -9,22 +9,13 @@
    [reagent.core :as r]
    [tick.alpha.api :as t]
 
-   [app.helpers :refer [<sub >evt get-theme]]
    [app.colors :refer [material-500-hexes]]
-   ))
-
-(def styles
-  {:surface
-   {:flex            1
-    :justify-content "flex-start"}
-
-   :time-stamps-component
-   {:button {:margin-right 8
-             :margin-top   16}}})
+   [app.helpers :refer [<sub >evt get-theme]]
+   [app.tailwind :refer [tw]]))
 
 (defn label-component []
   [:> paper/TextInput {:label          "Label"
-                       :style          {:margin-bottom 32}
+                       :style          (tw "mb-8")
                        :on-change-text #(tap> %)}])
 
 (defn tag-remove-modal []
@@ -50,9 +41,10 @@
          (str "Delete tag: " label)]]]]]))
 
 (defn tag-add-modal []
-  (let [all-tags [{:label "tag0" :color "#ff00ff" :id #uuid "732825de-6ffb-4cb7-a02c-04dbeb3500fb"}
-                  {:label "tag1" :color "#af0cff" :id #uuid "989b4f81-6f57-4f00-98dd-fedf7a6648fd"}
-                  {:label "tag2" :color "#cb2111" :id #uuid "e2100a73-8dd2-45ad-84b2-d7770aa6f7a2"}]
+  (let [all-tags (for [i (range 25)]
+                   {:label (str "tag " i)
+                    :color (-> material-500-hexes rand-nth)
+                    :id    (random-uuid)})
 
         {:tag-add-modal/keys [visible]} (<sub [:tag-add-modal])]
 
@@ -60,37 +52,35 @@
      [:> paper/Modal {:visible    visible
                       :on-dismiss #(>evt [:set-tag-add-modal
                                           #:tag-add-modal {:visible false}])}
-      [:> paper/Surface
-       [:> rn/View {:style {:padding 8}}
+      [:> paper/Surface {:style (tw "m-1")}
+       [:> rn/ScrollView
         [:> paper/IconButton {:icon     "close"
                               :on-press #(>evt [:set-tag-add-modal
                                                 #:tag-add-modal {:visible false}])}]
-        (for [{:keys [label color id]} all-tags]
-          [:> paper/Button
-           {:mode     "contained"
-            :key      id
-            :style    {:margin 8}
-            :color    color
-            :on-press #(tap> "adding tag to session")}
-           label])]]]]))
+
+        [:> rn/View {:style (tw "flex flex-row flex-wrap items-center p-4")}
+         (for [{:keys [label color id]} all-tags]
+           [:> paper/Button
+            {:mode     "contained"
+             :key      id
+             :style    (tw "m-2")
+             :color    color
+             :on-press #(tap> "adding tag to session")}
+            label])]]]]]))
 
 (defn tags-component []
-  (let [tags (for [i (range 20)]
+  (let [tags (for [i (range 4)]
                {:label (str "tag " i)
                 :color (-> material-500-hexes rand-nth)
                 :id    (random-uuid)}) ]
 
-    [:> rn/View {:style {:flex-direction "row"
-                         :flex-wrap      "wrap"
-                         :align-items    "center"
-                         :margin-bottom  32}}
+    [:> rn/View {:style (tw "flex flex-row flex-wrap items-center mb-8")}
 
      (for [{:keys [label color id]} tags]
        [:> paper/Button
         {:mode     "contained"
          :key      id
-         :style    {:margin-right  8
-                    :margin-bottom 8}
+         :style    (tw "mr-4 mb-4")
          :color    color
          :on-press #(>evt [:set-tag-remove-modal
                            #:tag-remove-modal
@@ -128,9 +118,7 @@
         {:date-time-picker/keys [value mode visible field-key]
          picker-session-id      :date-time-picker/session-id} (<sub [:date-time-picker])]
 
-    [:> rn/View {:style {:display        "flex"
-                         :flex-direction "column"
-                         :margin-bottom  32}}
+    [:> rn/View {:style (tw "flex flex-col mb-8")}
 
      (when visible
        [:> DateTimePicker {:value     value :mode mode
@@ -148,11 +136,10 @@
                                                    :visible    false}]))}])
 
      ;; start
-     [:> rn/View {:style {:display        "flex"
-                          :flex-direction "row"}}
+     [:> rn/View {:style (tw "flex flex-row")}
 
       [:> paper/Button {:mode     "outlined"
-                        :style    (-> styles :time-stamps-component :button)
+                        :style    (tw "mr-4 mt-4")
                         :on-press #(>evt [:set-date-time-picker
                                           #:date-time-picker
                                           {:value      start-value
@@ -162,7 +149,7 @@
                                            :visible    true}])} start-date-label]
 
       [:> paper/Button {:mode     "outlined"
-                        :style    (-> styles :time-stamps-component :button)
+                        :style    (tw "mr-4 mt-4")
                         :on-press #(>evt [:set-date-time-picker
                                           #:date-time-picker
                                           {:value      start-value
@@ -172,11 +159,10 @@
                                            :visible    true}])} start-time-label]]
 
      ;; end
-     [:> rn/View {:style {:display        "flex"
-                          :flex-direction "row"}}
+     [:> rn/View {:style (tw "flex flex-row")}
 
       [:> paper/Button {:mode     "outlined"
-                        :style    (-> styles :time-stamps-component :button)
+                        :style    (tw "mr-4 mt-4")
                         :on-press #(>evt [:set-date-time-picker
                                           #:date-time-picker
                                           {:value      stop-value
@@ -185,7 +171,7 @@
                                            :field-key  :session/stop
                                            :visible    true}])} stop-date-label]
       [:> paper/Button {:mode     "outlined"
-                        :style    (-> styles :time-stamps-component :button)
+                        :style    (tw "mr-4 mt-4")
                         :on-press #(>evt [:set-date-time-picker
                                           #:date-time-picker
                                           {:value      stop-value
@@ -199,19 +185,16 @@
     [(fn [props]
        (let [theme (->> [:theme] <sub get-theme)]
 
-         [:> paper/Surface {:style (-> styles :surface
+         [:> paper/Surface {:style (-> (tw "flex flex-1")
+                                       ;; TODO justin 2020-01-23 Move this to tailwind custom theme
                                        (merge {:background-color (-> theme (j/get :colors) (j/get :background))}))}
 
-          [:> rn/View {:style {:padding        8
-                               :display        "flex"
-                               :flex           1
-                               :flex-direction "column"}}
+          [:> rn/View {:style (tw "flex p-4 flex-col")}
 
            [label-component]
 
            [time-stamps-component]
 
            [tags-component]
-
 
            ]]))]))
