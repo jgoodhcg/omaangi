@@ -2,7 +2,7 @@
   (:require
    ["react-native" :as rn]
    ["react-native-paper" :as paper]
-   ["@react-native-community/datetimepicker" :default DateTimePicker]
+   ["react-native-modal-datetime-picker" :default DateTimePicker]
 
    [applied-science.js-interop :as j]
    [potpuri.core :as p]
@@ -116,29 +116,33 @@
                        :stop-value       (-> later t/inst)}
 
         {:date-time-picker/keys [value mode visible field-key]
-         picker-session-id      :date-time-picker/session-id} (<sub [:date-time-picker])]
+         picker-session-id      :date-time-picker/session-id} (<sub [:date-time-picker])
+
+        clear-datetime-picker [:set-date-time-picker
+                               #:date-time-picker
+                               {:value      nil
+                                :mode       nil
+                                :session-id nil
+                                :field-key  nil
+                                :visible    false}]]
 
     [:> rn/View {:style (tw "flex flex-col mb-8")}
 
-     (when visible
-       [:> DateTimePicker {:value     value :mode mode
-                           :on-change #(do (tap> (str "Update " field-key " for " picker-session-id " as "
-                                                      (-> %
-                                                          (j/get :nativeEvent)
-                                                          (j/get :timestamp)
-                                                          t/instant)))
-                                           (>evt [:set-date-time-picker
-                                                  #:date-time-picker
-                                                  {:value      nil
-                                                   :mode       nil
-                                                   :session-id nil
-                                                   :field-key  nil
-                                                   :visible    false}]))}])
+     [:> DateTimePicker {:is-visible visible
+                         :value      value
+                         :mode       mode
+                         :on-hide    #(do (tap> "hidden")
+                                          (>evt clear-datetime-picker))
+                         :on-cancel  #(do (tap> "cancelled")
+                                          (>evt clear-datetime-picker))
+                         :on-confirm #(do (tap> (str "Update " field-key " for " picker-session-id " as " (-> % t/instant)))
+                                          (>evt clear-datetime-picker))}]
 
      ;; start
      [:> rn/View {:style (tw "flex flex-row")}
 
-      [:> paper/Button {:mode     "outlined"
+      [:> paper/Button {:mode     "contained"
+                        :icon     "calendar"
                         :style    (tw "mr-4 mt-4")
                         :on-press #(>evt [:set-date-time-picker
                                           #:date-time-picker
@@ -148,7 +152,8 @@
                                            :field-key  :session/start
                                            :visible    true}])} start-date-label]
 
-      [:> paper/Button {:mode     "outlined"
+      [:> paper/Button {:mode     "contained"
+                        :icon     "clock"
                         :style    (tw "mr-4 mt-4")
                         :on-press #(>evt [:set-date-time-picker
                                           #:date-time-picker
@@ -161,7 +166,8 @@
      ;; end
      [:> rn/View {:style (tw "flex flex-row")}
 
-      [:> paper/Button {:mode     "outlined"
+      [:> paper/Button {:mode     "contained"
+                        :icon     "calendar"
                         :style    (tw "mr-4 mt-4")
                         :on-press #(>evt [:set-date-time-picker
                                           #:date-time-picker
@@ -170,7 +176,9 @@
                                            :session-id session-id
                                            :field-key  :session/stop
                                            :visible    true}])} stop-date-label]
-      [:> paper/Button {:mode     "outlined"
+
+      [:> paper/Button {:mode     "contained"
+                        :icon     "clock"
                         :style    (tw "mr-4 mt-4")
                         :on-press #(>evt [:set-date-time-picker
                                           #:date-time-picker
@@ -179,6 +187,16 @@
                                            :session-id session-id
                                            :field-key  :session/stop
                                            :visible    true}])} stop-time-label]]]))
+
+(defn color-override-component []
+  (let [{session-color :session/color}
+        {:session/color nil}
+
+        mode  (if (some? session-color) "contained" "outlined")
+        label (if (some? session-color) session-color "set session color")]
+
+    [:> rn/View {:style (tw "flex flex-col mb-8")}
+     [:> paper/Button {:mode mode :icon "palette"} label]]))
 
 (defn screen [props]
   (r/as-element
@@ -194,6 +212,8 @@
            [label-component]
 
            [time-stamps-component]
+
+           [color-override-component]
 
            [tags-component]
 
