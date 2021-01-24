@@ -1,6 +1,5 @@
 (ns app.screens.session
   (:require
-   ["croma-color-picker" :as croma]
    ["react-native" :as rn]
    ["react-native-paper" :as paper]
    ["react-native-modal-datetime-picker" :default DateTimePicker]
@@ -129,16 +128,16 @@
 
     [:> rn/View {:style (tw "flex flex-col mb-8")}
 
-     ;; Can't change colors without ejecting
-     [:> DateTimePicker {:is-visible visible
-                         :value      value
-                         :mode       mode
-                         :on-hide    #(do (tap> "hidden")
-                                          (>evt clear-datetime-picker))
-                         :on-cancel  #(do (tap> "cancelled")
-                                          (>evt clear-datetime-picker))
-                         :on-confirm #(do (tap> (str "Update " field-key " for " picker-session-id " as " (-> % t/instant)))
-                                          (>evt clear-datetime-picker))}]
+     [:> DateTimePicker {:is-visible           visible
+                         :is-dark-mode-enabled true
+                         :value                value
+                         :mode                 mode
+                         :on-hide              #(do (tap> "hidden")
+                                                    (>evt clear-datetime-picker))
+                         :on-cancel            #(do (tap> "cancelled")
+                                                    (>evt clear-datetime-picker))
+                         :on-confirm           #(do (tap> (str "Update " field-key " for " picker-session-id " as " (-> % t/instant)))
+                                                    (>evt clear-datetime-picker))}]
 
      ;; start
      [:> rn/View {:style (tw "flex flex-row")}
@@ -198,11 +197,7 @@
         label (if (some? session-color) session-color "set session color")]
 
     [:> rn/View {:style (tw "flex flex-col mb-8")}
-     [:> paper/Button {:mode mode :icon "palette"} label]
-     [:> rn/View {:style (tw "flex h-64 flex-col m-2")}
-      [:> croma/CromaColorPicker {:on-change-color #(tap> %)
-                                  :style           [#js {:color "white"}] }]]
-     ]))
+     [:> paper/Button {:mode mode :icon "palette"} label]]))
 
 (defn screen [props]
   (r/as-element

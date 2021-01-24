@@ -2413,14 +2413,6 @@ create-react-class@^15.6.2, create-react-class@^15.6.3:
     loose-envify "^1.3.1"
     object-assign "^4.1.1"
 
-croma-color-picker@^1.1.3:
-  version "1.1.3"
-  resolved "https://registry.yarnpkg.com/croma-color-picker/-/croma-color-picker-1.1.3.tgz#43da8c226136855d0aba8764f87417256f50fc92"
-  integrity sha512-xlUrVIUEZDq9fTJflC3xhqNYR78pT1WqnZgXc9KnREiZ0iy4oCLSYMkQPphm9l5lPGlBXKigXzHloZ4R5YoLjQ==
-  dependencies:
-    pigment "^0.1.0"
-    react-native-platform-touchable "^1.1.1"
-
 cross-spawn@^5.1.0:
   version "5.1.0"
   resolved "https://registry.yarnpkg.com/cross-spawn/-/cross-spawn-5.1.0.tgz#e8bd0efee58fcff6f8f94510a0a554bbfa235449"
@@ -5190,11 +5182,6 @@ pify@^4.0.1:
   resolved "https://registry.yarnpkg.com/pify/-/pify-4.0.1.tgz#4b2cd25c50d598735c50292224fd8c6df41e3231"
   integrity sha512-uB80kBFb/tfd68bVleG9T5GGsGPjJrLAUpR5PZIrhBnIaRTQRjqdJSsIKkOP6OAIFbj7GOrcudc5pNjZ+geV2g==
 
-pigment@^0.1.0:
-  version "0.1.0"
-  resolved "https://registry.yarnpkg.com/pigment/-/pigment-0.1.0.tgz#8295f60ddee5617935d4de153c7aabab7fde9ac2"
-  integrity sha1-gpX2Dd7lYXk11N4VPHqrq3/emsI=
-
 pirates@^4.0.0:
   version "4.0.1"
   resolved "https://registry.yarnpkg.com/pirates/-/pirates-4.0.1.tgz#643a92caf894566f91b2b986d2c66950a8e2fb87"
@@ -5477,11 +5464,6 @@ react-native-paper@^4.2.0:
     "@callstack/react-theme-provider" "^3.0.5"
     color "^3.1.2"
     react-native-iphone-x-helper "^1.3.1"
-
-react-native-platform-touchable@^1.1.1:
-  version "1.1.1"
-  resolved "https://registry.yarnpkg.com/react-native-platform-touchable/-/react-native-platform-touchable-1.1.1.tgz#fde4acc65eea585d28b164d0c3716a42129a68e4"
-  integrity sha1-/eSsxl7qWF0osWTQw3FqQhKaaOQ=
 
 react-native-reanimated@~1.13.0:
   version "1.13.2"
