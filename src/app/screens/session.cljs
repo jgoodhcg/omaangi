@@ -1,6 +1,7 @@
 (ns app.screens.session
   (:require
    ["react-native" :as rn]
+   ["react-native-color-picker" :as c]
    ["react-native-paper" :as paper]
    ["react-native-modal-datetime-picker" :default DateTimePicker]
 
@@ -197,7 +198,18 @@
         label (if (some? session-color) session-color "set session color")]
 
     [:> rn/View {:style (tw "flex flex-col mb-8")}
-     [:> paper/Button {:mode mode :icon "palette"} label]]))
+     [:> paper/Button {:mode mode :icon "palette"} label]
+
+     [:> paper/Portal
+      [:> paper/Modal {:visible    true
+                       :on-dismiss #(tap> "dismis color picker")}
+       [:> paper/Surface {:style (tw "m-8")}
+        [:> rn/View {:style (tw "h-full w-full")}
+         [:> paper/IconButton {:icon     "close"
+                               :on-press #(tap> "dismiss pls")}]
+         [:> c/ColorPicker {:on-color-selected #(tap> %)
+                            :style             (tw "flex flex-1")}]
+         ]]]]]))
 
 (defn screen [props]
   (r/as-element
