@@ -2,6 +2,7 @@
   (:require
    ["react-native" :as rn]
    ["react-native-color-picker" :as c]
+   ["react-native-gesture-handler" :as g]
    ["react-native-paper" :as paper]
    ["react-native-modal-datetime-picker" :default DateTimePicker]
 
@@ -205,10 +206,24 @@
                        :on-dismiss #(tap> "dismis color picker")}
        [:> paper/Surface {:style (tw "m-8")}
         [:> rn/View {:style (tw "h-full w-full")}
+
          [:> paper/IconButton {:icon     "close"
                                :on-press #(tap> "dismiss pls")}]
+
+         [:> rn/View {:style (tw "flex flex-wrap flex-row justify-center m-2")}
+          (for [c material-500-hexes]
+            [:> g/RectButton {:key      (random-uuid)
+                              :style    (merge (tw "h-8 w-20") {:background-color c})
+                              :on-press #(tap> "set color modal state")}])]
+
+         [:> paper/Text {:style (tw "text-center mt-4")} "Tap right side of circle to set"]
          [:> c/ColorPicker {:on-color-selected #(tap> %)
-                            :style             (tw "flex flex-1")}]
+                            :style             (tw "flex flex-1 m-4")}]
+         [:> paper/Button {:icon     "check"
+                           :mode     "contained"
+                           :style    (tw "m-4")
+                           :on-press #(tap> "color set")}
+          "Save"]
          ]]]]]))
 
 (defn screen [props]
