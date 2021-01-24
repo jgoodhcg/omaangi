@@ -8,13 +8,16 @@
    ["@react-navigation/native" :as nav]
    ["@react-navigation/drawer" :as d]
    ["@react-navigation/stack" :as s]
+   ["react-native-appearance" :as appearance]
    ["react-native-paper" :as paper]
+
    [applied-science.js-interop :as j]
    [camel-snake-kebab.core :as csk]
    [camel-snake-kebab.extras :as cske]
    [reagent.core :as r]
    [re-frame.core :refer [dispatch-sync]]
    [shadow.expo :as expo]
+
    [app.fx :refer [!navigation-ref]]
    [app.handlers]
    [app.subscriptions]
@@ -91,59 +94,63 @@
                                                (j/call :lighten 0.25)
                                                (j/call :hex))}]
 
-    [:> paper/Provider
-     {:theme theme}
+    ;; TODO justin 2021-01-24 Right now appearance provider doesn't do anything
+    ;; As far as I can tell it is just a way to programatically determine user theme settings
+    ;; Might use this in the future if I support toggling between light and dark mode
+    [:> appearance/AppearanceProvider
+     [:> paper/Provider
+      {:theme theme}
 
-     [:> nav/NavigationContainer
-      {:ref             (fn [el] (reset! !navigation-ref el))
-       :on-ready        (fn []
-                          (swap! !route-name-ref merge {:current (-> @!navigation-ref
-                                                                     (j/call :getCurrentRoute)
-                                                                     (j/get :name))}))
-       :on-state-change (fn []
-                          (let [prev-route-name    (-> @!route-name-ref :current)
-                                current-route-name (-> @!navigation-ref
-                                                       (j/call :getCurrentRoute)
-                                                       (j/get :name))]
-                            (when (not= prev-route-name current-route-name)
-                              ;; This is where you can do side effecty things like analytics
-                              (>evt [:some-fx-example (str "New screen encountered " current-route-name)]))
-                            (swap! !route-name-ref merge {:current current-route-name})))}
+      [:> nav/NavigationContainer
+       {:ref             (fn [el] (reset! !navigation-ref el))
+        :on-ready        (fn []
+                           (swap! !route-name-ref merge {:current (-> @!navigation-ref
+                                                                      (j/call :getCurrentRoute)
+                                                                      (j/get :name))}))
+        :on-state-change (fn []
+                           (let [prev-route-name    (-> @!route-name-ref :current)
+                                 current-route-name (-> @!navigation-ref
+                                                        (j/call :getCurrentRoute)
+                                                        (j/get :name))]
+                             (when (not= prev-route-name current-route-name)
+                               ;; This is where you can do side effecty things like analytics
+                               (>evt [:some-fx-example (str "New screen encountered " current-route-name)]))
+                             (swap! !route-name-ref merge {:current current-route-name})))}
 
-      [:> (drawer-navigator) {:drawer-content         custom-drawer
-                              :drawer-style           drawer-style
-                              :initial-route-name     "Day"
-                              :drawer-content-options {:active-tint-color   (-> theme (j/get :colors) (j/get :accent))
-                                                       :inactive-tint-color (-> theme (j/get :colors) (j/get :text))}}
-       (drawer-screen {:name      (:day screens)
-                       :options   {:drawerIcon (drawer-icon "hamburger")}
-                       :component #(r/as-element
-                                     [:> (stack-navigator) {:initial-route-name (:session screens)}
-                                      (stack-screen {:name      (:day screens)
-                                                     :component (paper/withTheme day/screen)
-                                                     :options   {:headerShown false}})
-                                      (stack-screen {:name      (:session screens)
-                                                     :options   {:headerTintColor (-> theme
-                                                                                      (j/get :colors)
-                                                                                      (j/get :text))
-                                                                 :headerTitleStyle
-                                                                 #js {:display "none"}
-                                                                 :headerStyle
-                                                                 ;; for some reason the :surface color comes out the same as :background when used on paper/Surface
-                                                                 ;; when using :background here it has a weird opacity issue or something
-                                                                 #js {:backgroundColor (-> theme
-                                                                                           (j/get :colors)
-                                                                                           (j/get :surface))}}
-                                                     :component (paper/withTheme session/screen)})])})
-       (drawer-screen {:name      (:reports screens)
-                       :options   {:drawerIcon (drawer-icon "hamburger")}
-                       :component (paper/withTheme reports/screen)})
-       (drawer-screen {:name      (:tags screens)
-                       :options   {:drawerIcon (drawer-icon "hamburger")}
-                       :component (paper/withTheme tags/screen)})
-       (drawer-screen {:name      (:settings screens)
-                       :options   {:drawerIcon (drawer-icon "hamburger")}
-                       :component (paper/withTheme settings/screen)})]]]))
+       [:> (drawer-navigator) {:drawer-content         custom-drawer
+                               :drawer-style           drawer-style
+                               :initial-route-name     "Day"
+                               :drawer-content-options {:active-tint-color   (-> theme (j/get :colors) (j/get :accent))
+                                                        :inactive-tint-color (-> theme (j/get :colors) (j/get :text))}}
+        (drawer-screen {:name      (:day screens)
+                        :options   {:drawerIcon (drawer-icon "hamburger")}
+                        :component #(r/as-element
+                                      [:> (stack-navigator) {:initial-route-name (:session screens)}
+                                       (stack-screen {:name      (:day screens)
+                                                      :component (paper/withTheme day/screen)
+                                                      :options   {:headerShown false}})
+                                       (stack-screen {:name      (:session screens)
+                                                      :options   {:headerTintColor (-> theme
+                                                                                       (j/get :colors)
+                                                                                       (j/get :text))
+                                                                  :headerTitleStyle
+                                                                  #js {:display "none"}
+                                                                  :headerStyle
+                                                                  ;; for some reason the :surface color comes out the same as :background when used on paper/Surface
+                                                                  ;; when using :background here it has a weird opacity issue or something
+                                                                  #js {:backgroundColor (-> theme
+                                                                                            (j/get :colors)
+                                                                                            (j/get :surface))}}
+                                                      :component (paper/withTheme session/screen)})])})
+        (drawer-screen {:name      (:reports screens)
+                        :options   {:drawerIcon (drawer-icon "hamburger")}
+                        :component (paper/withTheme reports/screen)})
+        (drawer-screen {:name      (:tags screens)
+                        :options   {:drawerIcon (drawer-icon "hamburger")}
+                        :component (paper/withTheme tags/screen)})
+        (drawer-screen {:name      (:settings screens)
+                        :options   {:drawerIcon (drawer-icon "hamburger")}
+                        :component (paper/withTheme settings/screen)})]]]]))
 
 (defn start
   {:dev/after-load true}
