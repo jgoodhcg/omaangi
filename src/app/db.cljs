@@ -271,7 +271,9 @@
                                                       :date-time-picker/value      (ds/maybe? inst?)
                                                       :date-time-picker/mode       (ds/maybe? (s/spec #{"date" "time"}))
                                                       :date-time-picker/session-id (ds/maybe? uuid?)
-                                                      :date-time-picker/field-key  (ds/maybe? keyword?)}}}}))
+                                                      :date-time-picker/field-key  (ds/maybe? keyword?)}
+                              :view/color-picker     {:color-picker/visible boolean?
+                                                      :color-picker/value   (ds/maybe? ::color)}}}}))
 
 (comment
   (s/explain app-db-spec (merge {:settings {:theme :dark}
@@ -304,4 +306,6 @@
                                           :date-time-picker/value      nil
                                           :date-time-picker/mode       nil
                                           :date-time-picker/session-id nil
-                                          :date-time-picker/field-key  nil}}})))
+                                          :date-time-picker/field-key  nil}
+                  :view/color-picker     {:color-picker/visible false
+                                          :color-picker/value   nil}}})))

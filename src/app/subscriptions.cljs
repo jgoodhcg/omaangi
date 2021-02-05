@@ -301,3 +301,13 @@
          :<- [:view]
 
          date-time-picker)
+
+(defn color-picker [view _]
+  (->> view
+       (select-one [:view/color-picker])
+       (transform [:color-picker/value] #(when-some [c %] (-> c (j/call :hex))))))
+(reg-sub :color-picker
+
+         :<- [:view]
+
+         color-picker)

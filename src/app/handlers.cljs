@@ -1,5 +1,6 @@
 (ns app.handlers
   (:require
+   ["color" :as color]
    [re-frame.core :refer [reg-event-db
                           ->interceptor
                           reg-event-fx
@@ -73,3 +74,12 @@
 (defn set-date-time-picker [db [_ new-state]]
   (->> db (setval [:view :view/date-time-picker] new-state)))
 (reg-event-db :set-date-time-picker set-date-time-picker)
+
+(defn set-color-picker [db [_ new-state]]
+  (tap> new-state)
+  (->> db (setval [:view :view/color-picker]
+                  (->> new-state (transform [:color-picker/value]
+                                            #(if (some? %)
+                                               (color %)
+                                               nil))))))
+(reg-event-db :set-color-picker set-color-picker)
