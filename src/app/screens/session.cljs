@@ -71,30 +71,34 @@
             label])]]]]]))
 
 (defn tags-component []
-  (let [tags (for [i (range 4)]
-               {:label (str "tag " i)
-                :color (-> material-500-hexes rand-nth)
-                :id    (random-uuid)}) ]
+  (let [tags           (for [i (range 1)]
+                         {:label (str "tag " i)
+                          :color (-> material-500-hexes rand-nth)
+                          :id    (random-uuid)})
+        there-are-tags (-> tags count (> 0))]
 
     [:> rn/View {:style (tw "flex flex-row flex-wrap items-center mb-8")}
 
-     (for [{:keys [label color id]} tags]
-       [:> paper/Button
-        {:mode     "contained"
-         :key      id
-         :style    (tw "mr-4 mb-4")
-         :color    color
-         :on-press #(>evt [:set-tag-remove-modal
-                           #:tag-remove-modal
-                           {:visible true
-                            :id      id
-                            :label   label}])}
-        label])
+     (when there-are-tags
+       (for [{:keys [label color id]} tags]
+         [:> paper/Button
+          {:mode     "contained"
+           :key      id
+           :style    (tw "mr-4 mb-4")
+           :color    color
+           :on-press #(>evt [:set-tag-remove-modal
+                             #:tag-remove-modal
+                             {:visible true
+                              :id      id
+                              :label   label}])}
+          label]))
 
-     [:> paper/IconButton {:icon     "plus"
-                           :on-press #(>evt [:set-tag-add-modal
-                                             #:tag-add-modal
-                                             {:visible true}])}]
+     [:> paper/Button {:icon     "plus"
+                       :mode     "outlined"
+                       :on-press #(>evt [:set-tag-add-modal
+                                         #:tag-add-modal
+                                         {:visible true}])}
+      "Add tag"]
 
      [tag-remove-modal]
 
@@ -256,18 +260,19 @@
     [(fn [props]
        (let [theme (->> [:theme] <sub get-theme)]
 
-         [:> paper/Surface {:style (-> (tw "flex flex-1")
-                                       ;; TODO justin 2020-01-23 Move this to tailwind custom theme
-                                       (merge {:background-color (-> theme (j/get :colors) (j/get :background))}))}
+         [:> rn/ScrollView {:style {:background-color (-> theme (j/get :colors) (j/get :background))}}
+          [:> paper/Surface {:style (-> (tw "flex flex-1")
+                                        ;; TODO justin 2020-01-23 Move this to tailwind custom theme
+                                        (merge {:background-color (-> theme (j/get :colors) (j/get :background))}))}
 
-          [:> rn/View {:style (tw "flex p-4 flex-col")}
+           [:> rn/View {:style (tw "flex p-4 flex-col")}
 
-           [label-component]
+            [label-component]
 
-           [time-stamps-component]
+            [time-stamps-component]
 
-           [color-override-component]
+            [color-override-component]
 
-           [tags-component]
+            [tags-component]
 
-           ]]))]))
+            ]]]))]))
