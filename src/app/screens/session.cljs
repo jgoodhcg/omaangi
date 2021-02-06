@@ -150,7 +150,7 @@
 
       [:> paper/Button {:mode     "contained"
                         :icon     "calendar"
-                        :style    (tw "mr-4 mt-4")
+                        :style    (tw "mr-4 mt-4 w-40")
                         :on-press #(>evt [:set-date-time-picker
                                           #:date-time-picker
                                           {:value      start-value
@@ -161,7 +161,7 @@
 
       [:> paper/Button {:mode     "contained"
                         :icon     "clock"
-                        :style    (tw "mr-4 mt-4")
+                        :style    (tw "mr-4 mt-4 w-28")
                         :on-press #(>evt [:set-date-time-picker
                                           #:date-time-picker
                                           {:value      start-value
@@ -175,7 +175,7 @@
 
       [:> paper/Button {:mode     "contained"
                         :icon     "calendar"
-                        :style    (tw "mr-4 mt-4")
+                        :style    (tw "mr-4 mt-4 w-40")
                         :on-press #(>evt [:set-date-time-picker
                                           #:date-time-picker
                                           {:value      stop-value
@@ -186,7 +186,7 @@
 
       [:> paper/Button {:mode     "contained"
                         :icon     "clock"
-                        :style    (tw "mr-4 mt-4")
+                        :style    (tw "mr-4 mt-4 w-28")
                         :on-press #(>evt [:set-date-time-picker
                                           #:date-time-picker
                                           {:value      stop-value
@@ -255,6 +255,22 @@
                                                                  :value   nil}]))}
           "Remove color"]]]]]]))
 
+(defn session-type-component []
+  (let [{session-type :session/type} {:session/type :session/track}]
+    [:> rn/View {:style (tw "flex flex-row mb-8")}
+     [:> paper/Button {:style (tw "mr-4 w-24")
+                       :icon  "circle-outline"
+                       :mode  (case session-type
+                                :session/plan "contained"
+                                "outlined")}
+      "plan"]
+     [:> paper/Button {:style (tw "w-24")
+                       :icon  "circle-slice-8"
+                       :mode  (case session-type
+                                :session/track "contained"
+                                "outlined")}
+      "track"]]))
+
 (defn screen [props]
   (r/as-element
     [(fn [props]
@@ -263,13 +279,16 @@
          [:> rn/ScrollView {:style {:background-color (-> theme (j/get :colors) (j/get :background))}}
           [:> paper/Surface {:style (-> (tw "flex flex-1")
                                         ;; TODO justin 2020-01-23 Move this to tailwind custom theme
-                                        (merge {:background-color (-> theme (j/get :colors) (j/get :background))}))}
+                                        ;; (merge {:background-color (-> theme (j/get :colors) (j/get :background))})
+                                        )}
 
            [:> rn/View {:style (tw "flex p-4 flex-col")}
 
             [label-component]
 
             [time-stamps-component]
+
+            [session-type-component]
 
             [color-override-component]
 

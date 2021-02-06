@@ -182,7 +182,7 @@
 
 (defn screen [props]
   (r/as-element
-    [(fn [props]
+    [(fn [] ;; don't pass props here I guess that isn't how `r/as-element` works
        (let [theme (->> [:theme] <sub get-theme)
              zoom  (<sub [:zoom])]
 
