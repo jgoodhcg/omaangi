@@ -119,11 +119,11 @@
 
        [:> (drawer-navigator) {:drawer-content         custom-drawer
                                :drawer-style           drawer-style
-                               :initial-route-name     "Day"
+                               :initial-route-name     (:settings screens)
                                :drawer-content-options {:active-tint-color   (-> theme (j/get :colors) (j/get :accent))
                                                         :inactive-tint-color (-> theme (j/get :colors) (j/get :text))}}
         (drawer-screen {:name      (:day screens)
-                        :options   {:drawerIcon (drawer-icon "hamburger")}
+                        :options   {:drawerIcon (drawer-icon "calendar")}
                         :component #(r/as-element
                                       [:> (stack-navigator) {:initial-route-name (:day screens)}
                                        (stack-screen {:name      (:day screens)
@@ -149,7 +149,7 @@
                         :options   {:drawerIcon (drawer-icon "hamburger")}
                         :component (paper/withTheme tags/screen)})
         (drawer-screen {:name      (:settings screens)
-                        :options   {:drawerIcon (drawer-icon "hamburger")}
+                        :options   {:drawerIcon (drawer-icon "tune")}
                         :component (paper/withTheme settings/screen)})]]]]))
 
 (defn start
