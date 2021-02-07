@@ -229,8 +229,8 @@
 (def tag-data-spec
   (ds/spec {:name ::tag-ds
             :spec {:tag/id             uuid?
-                   (ds/opt :tag/color) ::color
-                   (ds/opt :tag/label) string?}}))
+                   (ds/opt :tag/color) (ds/maybe ::color)
+                   (ds/opt :tag/label) (ds/maybe string?)}}))
 
 (s/def ::tag (s/with-gen tag-data-spec #(gen/fmap generate-tag (s/gen int?))))
 

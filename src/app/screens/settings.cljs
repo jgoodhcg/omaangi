@@ -6,24 +6,10 @@
    [applied-science.js-interop :as j]
    [reagent.core :as r]
 
-   [app.components.menu :as menu]
+   [app.components.generic-top-section :as top-section]
    [app.helpers :refer [<sub >evt get-theme]]
    [app.screens.core :refer [screens]]
    [app.tailwind :refer [tw]]))
-
-(defn top-section [props]
-  (let [theme         (->> [:theme] <sub get-theme)
-        menu-color    (-> theme
-                          (j/get :colors)
-                          (j/get :text))
-        toggle-drawer (-> props
-                          (j/get :navigation)
-                          (j/get :toggleDrawer))]
-
-    [:> rn/View {:style (tw "flex flex-row items-center pb-2 pt-2")}
-     [menu/button {:button-color menu-color
-                   :toggle-menu  toggle-drawer}]
-     [:> paper/Title {:style (tw "ml-4")} (:settings screens)]]))
 
 (defn screen [props]
   (r/as-element
@@ -35,7 +21,7 @@
 
           [:> rn/StatusBar {:visibility "hidden"}]
 
-          [top-section props]
+          [top-section/component props (:settings screens)]
 
           [:> paper/Surface {:style (merge  (tw "flex flex-1"))}
 
