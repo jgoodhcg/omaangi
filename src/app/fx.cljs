@@ -14,7 +14,7 @@
 
   (-> @!navigation-ref
       ;; no params yet for second arg
-      (j/call :navigate name #js {})))
+      (j/call :navigate name (j/lit {}))))
 
 (reg-fx :navigate navigate)
 

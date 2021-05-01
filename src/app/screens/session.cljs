@@ -12,6 +12,7 @@
    [tick.alpha.api :as t]
 
    [app.colors :refer [material-500-hexes]]
+   [app.components.color-picker :as color-picker]
    [app.helpers :refer [<sub >evt get-theme]]
    [app.tailwind :refer [tw]]))
 
@@ -202,9 +203,7 @@
         {:session/color @tmp-session-color-state}
 
         mode  (if (some? session-color) "contained" "outlined")
-        label (if (some? session-color) session-color "set session color")
-
-        {:color-picker/keys [visible value]} (<sub [:color-picker])]
+        label (if (some? session-color) session-color "set session color")]
 
     [:> rn/View {:style (tw "flex flex-col mb-8")}
      [:> paper/Button {:mode     mode
@@ -215,83 +214,46 @@
                                                          :value   session-color}])}
       label]
 
-     [:> paper/Portal
-      [:> paper/Modal {:visible    visible
-                       :on-dismiss #(tap> "dismis color picker")}
-       [:> paper/Surface {:style (tw "m-8")}
-        [:> rn/View {:style (tw "h-full w-full")}
-
-         [:> paper/IconButton {:icon     "close"
-                               :on-press #(>evt [:set-color-picker
-                                                 #:color-picker {:visible false
-                                                                 :value   nil}])}]
-
-         [:> rn/View {:style (tw "flex flex-wrap flex-row justify-center m-2")}
-          (for [material-color material-500-hexes]
-            [:> g/RectButton {:key      (random-uuid)
-                              :style    (merge (tw "h-8 w-20") {:background-color material-color})
-                              :on-press #(do
-                                           (reset! tmp-session-color-state material-color)
-                                           (>evt [:set-color-picker
-                                                  #:color-picker {:visible false
-                                                                  :value   material-color}]))}])]
-
-         [:> paper/Text {:style (tw "text-center mt-4")} "Tap right side of circle to save"]
-         [:> c/ColorPicker {:on-color-selected #(do
-                                                  (reset! tmp-session-color-state %)
-                                                  (>evt [:set-color-picker
-                                                         #:color-picker {:visible false
-                                                                         :value   %}]))
-                            :old-color         session-color
-                            :default-color     value
-                            :style             (tw "flex flex-1 m-4")}]
-
-         [:> paper/Button {:mode     "contained"
-                           :icon     "water-off"
-                           :style    (tw "m-4")
-                           :on-press #(do (reset! tmp-session-color-state nil)
-                                          (>evt [:set-color-picker
-                                                 #:color-picker {:visible false
-                                                                 :value   nil}]))}
-          "Remove color"]]]]]]))
+     [color-picker/component {:input-color session-color
+                              :update-fn   #(reset! tmp-session-color-state %)}]]))
 
 (defn session-type-component []
-  (let [{session-type :session/type} {:session/type :session/track}]
-    [:> rn/View {:style (tw "flex flex-row mb-8")}
-     [:> paper/Button {:style (tw "mr-4 w-24")
-                       :icon  "circle-outline"
-                       :mode  (case session-type
-                                :session/plan "contained"
-                                "outlined")}
-      "plan"]
-     [:> paper/Button {:style (tw "w-24")
-                       :icon  "circle-slice-8"
-                       :mode  (case session-type
-                                :session/track "contained"
-                                "outlined")}
-      "track"]]))
+(let [{session-type :session/type} {:session/type :session/track}]
+  [:> rn/View {:style (tw "flex flex-row mb-8")}
+   [:> paper/Button {:style (tw "mr-4 w-24")
+                     :icon  "circle-outline"
+                     :mode  (case session-type
+                              :session/plan "contained"
+                              "outlined")}
+    "plan"]
+   [:> paper/Button {:style (tw "w-24")
+                     :icon  "circle-slice-8"
+                     :mode  (case session-type
+                              :session/track "contained"
+                              "outlined")}
+    "track"]]))
 
 (defn screen [props]
-  (r/as-element
-    [(fn [props]
-       (let [theme (->> [:theme] <sub get-theme)]
+(r/as-element
+  [(fn [props]
+     (let [theme (->> [:theme] <sub get-theme)]
 
-         [:> rn/ScrollView {:style {:background-color (-> theme (j/get :colors) (j/get :background))}}
-          [:> paper/Surface {:style (-> (tw "flex flex-1")
-                                        ;; TODO justin 2020-01-23 Move this to tailwind custom theme
-                                        ;; (merge {:background-color (-> theme (j/get :colors) (j/get :background))})
-                                        )}
+       [:> rn/ScrollView {:style {:background-color (-> theme (j/get :colors) (j/get :background))}}
+        [:> paper/Surface {:style (-> (tw "flex flex-1")
+                                      ;; TODO justin 2020-01-23 Move this to tailwind custom theme
+                                      ;; (merge {:background-color (-> theme (j/get :colors) (j/get :background))})
+                                      )}
 
-           [:> rn/View {:style (tw "flex p-4 flex-col")}
+         [:> rn/View {:style (tw "flex p-4 flex-col")}
 
-            [label-component]
+          [label-component]
 
-            [time-stamps-component]
+          [time-stamps-component]
 
-            [session-type-component]
+          [session-type-component]
 
-            [color-override-component]
+          [color-override-component]
 
-            [tags-component]
+          [tags-component]
 
-            ]]]))]))
+          ]]]))]))

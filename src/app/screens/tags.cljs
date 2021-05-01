@@ -5,24 +5,34 @@
    ["react-native-paper" :as paper]
 
    [applied-science.js-interop :as j]
+   [com.rpl.specter :as sp :refer [setval]]
    [reagent.core :as r]
 
    [app.colors :refer [material-500-hexes]]
    [app.components.generic-top-section :as top-section]
+   [app.components.color-picker :as color-picker]
    [app.helpers :refer [<sub >evt get-theme chance]]
    [app.screens.core :refer [screens]]
    [app.tailwind :refer [tw]]))
+
+(def tmp-tags
+  (r/atom
+    (for [i (range 10)]
+      #:tag {:label (str "tag " i)
+             :color (if (chance :med)
+                      nil
+                      (-> material-500-hexes rand-nth))
+
+             :tmp-update-fn
+             #(swap! tmp-tags (fn [tags] (->> tags (setval [i :color] %))))
+
+             :id (random-uuid)})))
 
 (defn screen [props]
   (r/as-element
     [(fn []
        (let [theme (->> [:theme] <sub get-theme)
-             tags  (for [i (range 10)]
-                     #:tag {:label (str "tag " i)
-                            :color (if (chance :med)
-                                     nil
-                                     (-> material-500-hexes rand-nth))
-                            :id    (random-uuid)})]
+             tags  @tmp-tags]
 
          ;; TODO justin 2021-02-07 Do we need safe area view everywhere?
          [:> rn/ScrollView {:style (merge (tw "flex flex-1")
@@ -38,7 +48,9 @@
             [:> rn/View {:style (tw "flex flex-row mb-4 items-center")
                          :key   tag-id}
 
-             ;; TODO justin 2021-02-07 Make color picker generic and add here
+             [color-picker/component {:input-color tag-color
+                                      :update-fn   #(tap> (str "set tag color " %))}]
+
              [:> paper/IconButton {:style    (merge (tw "mr-4")
                                                     {:background-color tag-color})
                                    :color    (if-some [c tag-color]
@@ -46,7 +58,9 @@
                                                  "black" "white")
                                                (-> theme (j/get :colors) (j/get :disabled)))
                                    :icon     "palette"
-                                   :on-press #(tap> "setting tag color")}]
+                                   :on-press #(>evt [:set-color-picker
+                                                     #:color-picker {:visible true
+                                                                     :value   tag-color}])}]
 
              ;; TODO justin 2021-02-07 Should this toggle an input or be an input all of the time?
              [:> paper/TextInput {:style          (tw "w-2/3")
