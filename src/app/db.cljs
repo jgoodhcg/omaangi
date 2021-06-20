@@ -2,12 +2,14 @@
   (:require
    ["color" :as color]
    ["faker" :as faker]
+   ["expo-localization" :as localization]
    [applied-science.js-interop :as j]
    [com.rpl.specter :as sp :refer [select select-one setval transform selected-any?]]
    [clojure.spec.alpha :as s]
    [spec-tools.data-spec :as ds]
    [spec-tools.core :as st]
    [tick.alpha.api :as t]
+   [tick.timezone]
    [clojure.spec.gen.alpha :as gen]
    ;; needed to `gen/sample` or `gen/generate`
    [clojure.test.check.generators]
@@ -208,6 +210,8 @@
                     generate-color
                     (s/gen int?))))
 
+;; sessions
+
 (def session-data-spec
   (ds/spec {:name ::session-ds
             :spec {:session/id             uuid?
@@ -226,6 +230,8 @@
                     (s/and map? (s/every-kv uuid? ::session))
                     #(gen/fmap generate-sessions (s/gen ::reasonable-number))))
 
+;; tags
+
 (def tag-data-spec
   (ds/spec {:name ::tag-ds
             :spec {:tag/id             uuid?
@@ -238,6 +244,8 @@
                 (s/and map? (s/every-kv uuid? ::tag))
                 #(gen/fmap generate-tags (s/gen ::reasonable-number))))
 
+;; calendars
+
 (def calendar-val-data-spec
   (ds/spec {:name ::calendar-ds
             :spec {:calendar/date     t/date?
@@ -249,9 +257,31 @@
                     (s/and map? (s/every-kv t/date? ::calendar-val))
                     #(gen/fmap generate-calendar (s/gen ::reasonable-number))))
 
+;; other
+
 (s/def ::zoom (s/with-gen
                 (s/and float? pos?)
                 #(gen/fmap (fn [n] (* n 0.1)) (s/gen ::reasonable-number))))
+
+(def intention-data-spec
+  (ds/spec {:name ::intention-ds
+            :spec {:intention/id             uuid?
+                   :intention/created        ::time-point
+                   :intention/last-edited    ::time-point
+                   :intention/date           t/date?
+                   (ds/opt :intention/tags)  [uuid?]
+                   (ds/opt :intention/label) string?
+                   (ds/opt :intention/color) ::color}}))
+
+;; TODO Justin 2021-06-20 build generators
+(s/def ::intention intention-data-spec)
+
+(s/def ::intentions (s/and map? (s/every-kv uuid? ::intention)))
+
+;; TODO Justin 2021-06-20 make templates
+;; {:template/date       t/date?
+;;  :template/intentions "Everything from intention-ds except date"
+;;  :template/sessions   "Session except start/stop are t/time?"}
 
 (def app-db-spec
   (ds/spec {:name ::app-db
