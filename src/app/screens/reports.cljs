@@ -81,14 +81,16 @@
      {:mode     "outlined"
       :on-press #(tap> "hello")}
      "2021-06-27"]]
-   [:> rn/View (tw "flex flex-column")
+   [:> rn/View (tw "flex flex-col")
     (for [{:keys [day hours]} tmp-pattern-data]
-      [:> rn/View (tw "flex flex-row justify-between pb-1")
+      [:> rn/View {:style (tw "flex flex-row justify-between pb-1")
+                   :key   (str (random-uuid))}
        [:> rn/View (tw "w-9")
         [:> paper/Text  day]]
        (for [c hours]
-         [:> rn/View (merge (tw "w-3 h-6")
-                            {:background-color c})])])]])
+         [:> rn/View {:style (merge (tw "w-3 h-6")
+                                    {:background-color c})
+                      :key   (str (random-uuid))}])])]])
 
 (defn screen [props]
 (r/as-element

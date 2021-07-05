@@ -20,6 +20,7 @@
                               month
                               display-year
                               display-month]}]
+  ;; TODO wrap this in a date picker
   [:> rn/View {:style (tw "flex flex-1 flex-row justify-center")}
 
    (when display-year

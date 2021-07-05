@@ -170,4 +170,5 @@
 (defn init []
   (dispatch-sync [:initialize-db])
   (dispatch-sync [:set-version version])
+  ;; TODO add a set day event for "today"
   (start))
