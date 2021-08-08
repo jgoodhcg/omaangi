@@ -197,6 +197,7 @@
      :day-of-month  (str (t/day-of-month selected-day))
      :year          (str year)
      :month         (->> month str)
+     :selected-day  selected-day
      :display-year  (not= year (t/year now))
      :display-month (or (not= year (t/year now))
                         (not= month (t/month now)))}))

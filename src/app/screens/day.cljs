@@ -4,31 +4,52 @@
    ["react" :as react]
    ["react-native" :as rn]
    ["react-native-gesture-handler" :as g]
+   ["react-native-modal-datetime-picker" :default DateTimePicker]
    ["react-native-paper" :as paper]
 
    [applied-science.js-interop :as j]
    [reagent.core :as r]
 
    [app.components.menu :as menu]
-   [app.helpers :refer [<sub >evt get-theme]]
+   [app.helpers :refer [<sub >evt get-theme clear-datetime-picker]]
    [app.screens.core :refer [screens]]
    [app.tailwind :refer [tw]]))
 
-(defn date-indicator [{:keys [day-of-week
-                              day-of-month
-                              year
-                              month
-                              display-year
-                              display-month]}]
-  ;; TODO wrap this in a date picker
-  [:> rn/View {:style (tw "flex flex-1 flex-row justify-center")}
+(defn date-indicator []
+  (let [{:keys [day-of-week
+                day-of-month
+                year
+                month
+                selected-day
+                display-year
+                display-month]}
+        (<sub [:this-day])
 
-   (when display-year
-     [:> paper/Text {:style (tw "font-bold text-center m-2")} year])
-   (when display-month
-     [:> paper/Text {:style (tw "font-bold text-center m-2")} month])
-   [:> paper/Text {:style (tw "font-bold text-center m-2")} day-of-week]
-   [:> paper/Text {:style (tw "font-bold text-center m-2")} day-of-month]])
+        {:date-time-picker/keys [value mode visible]}
+        (<sub [:date-time-picker])]
+
+    [:> g/RectButton {:style    (tw "flex flex-1 flex-row justify-center")
+                      :on-press #(>evt [:set-date-time-picker
+                                        #:date-time-picker
+                                        {:value   selected-day
+                                         :mode    "date"
+                                         :visible true}])}
+     [:> rn/View {:style (tw "flex flex-1 flex-row justify-center")}
+      (when display-year
+        [:> paper/Text {:style (tw "font-bold text-center m-2")} year])
+      (when display-month
+        [:> paper/Text {:style (tw "font-bold text-center m-2")} month])
+      [:> paper/Text {:style (tw "font-bold text-center m-2")} day-of-week]
+      [:> paper/Text {:style (tw "font-bold text-center m-2")} day-of-month]
+
+      [:> DateTimePicker {:is-visible           visible
+                          :is-dark-mode-enabled true
+                          :value                value
+                          :mode                 mode
+                          :on-hide              #(>evt clear-datetime-picker)
+                          :on-cancel            #(>evt clear-datetime-picker)
+                          :on-confirm           #(do (>evt [:set-selected-day %])
+                                                     (>evt clear-datetime-picker))}]]]))
 
 (defn tracking-sessions []
   (let [theme  (->> [:theme] <sub get-theme)
@@ -83,8 +104,7 @@
                                                        :border-radius (-> theme (j/get :roundness))}))}]])]]))
 
 (defn top-section [props]
-  (let [this-day      (<sub [:this-day])
-        theme         (->> [:theme] <sub get-theme)
+  (let [theme         (->> [:theme] <sub get-theme)
         menu-color    (-> theme
                           (j/get :colors)
                           (j/get :text))
@@ -98,7 +118,7 @@
       [menu/button {:button-color menu-color
                     :toggle-menu  toggle-drawer}]
 
-      [date-indicator this-day]]
+      [date-indicator]]
 
      [tracking-sessions]]))
 
@@ -155,7 +175,7 @@
           label
           display-indicator]} (<sub [:now-indicator])]
 
-    (when true ;; TODO display-indicator
+    (when display-indicator
       [:> rn/View {:elevation 99 ;; otherwise the second session in a collision group covers it
                    ;; Theoritically enough items in a collision group will get past this but it isn't practical
                    :style     (-> (tw "absolute w-full")

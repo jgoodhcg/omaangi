@@ -8,7 +8,8 @@
                           debug]]
    [com.rpl.specter :as sp :refer [select select-one setval transform selected-any?]]
    [clojure.spec.alpha :as s]
-   [app.db :as db :refer [default-app-db app-db-spec]]))
+   [app.db :as db :refer [default-app-db app-db-spec]]
+   [tick.alpha.api :as t]))
 
 (defn check-and-throw
   "Throw an exception if db doesn't have a valid spec."
@@ -83,3 +84,7 @@
                                                (color %)
                                                nil))))))
 (reg-event-db :set-color-picker set-color-picker)
+
+(defn set-selected-day [db [_ new-date-inst]]
+  (->> db (setval [:view :view/selected-day] (-> new-date-inst t/date))))
+(reg-event-db :set-selected-day set-selected-day)

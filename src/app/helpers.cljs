@@ -52,3 +52,11 @@
   (if (= 1 (count (str n)))
     (str 0 n)
     (str n)))
+
+(def clear-datetime-picker [:set-date-time-picker
+                            #:date-time-picker
+                            {:value      nil
+                             :mode       nil
+                             :session-id nil
+                             :field-key  nil
+                             :visible    false}] )

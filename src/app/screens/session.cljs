@@ -13,7 +13,7 @@
 
    [app.colors :refer [material-500-hexes]]
    [app.components.color-picker :as color-picker]
-   [app.helpers :refer [<sub >evt get-theme]]
+   [app.helpers :refer [<sub >evt get-theme clear-datetime-picker]]
    [app.tailwind :refer [tw]]))
 
 (defn label-component []
@@ -123,15 +123,7 @@
                        :stop-value       (-> later t/inst)}
 
         {:date-time-picker/keys [value mode visible field-key]
-         picker-session-id      :date-time-picker/session-id} (<sub [:date-time-picker])
-
-        clear-datetime-picker [:set-date-time-picker
-                               #:date-time-picker
-                               {:value      nil
-                                :mode       nil
-                                :session-id nil
-                                :field-key  nil
-                                :visible    false}]]
+         picker-session-id      :date-time-picker/session-id} (<sub [:date-time-picker])]
 
     [:> rn/View {:style (tw "flex flex-col mb-8")}
 
