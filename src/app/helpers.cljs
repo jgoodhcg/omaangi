@@ -2,6 +2,7 @@
   (:require
    ["react-native" :as rn]
    ["react-native-paper" :as paper]
+   [clojure.string :refer [join split]]
    [applied-science.js-interop :as j]
    [camel-snake-kebab.core :as csk]
    [camel-snake-kebab.extras :as cske]
@@ -60,3 +61,11 @@
                              :session-id nil
                              :field-key  nil
                              :visible    false}] )
+
+(defn drop-keyword-sections [n k]
+  (-> k
+      str
+      (split ".")
+      (->> (drop n))
+      join
+      keyword))

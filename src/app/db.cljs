@@ -193,9 +193,9 @@
                                                    :tick/end       stop}))
                                        :session/id]))})])))]
 
-    {:calendar calendar
-     :sessions sessions-with-tags
-     :tags     tags}))
+    {:app-db/calendar calendar
+     :app-db/sessions sessions-with-tags
+     :app-db/tags     tags}))
 
 ;;
 ;; specs with gen
@@ -285,25 +285,25 @@
 
 (def app-db-spec
   (ds/spec {:name ::app-db
-            :spec {:settings {:theme (s/spec #{:light :dark})}
-                   :version  string?
-                   :tracking [uuid?]
-                   :calendar ::calendar
-                   :sessions ::sessions
-                   :tags     ::tags
-                   :view     {:view/selected-day     t/date?
-                              :view/zoom             ::zoom
-                              :view/tag-remove-modal {:tag-remove-modal/id      (ds/maybe uuid?)
-                                                      :tag-remove-modal/visible boolean?
-                                                      :tag-remove-modal/label   (ds/maybe string?)}
-                              :view/tag-add-modal    {:tag-add-modal/visible boolean?}
-                              :view/date-time-picker {:date-time-picker/visible    boolean?
-                                                      :date-time-picker/value      (ds/maybe? inst?)
-                                                      :date-time-picker/mode       (ds/maybe? (s/spec #{"date" "time"}))
-                                                      :date-time-picker/session-id (ds/maybe? uuid?)
-                                                      :date-time-picker/field-key  (ds/maybe? keyword?)}
-                              :view/color-picker     {:color-picker/visible boolean?
-                                                      :color-picker/value   (ds/maybe? ::color)}}}}))
+            :spec {:app-db.settings/theme                   (s/spec #{:light :dark})
+                   :app-db/version                          string?
+                   :app-db/tracking                         [uuid?]
+                   :app-db/calendar                         ::calendar
+                   :app-db/sessions                         ::sessions
+                   :app-db/tags                             ::tags
+                   :app-db.view/selected-day                t/date?
+                   :app-db.view/zoom                        ::zoom
+                   :app-db.view.tag-remove-modal/id         (ds/maybe uuid?)
+                   :app-db.view.tag-remove-modal/visible    boolean?
+                   :app-db.view.tag-remove-modal/label      (ds/maybe string?)
+                   :app-db.view.tag-add-modal/visible       boolean?
+                   :app-db.view.date-time-picker/visible    boolean?
+                   :app-db.view.date-time-picker/value      (ds/maybe? inst?)
+                   :app-db.view.date-time-picker/mode       (ds/maybe? (s/spec #{"date" "time"}))
+                   :app-db.view.date-time-picker/session-id (ds/maybe? uuid?)
+                   :app-db.view.date-time-picker/field-key  (ds/maybe? keyword?)
+                   :app-db.view.color-picker/visible        boolean?
+                   :app-db.view.color-picker/value          (ds/maybe? ::color)}}))
 
 (comment
   (s/explain app-db-spec (merge {:settings {:theme :dark}
@@ -320,22 +320,22 @@
   (let [cal-tag-sessions (generate-calendar-tag-sessions)]
     (merge
       cal-tag-sessions
-      {:settings {:theme :dark}
-       :version  "version-not-set"
-       :tracking []
-       :view     {:view/selected-day     (->> cal-tag-sessions
-                                              :calendar
-                                              keys
-                                              rand-nth)
-                  :view/zoom             1.25
-                  :view/tag-remove-modal {:tag-remove-modal/id      nil
-                                          :tag-remove-modal/visible false
-                                          :tag-remove-modal/label   nil}
-                  :view/tag-add-modal    {:tag-add-modal/visible false}
-                  :view/date-time-picker {:date-time-picker/visible    false
-                                          :date-time-picker/value      nil
-                                          :date-time-picker/mode       nil
-                                          :date-time-picker/session-id nil
-                                          :date-time-picker/field-key  nil}
-                  :view/color-picker     {:color-picker/visible false
-                                          :color-picker/value   nil}}})))
+      {:app-db.settings/theme                   :dark
+       :app-db/version                          "version-not-set"
+       :app-db/tracking                         []
+       :app-db.view/selected-day                (->> cal-tag-sessions
+                                                     :app-db/calendar
+                                                     keys
+                                                     rand-nth)
+       :app-db.view/zoom                        1.25
+       :app-db.view.tag-remove-modal/id         nil
+       :app-db.view.tag-remove-modal/visible    false
+       :app-db.view.tag-remove-modal/label      nil
+       :app-db.view.tag-add-modal/visible       false
+       :app-db.view.date-time-picker/visible    false
+       :app-db.view.date-time-picker/value      nil
+       :app-db.view.date-time-picker/mode       nil
+       :app-db.view.date-time-picker/session-id nil
+       :app-db.view.date-time-picker/field-key  nil
+       :app-db.view.color-picker/visible        false
+       :app-db.view.color-picker/value          nil})))

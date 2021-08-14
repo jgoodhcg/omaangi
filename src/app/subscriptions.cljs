@@ -13,39 +13,45 @@
                                    select-one!]]
    [tick.alpha.api :as t]
    [app.colors :refer [material-500-hexes white black]]
-   [app.helpers :refer [touches chance prepend-zero]]))
+   [app.helpers :refer [touches chance prepend-zero drop-keyword-sections]]))
 
-(defn version [db _]
-  (->> db (select-one! [:version])))
+(defn version
+  [db _]
+  (->> db (select-one! [:app-db/version])))
 (reg-sub :version version)
 
-(defn theme [db _]
+(defn theme
+  [db _]
   ;; TODO inject paper from sub? to make testing easier?
-  (let [theme-type (->> db
-                        (select-one! [:settings :theme]))]
+  (let [theme-type (->> db (select-one! [:app-db.settings/theme]))]
     (case theme-type
       :light :DefaultTheme
       :dark  :DarkTheme
       :DarkTheme)))
 (reg-sub :theme theme)
 
-(defn zoom [db _]
-  (->> db (select-one! [:view :view/zoom])))
+(defn zoom
+  [db _]
+  (->> db (select-one! [:app-db.view/zoom])))
 (reg-sub :zoom zoom)
 
-(defn selected-day [db _]
-  (->> db (select-one! [:view :view/selected-day])))
+(defn selected-day
+  [db _]
+  (->> db (select-one! [:app-db.view/selected-day])))
 (reg-sub :selected-day selected-day)
 
-(defn calendar [db _]
-  (->> db (select-one! [:calendar])))
+(defn calendar
+  [db _]
+  (->> db (select-one! [:app-db/calendar])))
 (reg-sub :calendar calendar)
 
-(defn sessions [db _]
-  (->> db (select-one! [:sessions])))
+(defn sessions
+  [db _]
+  (->> db (select-one! [:app-db/sessions])))
 (reg-sub :sessions sessions)
 
-(defn truncate-session [day session]
+(defn truncate-session
+  [day session]
   (let [{:tick/keys [beginning end]} (t/bounds day)
         beginning                    (t/instant beginning)
         end                          (t/instant end)
@@ -59,11 +65,13 @@
                                   end
                                   stop)})))
 
-(defn session-overlaps-collision-group? [session c-group]
+(defn session-overlaps-collision-group?
+  [session c-group]
   (some? (->> c-group
               (some #(touches session %)))))
 
-(defn insert-into-collision-group [collision-groups session]
+(defn insert-into-collision-group
+  [collision-groups session]
   (let [collision-groups-with-trailing-empty
         (if (empty? (last collision-groups))
           collision-groups
@@ -83,13 +91,15 @@
       session
       collision-groups-with-trailing-empty)))
 
-(defn get-collision-groups [sessions]
+(defn get-collision-groups
+  [sessions]
   (->> sessions
        (reduce insert-into-collision-group [[]])
        (remove empty?)
        vec))
 
-(defn instant->top-position [i zoom]
+(defn instant->top-position
+  [i zoom]
   (-> i
       t/date
       t/bounds
@@ -99,14 +109,15 @@
       t/minutes
       (* zoom)))
 
-(defn set-render-props [zoom
-                        [collision-index
-                         {:session/keys [type
-                                         start-truncated
-                                         stop-truncated
-                                         label]
-                          session-color :session/color
-                          :as           session}]]
+(defn set-render-props
+  [zoom
+   [collision-index
+    {:session/keys [type
+                    start-truncated
+                    stop-truncated
+                    label]
+     session-color :session/color
+     :as           session}]]
 
   (let [type-offset      (case type
                            :session/plan  0
@@ -150,7 +161,8 @@
                      :session-render/text-color-hex   text-color-hex
                      })]))
 
-(defn sessions-for-this-day [[selected-day calendar sessions zoom] _]
+(defn sessions-for-this-day
+  [[selected-day calendar sessions zoom] _]
   ;; TODO needs to return this structure
   (comment [;; collision groups are an intermediate grouping not in sub result
             #:session-render {:left             0         ;; collision group position and type
@@ -168,10 +180,10 @@
          (mapv #(get sessions %))
          (mapv #(truncate-session (:calendar/date this-day) %))
          (sort-by (fn [s] (->> s
-                               :session/start
-                               (t/new-interval (t/epoch))
-                               t/duration
-                               t/millis)))
+                              :session/start
+                              (t/new-interval (t/epoch))
+                              t/duration
+                              t/millis)))
          (group-by :session/type)
          (transform [sp/MAP-VALS] get-collision-groups)
          (transform [sp/MAP-VALS sp/ALL sp/INDEXED-VALS] (partial set-render-props zoom))
@@ -186,7 +198,8 @@
 
          sessions-for-this-day)
 
-(defn this-day [selected-day _]
+(defn this-day
+  [selected-day _]
   (let [month (t/month selected-day)
         year  (t/year selected-day)
         ;; TODO move this to injection form sub call or interceptor
@@ -207,7 +220,8 @@
 
          this-day)
 
-(defn tracking [db _]
+(defn tracking
+  [db _]
   ;; TODO implement once tick and track event is in place
   (for [x (-> 4 rand-int (max 1) range)]
     (let [c                  (-> material-500-hexes rand-nth color)
@@ -240,7 +254,8 @@
                          :text-color-hex      (-> c (j/call :isLight) (#(if % black white)))})))
 (reg-sub :tracking tracking)
 
-(defn hours [[selected-day zoom] _]
+(defn hours
+  [[selected-day zoom] _]
   (->> (let [intvl (t/bounds selected-day)]
          (t/range
            (t/beginning intvl)
@@ -261,7 +276,8 @@
 
          hours)
 
-(defn now-indicator [[zoom selected-day] _]
+(defn now-indicator
+  [[zoom selected-day] _]
   (let [now (t/now)]
     #:now-indicator-render {:position          (instant->top-position now zoom)
                             :display-indicator (= (t/date now) (t/date selected-day))
@@ -275,40 +291,44 @@
 
          now-indicator)
 
-(defn view [db _]
-  (->> db (select-one [:view])))
-(reg-sub :view view)
+(defn tag-removal-modal
+  [db _]
+  (->> db
+       (select-one [(sp/submap [:app-db.view.tag-removal-modal/id
+                                :app-db.view.tag-removal-modal/visible
+                                :app-db.view.tag-removal-modal/label])])
+       ;; remove :app-db.view from keyword because legacy subscription consumer
+       (transform [sp/MAP-KEYS] #(drop-keyword-sections 2 %))))
+(reg-sub :tag-remove-modal tag-removal-modal)
 
-(defn tag-removal-modal [view _]
-  (->> view (select-one [:view/tag-remove-modal])))
-(reg-sub :tag-remove-modal
+(defn tag-add-modal
+  [db _]
+  (->> db
+       (select-one [(sp/submap [:app-db.view.tag-add-modal/visible])])
+       ;; remove :app-db.view from keyword because legacy subscription consumer
+       (transform [sp/MAP-KEYS] #(drop-keyword-sections 2 %))))
+(reg-sub :tag-add-modal tag-add-modal)
 
-         :<- [:view]
+(defn date-time-picker
+  [db _]
+  (->> db
+       (select-one [(sp/submap [:app-db.view.date-time-picker/value
+                                :app-db.view.date-time-picker/visible
+                                :app-db.view.date-time-picker/mode
+                                :app-db.view.date-time-picker/session-id
+                                :app-db.view.date-time-picker/field-key])])
+       ;; remove :app-db.view from keyword because legacy subscription consumer
+       (transform [sp/MAP-KEYS] #(drop-keyword-sections 2 %))))
+(reg-sub :date-time-picker date-time-picker)
 
-         tag-removal-modal)
 
-(defn tag-add-modal [view _]
-  (->> view (select-one [:view/tag-add-modal])))
-(reg-sub :tag-add-modal
-
-         :<- [:view]
-
-         tag-add-modal)
-
-(defn date-time-picker [view _]
-  (->> view (select-one [:view/date-time-picker])))
-(reg-sub :date-time-picker
-
-         :<- [:view]
-
-         date-time-picker)
-
-(defn color-picker [view _]
-  (->> view
-       (select-one [:view/color-picker])
-       (transform [:color-picker/value] #(when-some [c %] (-> c (j/call :hex))))))
-(reg-sub :color-picker
-
-         :<- [:view]
-
-         color-picker)
+(defn color-picker
+  [db _]
+  (->> db
+       (select-one [(sp/submap [:app-db.view.color-picker/visible
+                                :app-db.view.color-picker/value])])
+       ;; remove :app-db.view from keyword because legacy subscription consumer
+       (transform [sp/MAP-KEYS] #(drop-keyword-sections 2 %))
+       (transform [:color-picker/value]
+                  #(when-some [c %] (-> c (j/call :hex))))))
+(reg-sub :color-picker color-picker)
