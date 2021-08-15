@@ -37,7 +37,7 @@
 
 (defn selected-day
   [db _]
-  (->> db (select-one! [:app-db.view/selected-day])))
+  (->> db (select-one! [:app-db.selected/day])))
 (reg-sub :selected-day selected-day)
 
 (defn calendar
@@ -49,6 +49,11 @@
   [db _]
   (->> db (select-one! [:app-db/sessions])))
 (reg-sub :sessions sessions)
+
+(defn tags
+  [db _]
+  (->> db (select-one! [:app-db/tags])))
+(reg-sub :tags tags)
 
 (defn truncate-session
   [day session]
@@ -111,13 +116,16 @@
 
 (defn set-render-props
   [zoom
+   tags
    [collision-index
-    {:session/keys [type
-                    start-truncated
-                    stop-truncated
-                    label]
-     session-color :session/color
-     :as           session}]]
+    {:session/keys    [type
+                       id
+                       start-truncated
+                       stop-truncated
+                       label]
+     session-color    :session/color
+     session-tag-refs :session/tags
+     :as              session}]]
 
   (let [type-offset      (case type
                            :session/plan  0
@@ -138,14 +146,10 @@
                              (* zoom))
         session-color    (-> material-500-hexes rand-nth color)
         text-color-hex   (-> session-color (j/call :isLight) (#(if % black white)))
-        tag-labels       (remove nil?
-                                 (for [_ (range (rand-int 10))]
-                                   (str (-> :high chance
-                                            (#(if % (-> emoji (j/call :random) (j/get :emoji))
-                                                  nil)))
-                                        (-> :low chance
-                                            (#(if % (-> faker (j/get :random) (j/call :words))
-                                                  nil))))))
+        tag-labels       (->> session-tag-refs
+                              (map (fn [tag-id]
+                                     (-> tags (get-in [tag-id :tag/label]))))
+                              (remove nil?))
         label            (str label "\n" (join "\n" tag-labels))]
 
     [collision-index
@@ -159,10 +163,11 @@
                      :session-render/color-hex        (-> session-color (j/call :hex))
                      :session-render/ripple-color-hex (-> session-color (j/call :lighten 0.64) (j/call :hex))
                      :session-render/text-color-hex   text-color-hex
+                     :session-render/id               id
                      })]))
 
 (defn sessions-for-this-day
-  [[selected-day calendar sessions zoom] _]
+  [[selected-day calendar sessions zoom tags] _]
   ;; TODO needs to return this structure
   (comment [;; collision groups are an intermediate grouping not in sub result
             #:session-render {:left             0         ;; collision group position and type
@@ -173,7 +178,7 @@
                               :ripple-color-hex "#ff00ff" ;; tags mix or :session/color lightened
                               :label            "label"   ;; session label and tags depending on settings
                               }])
-
+  ;; TODO include session-id for session editing
   (let [this-day (get calendar selected-day)]
     (->> this-day
          :calendar/sessions
@@ -186,7 +191,7 @@
                               t/millis)))
          (group-by :session/type)
          (transform [sp/MAP-VALS] get-collision-groups)
-         (transform [sp/MAP-VALS sp/ALL sp/INDEXED-VALS] (partial set-render-props zoom))
+         (transform [sp/MAP-VALS sp/ALL sp/INDEXED-VALS] (partial set-render-props zoom tags))
          (select [sp/MAP-VALS])
          flatten)))
 (reg-sub :sessions-for-this-day
@@ -195,6 +200,7 @@
          :<- [:calendar]
          :<- [:sessions]
          :<- [:zoom]
+         :<- [:tags]
 
          sessions-for-this-day)
 
@@ -321,7 +327,6 @@
        (transform [sp/MAP-KEYS] #(drop-keyword-sections 2 %))))
 (reg-sub :date-time-picker date-time-picker)
 
-
 (defn color-picker
   [db _]
   (->> db
@@ -332,3 +337,22 @@
        (transform [:color-picker/value]
                   #(when-some [c %] (-> c (j/call :hex))))))
 (reg-sub :color-picker color-picker)
+
+(defn selected-session-id
+  [db _]
+  (->> db (select-one! [:app-db.selected/session])))
+(reg-sub :selected-session-id selected-session-id)
+
+(defn selected-session
+  [[selected-session-id sessions tags] _]
+  (->> sessions
+       (select-one! [(sp/keypath selected-session-id)])
+       (transform [(sp/keypath :session/tags)]
+                  (fn [tag-ids] (->> tag-ids (map #(-> tags (get %))))))))
+(reg-sub :selected-session
+
+         :<- [:selected-session-id]
+         :<- [:sessions]
+         :<- [:tags]
+
+         selected-session)

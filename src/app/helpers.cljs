@@ -44,7 +44,7 @@
 (defn chance [p]
   (let [r (rand)]
     (case p
-      :low  (-> r (< 0.2))
+      :low  (-> r (< 0.25))
       :med  (-> r (< 0.51))
       :high (-> r (< 0.90))
       (-> r (< 0.75)))))

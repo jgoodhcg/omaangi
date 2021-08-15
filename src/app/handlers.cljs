@@ -102,5 +102,11 @@
 (defn set-selected-day
   [db [_ new-date-inst]]
   (->> db
-       (setval [:app-db.view/selected-day] (-> new-date-inst t/date))))
+       (setval [:app-db.selected/day] (-> new-date-inst t/date))))
 (reg-event-db :set-selected-day set-selected-day)
+
+(defn set-selected-session
+  [db [_ session-id]]
+  (->> db
+       (setval [:app-db.selected/session] session-id)))
+(reg-event-db :set-selected-session set-selected-session)

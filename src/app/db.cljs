@@ -2,6 +2,7 @@
   (:require
    ["color" :as color]
    ["faker" :as faker]
+   ["node-emoji" :as emoji]
    ["expo-localization" :as localization]
    [applied-science.js-interop :as j]
    [com.rpl.specter :as sp :refer [select select-one setval transform selected-any?]]
@@ -100,7 +101,14 @@
 (defn generate-tag []
   (merge #:tag {:id (random-uuid)}
          (when (chance :high)
-           #:tag {:color (generate-color)})))
+           #:tag {:color (generate-color)})
+         (when (chance :high)
+           #:tag {:label (str (-> :high chance
+                                  (#(if % (-> emoji (j/call :random) (j/get :emoji))
+                                        nil)))
+                              (-> :med chance
+                                  (#(if % (-> faker (j/get :random) (j/call :words))
+                                        nil))))})))
 
 (defn generate-calendar-val []
   {:calendar/sessions []
@@ -144,7 +152,7 @@
 
 (defn generate-calendar-tag-sessions []
   ;; TODO specmonstah would make this so much cleaner
-  (let [tags     (generate-tags 2)
+  (let [tags     (generate-tags 8)
         sessions (generate-sessions 70)
 
         sessions-with-tags
@@ -263,6 +271,9 @@
                 (s/and float? pos?)
                 #(gen/fmap (fn [n] (* n 0.1)) (s/gen ::reasonable-number))))
 
+;; I think intentions were meant to be todo items
+;; Something to be done but not at any specific time
+;; Not sure if I want to keep these
 (def intention-data-spec
   (ds/spec {:name ::intention-ds
             :spec {:intention/id             uuid?
@@ -285,13 +296,14 @@
 
 (def app-db-spec
   (ds/spec {:name ::app-db
-            :spec {:app-db.settings/theme                   (s/spec #{:light :dark})
-                   :app-db/version                          string?
+            :spec {:app-db/version                          string?
                    :app-db/tracking                         [uuid?]
                    :app-db/calendar                         ::calendar
                    :app-db/sessions                         ::sessions
                    :app-db/tags                             ::tags
-                   :app-db.view/selected-day                t/date?
+                   :app-db.selected/session                 (ds/maybe? uuid?)
+                   :app-db.selected/day                     t/date?
+                   :app-db.settings/theme                   (s/spec #{:light :dark})
                    :app-db.view/zoom                        ::zoom
                    :app-db.view.tag-remove-modal/id         (ds/maybe uuid?)
                    :app-db.view.tag-remove-modal/visible    boolean?
@@ -320,13 +332,15 @@
   (let [cal-tag-sessions (generate-calendar-tag-sessions)]
     (merge
       cal-tag-sessions
-      {:app-db.settings/theme                   :dark
+      {
        :app-db/version                          "version-not-set"
        :app-db/tracking                         []
-       :app-db.view/selected-day                (->> cal-tag-sessions
+       :app-db.selected/session                 nil
+       :app-db.selected/day                     (->> cal-tag-sessions
                                                      :app-db/calendar
                                                      keys
                                                      rand-nth)
+       :app-db.settings/theme                   :dark
        :app-db.view/zoom                        1.25
        :app-db.view.tag-remove-modal/id         nil
        :app-db.view.tag-remove-modal/visible    false

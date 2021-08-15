@@ -16,8 +16,10 @@
    [app.helpers :refer [<sub >evt get-theme clear-datetime-picker]]
    [app.tailwind :refer [tw]]))
 
-(defn label-component []
+(defn label-component
+  [{:keys [id label]}]
   [:> paper/TextInput {:label          "Label"
+                       :value          label
                        :style          (tw "mb-8")
                        :on-change-text #(tap> %)}])
 
@@ -226,26 +228,32 @@
     "track"]]))
 
 (defn screen [props]
-(r/as-element
-  [(fn [props]
-     (let [theme (->> [:theme] <sub get-theme)]
+  (r/as-element
+    [(fn [props]
+       (let [theme                   (->> [:theme] <sub get-theme)
+             {:session/keys [id
+                             start
+                             stop
+                             type
+                             label
+                             color]} (<sub [:selected-session])]
+         [:> rn/ScrollView {:style {:background-color (-> theme (j/get :colors) (j/get :background))}}
+          [:> paper/Surface {:style (-> (tw "flex flex-1")
+                                        ;; TODO justin 2020-01-23 Move this to tailwind custom theme
+                                        ;; (merge {:background-color (-> theme (j/get :colors) (j/get :background))})
+                                        )}
 
-       [:> rn/ScrollView {:style {:background-color (-> theme (j/get :colors) (j/get :background))}}
-        [:> paper/Surface {:style (-> (tw "flex flex-1")
-                                      ;; TODO justin 2020-01-23 Move this to tailwind custom theme
-                                      ;; (merge {:background-color (-> theme (j/get :colors) (j/get :background))})
-                                      )}
+           [:> rn/View {:style (tw "flex p-4 flex-col")}
 
-         [:> rn/View {:style (tw "flex p-4 flex-col")}
+            [label-component (p/map-of id label)]
 
-          [label-component]
+            [time-stamps-component (p/map-of start stop id)]
 
-          [time-stamps-component]
+            [session-type-component (p/map-of type id)]
 
-          [session-type-component]
+            [color-override-component (p/map-of color id)]
 
-          [color-override-component]
+            ;; TODO tags
+            [tags-component]
 
-          [tags-component]
-
-          ]]]))]))
+            ]]]))]))

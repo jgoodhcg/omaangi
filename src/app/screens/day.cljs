@@ -142,6 +142,7 @@
 
     [:> rn/View {:style (tw "ml-20")}
      (for [{:session-render/keys [left
+                                  id
                                   top
                                   height
                                   width
@@ -161,7 +162,8 @@
                                                      :elevation        elevation
                                                      :background-color color-hex
                                                      :border-radius    (-> theme (j/get :roundness))}))
-                         :on-press       #(>evt [:navigate (:session screens)])
+                         :on-press       #(do (>evt [:set-selected-session id])
+                                              (>evt [:navigate (:session screens)]))
                          :ripple-color   ripple-color-hex
                          :underlay-color ripple-color-hex
                          :active-opacity 0.7}
