@@ -64,11 +64,13 @@
 (reg-event-fx :navigate [base-interceptors] navigate)
 
 (defn set-tag-remove-modal
-  [db [_ {:tag-remove-modal/keys [id visible label]}]]
+  [db [_ {:tag-remove-modal/keys [id visible label]
+          hex-color              :tag-remove-modal/color}]]
   (->> db
        (setval [:app-db.view.tag-remove-modal/id] id)
        (setval [:app-db.view.tag-remove-modal/visible] visible)
-       (setval [:app-db.view.tag-remove-modal/visible] label)))
+       (setval [:app-db.view.tag-remove-modal/label] label)
+       (setval [:app-db.view.tag-remove-modal/color] (color hex-color))))
 (reg-event-db :set-tag-remove-modal set-tag-remove-modal)
 
 (defn set-tag-add-modal
@@ -110,3 +112,26 @@
   (->> db
        (setval [:app-db.selected/session] session-id)))
 (reg-event-db :set-selected-session set-selected-session)
+
+(defn update-session
+  "This is not meant to be used with tags, just label start stop type color "
+  [db [_ {:session/keys [id] :as session}]]
+  (->> db
+       (transform [:app-db/sessions (sp/keypath id)] #(merge % session))))
+(reg-event-db :update-session update-session)
+
+(defn add-tag-to-session
+  [db [_ {session-id :session/id
+          tag-id     :tag/id}]]
+  (->> db
+       (transform [:app-db/sessions (sp/keypath session-id) :session/tags]
+                  #(conj % tag-id))))
+(reg-event-db :add-tag-to-session add-tag-to-session)
+
+(defn remove-tag-from-session
+  [db [_ {session-id :session/id
+          tag-id     :tag/id}]]
+  (->> db
+       (transform [:app-db/sessions (sp/keypath session-id) :session/tags]
+                  (fn [tags] (->> tags (remove #(= % tag-id)))))))
+(reg-event-db :remove-tag-from-session remove-tag-from-session)

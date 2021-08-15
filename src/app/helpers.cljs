@@ -2,6 +2,7 @@
   (:require
    ["react-native" :as rn]
    ["react-native-paper" :as paper]
+   ["color" :as color]
    [clojure.string :refer [join split]]
    [applied-science.js-interop :as j]
    [camel-snake-kebab.core :as csk]
@@ -69,3 +70,8 @@
       (->> (drop n))
       join
       keyword))
+
+(defn hex-if-some
+  [color-object]
+  (when (some? color-object)
+    (-> color-object (j/call :hex))))

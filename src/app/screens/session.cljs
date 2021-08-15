@@ -19,12 +19,13 @@
 (defn label-component
   [{:keys [id label]}]
   [:> paper/TextInput {:label          "Label"
-                       :value          label
+                       :default-value  label
                        :style          (tw "mb-8")
-                       :on-change-text #(tap> %)}])
+                       :on-change-text #(>evt [:update-session {:session/label %
+                                                                :session/id    id}])}])
 
 (defn tag-remove-modal []
-  (let [{:tag-remove-modal/keys [visible id label]} (<sub [:tag-remove-modal])]
+  (let [{:tag-remove-modal/keys [visible id label color]} (<sub [:tag-remove-modal])]
 
     [:> paper/Portal
      [:> paper/Modal {:visible    visible
@@ -33,17 +34,31 @@
                                                               :id      nil
                                                               :label   nil}])}
       [:> paper/Surface
-       [:> rn/View {:style {:padding 8}}
+       [:> rn/View {:style (tw "p-2 flex-col")}
+        ;; close button
         [:> paper/IconButton {:icon     "close"
                               :on-press #(>evt [:set-tag-remove-modal
                                                 #:tag-remove-modal {:visible false
                                                                     :id      nil
                                                                     :label   nil}])}]
+
+        [:> paper/Paragraph
+         {:style (tw "mb-4")}
+         "Are you sure you want to remove this tag?"]
+
+        [:> paper/Button
+         {:mode  "contained"
+          :key   id
+          :style (tw "mb-4")
+          :color color}
+         label]
+
         [:> paper/Button {:icon     "close"
                           :mode     "contained"
+                          :style    (tw "mb-4")
                           :color    "red"
                           :on-press #(tap> (str "deleting " id))}
-         (str "remove tag: " label)]]]]]))
+         "remove it"]]]]]))
 
 (defn tag-add-modal []
   (let [all-tags (for [i (range 25)]
@@ -73,17 +88,14 @@
              :on-press #(tap> "adding tag to session")}
             label])]]]]]))
 
-(defn tags-component []
-  (let [tags           (for [i (range 1)]
-                         {:label (str "tag " i)
-                          :color (-> material-500-hexes rand-nth)
-                          :id    (random-uuid)})
-        there-are-tags (-> tags count (> 0))]
+(defn tags-component
+  [{:keys [tags id]}]
+  (let [there-are-tags (-> tags count (> 0))]
 
     [:> rn/View {:style (tw "flex flex-row flex-wrap items-center mb-8")}
 
      (when there-are-tags
-       (for [{:keys [label color id]} tags]
+       (for [{:tag/keys [label color id]} tags]
          [:> paper/Button
           {:mode     "contained"
            :key      id
@@ -93,6 +105,7 @@
                              #:tag-remove-modal
                              {:visible true
                               :id      id
+                              :color   color
                               :label   label}])}
           label]))
 
@@ -236,6 +249,7 @@
                              stop
                              type
                              label
+                             tags
                              color]} (<sub [:selected-session])]
          [:> rn/ScrollView {:style {:background-color (-> theme (j/get :colors) (j/get :background))}}
           [:> paper/Surface {:style (-> (tw "flex flex-1")
@@ -253,7 +267,6 @@
 
             [color-override-component (p/map-of color id)]
 
-            ;; TODO tags
-            [tags-component]
+            [tags-component (p/map-of tags id)]
 
             ]]]))]))

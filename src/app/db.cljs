@@ -301,21 +301,22 @@
                    :app-db/calendar                         ::calendar
                    :app-db/sessions                         ::sessions
                    :app-db/tags                             ::tags
-                   :app-db.selected/session                 (ds/maybe? uuid?)
+                   :app-db.selected/session                 (ds/maybe uuid?)
                    :app-db.selected/day                     t/date?
                    :app-db.settings/theme                   (s/spec #{:light :dark})
                    :app-db.view/zoom                        ::zoom
                    :app-db.view.tag-remove-modal/id         (ds/maybe uuid?)
                    :app-db.view.tag-remove-modal/visible    boolean?
                    :app-db.view.tag-remove-modal/label      (ds/maybe string?)
+                   :app-db.view.tag-remove-modal/color      (ds/maybe ::color)
                    :app-db.view.tag-add-modal/visible       boolean?
                    :app-db.view.date-time-picker/visible    boolean?
-                   :app-db.view.date-time-picker/value      (ds/maybe? inst?)
-                   :app-db.view.date-time-picker/mode       (ds/maybe? (s/spec #{"date" "time"}))
-                   :app-db.view.date-time-picker/session-id (ds/maybe? uuid?)
-                   :app-db.view.date-time-picker/field-key  (ds/maybe? keyword?)
+                   :app-db.view.date-time-picker/value      (ds/maybe inst?)
+                   :app-db.view.date-time-picker/mode       (ds/maybe (s/spec #{"date" "time"}))
+                   :app-db.view.date-time-picker/session-id (ds/maybe uuid?)
+                   :app-db.view.date-time-picker/field-key  (ds/maybe keyword?)
                    :app-db.view.color-picker/visible        boolean?
-                   :app-db.view.color-picker/value          (ds/maybe? ::color)}}))
+                   :app-db.view.color-picker/value          (ds/maybe ::color)}}))
 
 (comment
   (s/explain app-db-spec (merge {:settings {:theme :dark}
@@ -345,6 +346,7 @@
        :app-db.view.tag-remove-modal/id         nil
        :app-db.view.tag-remove-modal/visible    false
        :app-db.view.tag-remove-modal/label      nil
+       :app-db.view.tag-remove-modal/color      nil
        :app-db.view.tag-add-modal/visible       false
        :app-db.view.date-time-picker/visible    false
        :app-db.view.date-time-picker/value      nil

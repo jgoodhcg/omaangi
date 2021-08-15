@@ -13,7 +13,7 @@
                                    select-one!]]
    [tick.alpha.api :as t]
    [app.colors :refer [material-500-hexes white black]]
-   [app.helpers :refer [touches chance prepend-zero drop-keyword-sections]]))
+   [app.helpers :refer [touches chance prepend-zero drop-keyword-sections hex-if-some]]))
 
 (defn version
   [db _]
@@ -300,9 +300,12 @@
 (defn tag-removal-modal
   [db _]
   (->> db
-       (select-one [(sp/submap [:app-db.view.tag-removal-modal/id
-                                :app-db.view.tag-removal-modal/visible
-                                :app-db.view.tag-removal-modal/label])])
+       (select-one [(sp/submap [:app-db.view.tag-remove-modal/id
+                                :app-db.view.tag-remove-modal/visible
+                                :app-db.view.tag-remove-modal/color
+                                :app-db.view.tag-remove-modal/label])])
+       (transform [(sp/keypath :app-db.view.tag-remove-modal/color)]
+                  hex-if-some)
        ;; remove :app-db.view from keyword because legacy subscription consumer
        (transform [sp/MAP-KEYS] #(drop-keyword-sections 2 %))))
 (reg-sub :tag-remove-modal tag-removal-modal)
@@ -348,7 +351,9 @@
   (->> sessions
        (select-one! [(sp/keypath selected-session-id)])
        (transform [(sp/keypath :session/tags)]
-                  (fn [tag-ids] (->> tag-ids (map #(-> tags (get %))))))))
+                  (fn [tag-ids] (->> tag-ids (map #(-> tags (get %))))))
+       (transform [(sp/keypath :session/tags) sp/ALL (sp/keypath :tag/color)]
+                  hex-if-some)))
 (reg-sub :selected-session
 
          :<- [:selected-session-id]
