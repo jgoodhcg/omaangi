@@ -24,6 +24,19 @@
                        :on-change-text #(>evt [:update-session {:session/label %
                                                                 :session/id    id}])}])
 
+(defn tag-button
+  [{:keys [color id label on-press style]}]
+  [:> paper/Button
+   (merge
+     (when (some? on-press)
+       {:on-press on-press})
+     (when (some? style)
+       {:style style})
+     {:mode  (if (some? color) "contained" "outlined")
+      :key   id
+      :color color})
+   label])
+
 (defn tag-remove-modal []
   (let [{:tag-remove-modal/keys [visible id label color]} (<sub [:tag-remove-modal])]
 
@@ -46,12 +59,9 @@
          {:style (tw "mb-4")}
          "Are you sure you want to remove this tag?"]
 
-        [:> paper/Button
-         {:mode  "contained"
-          :key   id
-          :style (tw "mb-4")
-          :color color}
-         label]
+
+        [tag-button (merge {:style (tw "mb-4")}
+                           (p/map-of color id label))]
 
         [:> paper/Button {:icon     "close"
                           :mode     "contained"
@@ -96,18 +106,14 @@
 
      (when there-are-tags
        (for [{:tag/keys [label color id]} tags]
-         [:> paper/Button
-          {:mode     "contained"
-           :key      id
-           :style    (tw "mr-4 mb-4")
-           :color    color
-           :on-press #(>evt [:set-tag-remove-modal
-                             #:tag-remove-modal
-                             {:visible true
-                              :id      id
-                              :color   color
-                              :label   label}])}
-          label]))
+         (let [on-press #(>evt [:set-tag-remove-modal
+                                #:tag-remove-modal
+                                {:visible true
+                                 :id      id
+                                 :color   color
+                                 :label   label}])
+               style    (tw "mr-4 mb-4")]
+           [tag-button (p/map-of color id label on-press style)])))
 
      [:> paper/Button {:icon     "plus"
                        :mode     "outlined"
@@ -251,7 +257,8 @@
                              label
                              tags
                              color]} (<sub [:selected-session])]
-         [:> rn/ScrollView {:style {:background-color (-> theme (j/get :colors) (j/get :background))}}
+         [:> rn/ScrollView {:style {:background-color
+                                    (-> theme (j/get :colors) (j/get :background))}}
           [:> paper/Surface {:style (-> (tw "flex flex-1")
                                         ;; TODO justin 2020-01-23 Move this to tailwind custom theme
                                         ;; (merge {:background-color (-> theme (j/get :colors) (j/get :background))})
