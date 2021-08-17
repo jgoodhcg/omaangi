@@ -25,7 +25,7 @@
                                                                 :session/id    id}])}])
 
 (defn tag-button
-  [{:keys [color id label on-press style]}]
+  [{:keys [color label on-press style]}]
   [:> paper/Button
    (merge
      (when (some? on-press)
@@ -33,12 +33,12 @@
      (when (some? style)
        {:style style})
      {:mode  (if (some? color) "contained" "outlined")
-      :key   id
       :color color})
    label])
 
-(defn tag-remove-modal []
-  (let [{:tag-remove-modal/keys [visible id label color]} (<sub [:tag-remove-modal])]
+(defn tag-remove-modal [{:keys [session-id]}]
+  (let [{:tag-remove-modal/keys [visible id label color]}
+        (<sub [:tag-remove-modal])]
 
     [:> paper/Portal
      [:> paper/Modal {:visible    visible
@@ -67,7 +67,14 @@
                           :mode     "contained"
                           :style    (tw "mb-4")
                           :color    "red"
-                          :on-press #(tap> (str "deleting " id))}
+                          :on-press #(do (>evt [:set-tag-remove-modal
+                                                #:tag-remove-modal
+                                                {:visible false
+                                                 :id      nil
+                                                 :label   nil}])
+                                         (>evt [:remove-tag-from-session
+                                                {:session/id session-id
+                                                 :tag/id     id}]))}
          "remove it"]]]]]))
 
 (defn tag-add-modal []
@@ -99,7 +106,8 @@
             label])]]]]]))
 
 (defn tags-component
-  [{:keys [tags id]}]
+  [{:keys      [tags]
+    session-id :id}]
   (let [there-are-tags (-> tags count (> 0))]
 
     [:> rn/View {:style (tw "flex flex-row flex-wrap items-center mb-8")}
@@ -113,7 +121,8 @@
                                  :color   color
                                  :label   label}])
                style    (tw "mr-4 mb-4")]
-           [tag-button (p/map-of color id label on-press style)])))
+           [tag-button (merge {:key id}
+                              (p/map-of color id label on-press style))])))
 
      [:> paper/Button {:icon     "plus"
                        :mode     "outlined"
@@ -122,7 +131,7 @@
                                          {:visible true}])}
       "Add tag"]
 
-     [tag-remove-modal]
+     [tag-remove-modal (p/map-of session-id)]
 
      [tag-add-modal]]))
 

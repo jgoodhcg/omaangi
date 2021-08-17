@@ -133,5 +133,5 @@
           tag-id     :tag/id}]]
   (->> db
        (transform [:app-db/sessions (sp/keypath session-id) :session/tags]
-                  (fn [tags] (->> tags (remove #(= % tag-id)))))))
+                  (fn [tags] (->> tags (remove #(= % tag-id)) vec)))))
 (reg-event-db :remove-tag-from-session remove-tag-from-session)
