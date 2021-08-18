@@ -77,12 +77,8 @@
                                                  :tag/id     id}]))}
          "remove it"]]]]]))
 
-(defn tag-add-modal []
-  (let [all-tags (for [i (range 25)]
-                   {:label (str "tag " i)
-                    :color (-> material-500-hexes rand-nth)
-                    :id    (random-uuid)})
-
+(defn tag-add-modal [{:keys [session-id]}]
+  (let [all-tags                        (<sub [:tags-not-on-selected-session])
         {:tag-add-modal/keys [visible]} (<sub [:tag-add-modal])]
 
     [:> paper/Portal
@@ -96,14 +92,15 @@
                                                 #:tag-add-modal {:visible false}])}]
 
         [:> rn/View {:style (tw "flex flex-row flex-wrap items-center p-4")}
-         (for [{:keys [label color id]} all-tags]
-           [:> paper/Button
-            {:mode     "contained"
-             :key      id
-             :style    (tw "m-2")
-             :color    color
-             :on-press #(tap> "adding tag to session")}
-            label])]]]]]))
+         (for [{:tag/keys [label color id]} all-tags]
+           [tag-button (merge {:key      id
+                               :style    (tw "m-2")
+                               :on-press #(do (>evt [:add-tag-to-session
+                                                     {:session/id session-id
+                                                      :tag/id     id}])
+                                              (>evt [:set-tag-add-modal
+                                                     #:tag-add-modal {:visible false}]))}
+                              (p/map-of label color id))])]]]]]))
 
 (defn tags-component
   [{:keys      [tags]
@@ -133,7 +130,7 @@
 
      [tag-remove-modal (p/map-of session-id)]
 
-     [tag-add-modal]]))
+     [tag-add-modal (p/map-of session-id)]]))
 
 (defn time-stamps-component []
   (let [session-id (random-uuid)

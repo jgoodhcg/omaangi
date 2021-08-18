@@ -6,6 +6,7 @@
    [applied-science.js-interop :as j]
    [re-frame.core :refer [reg-sub subscribe]]
    [clojure.string :refer [join]]
+   [clojure.set :refer [subset?]]
    [com.rpl.specter :as sp :refer [select
                                    setval
                                    transform
@@ -361,3 +362,30 @@
          :<- [:tags]
 
          selected-session)
+
+(defn tag-list
+  [indexed-tags _]
+  (->> indexed-tags
+       (select [sp/MAP-VALS])
+       (transform [sp/ALL (sp/keypath :tag/color)] hex-if-some)))
+(reg-sub :tag-list
+
+         :<- [:tags]
+
+         tag-list)
+
+(defn tags-not-on-selected-session
+  [[all-tags selected-session] _]
+  (let [not-these-tags (->> selected-session
+                            (select [(sp/keypath :session/tags)
+                                     sp/ALL
+                                     (sp/keypath :tag/id)])
+                            set)]
+    (->> all-tags
+         (remove #(subset? #{(:tag/id %)} not-these-tags)))))
+(reg-sub :tags-not-on-selected-session
+
+         :<- [:tag-list]
+         :<- [:selected-session]
+
+         tags-not-on-selected-session)
