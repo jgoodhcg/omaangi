@@ -75,3 +75,9 @@
   [color-object]
   (when (some? color-object)
     (-> color-object (j/call :hex))))
+
+(defn is-color?
+  [c]
+  (if (some? c)
+    (j/contains? c :color)
+    false))

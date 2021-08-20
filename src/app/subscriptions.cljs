@@ -14,7 +14,8 @@
                                    select-one!]]
    [tick.alpha.api :as t]
    [app.colors :refer [material-500-hexes white black]]
-   [app.helpers :refer [touches chance prepend-zero drop-keyword-sections hex-if-some]]))
+   [app.helpers :refer [touches chance prepend-zero drop-keyword-sections hex-if-some is-color?]]
+   [potpuri.core :as p]))
 
 (defn version
   [db _]
@@ -115,6 +116,50 @@
       t/minutes
       (* zoom)))
 
+(defn set-session-color
+  "Tag refs must be replaced with values and session/tag colors must be color objects"
+  [{:keys [hex]} session]
+  (->> session
+       (transform []
+                  (fn [{c :session/color :as s}]
+                    (if-let [c c]
+                      ;; when there is a session color just hex it
+                      (merge s {:session/color (if hex (hex-if-some c) c)})
+                      ;; when there is NOT a session color mix tag colors
+                      (merge s {:session/color
+                                (->> s
+                                     (select [(sp/keypath :session/tags)
+                                              sp/ALL
+                                              (sp/keypath :tag/color)])
+                                     (reduce (fn [c1 c2]
+                                               (cond
+                                                 (and (is-color? c1)
+                                                      (is-color? c2))
+                                                 (-> c1 (j/call :mix c2))
+
+                                                 (is-color? c1)
+                                                 c1
+
+                                                 (is-color? c2)
+                                                 c2
+
+                                                 ;; TODO is this a good default?
+                                                 ;; should this default live somewhere else?
+                                                 :else
+                                                 (color "#ababab"))))
+                                     ((fn [c]
+                                        (if (some? c)
+                                          (if hex
+                                            (hex-if-some c)
+                                            c)
+                                          (throw (str "not a color: " c))))))}))))))
+
+(defn replace-tag-refs-with-objects
+  [indexed-tags session]
+  (->> session
+       (transform [(sp/keypath :session/tags)]
+                  (fn [tag-ids] (->> tag-ids (map #(-> indexed-tags (get %))))))))
+
 (defn set-render-props
   [zoom
    tags
@@ -124,7 +169,6 @@
                        start-truncated
                        stop-truncated
                        label]
-     session-color    :session/color
      session-tag-refs :session/tags
      :as              session}]]
 
@@ -145,7 +189,10 @@
                              t/minutes
                              (max 1)
                              (* zoom))
-        session-color    (-> material-500-hexes rand-nth color)
+        session-color    (->> session
+                              (replace-tag-refs-with-objects tags)
+                              (set-session-color {:hex false})
+                              :session/color)
         text-color-hex   (-> session-color (j/call :isLight) (#(if % black white)))
         tag-labels       (->> session-tag-refs
                               (map (fn [tag-id]
@@ -160,7 +207,6 @@
                      :session-render/height           height
                      :session-render/width            width
                      :session-render/label            label
-                     ;; TODO finish when tags can be injected
                      :session-render/color-hex        (-> session-color (j/call :hex))
                      :session-render/ripple-color-hex (-> session-color (j/call :lighten 0.64) (j/call :hex))
                      :session-render/text-color-hex   text-color-hex
@@ -169,16 +215,16 @@
 
 (defn sessions-for-this-day
   [[selected-day calendar sessions zoom tags] _]
-  ;; TODO needs to return this structure
-  (comment [;; collision groups are an intermediate grouping not in sub result
-            #:session-render {:left             0         ;; collision group position and type
-                              :top              0         ;; start
-                              :elevation        1         ;; collision group position
-                              :height           10        ;; duration
-                              :color-hex        "#ff00ff" ;; tags mix or :session/color
-                              :ripple-color-hex "#ff00ff" ;; tags mix or :session/color lightened
-                              :label            "label"   ;; session label and tags depending on settings
-                              }])
+  (comment
+    [;; collision groups are an intermediate grouping not in sub result
+     #:session-render {:left             0         ;; collision group position and type
+                       :top              0         ;; start
+                       :elevation        1         ;; collision group position
+                       :height           10        ;; duration
+                       :color-hex        "#ff00ff" ;; tags mix or :session/color
+                       :ripple-color-hex "#ff00ff" ;; tags mix or :session/color lightened
+                       :label            "label"   ;; session label and tags depending on settings
+                       }])
   ;; TODO include session-id for session editing
   (let [this-day (get calendar selected-day)]
     (->> this-day
@@ -186,13 +232,14 @@
          (mapv #(get sessions %))
          (mapv #(truncate-session (:calendar/date this-day) %))
          (sort-by (fn [s] (->> s
-                              :session/start
-                              (t/new-interval (t/epoch))
-                              t/duration
-                              t/millis)))
+                               :session/start
+                               (t/new-interval (t/epoch))
+                               t/duration
+                               t/millis)))
          (group-by :session/type)
          (transform [sp/MAP-VALS] get-collision-groups)
-         (transform [sp/MAP-VALS sp/ALL sp/INDEXED-VALS] (partial set-render-props zoom tags))
+         (transform [sp/MAP-VALS sp/ALL sp/INDEXED-VALS]
+                    (partial set-render-props zoom tags))
          (select [sp/MAP-VALS])
          flatten)))
 (reg-sub :sessions-for-this-day
@@ -351,8 +398,8 @@
   [[selected-session-id sessions tags] _]
   (->> sessions
        (select-one! [(sp/keypath selected-session-id)])
-       (transform [(sp/keypath :session/tags)]
-                  (fn [tag-ids] (->> tag-ids (map #(-> tags (get %))))))
+       (replace-tag-refs-with-objects tags)
+       (set-session-color {:hex true})
        (transform [(sp/keypath :session/tags) sp/ALL (sp/keypath :tag/color)]
                   hex-if-some)))
 (reg-sub :selected-session

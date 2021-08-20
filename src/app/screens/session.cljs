@@ -217,11 +217,9 @@
 
 (def tmp-session-color-state (r/atom nil))
 
-(defn color-override-component []
-  (let [{session-color :session/color}
-        {:session/color @tmp-session-color-state}
-
-        mode  (if (some? session-color) "contained" "outlined")
+(defn color-override-component [{session-color :color
+                                 session-id    :id}]
+  (let [mode  (if (some? session-color) "contained" "outlined")
         label (if (some? session-color) session-color "set session color")]
 
     [:> rn/View {:style (tw "flex flex-col mb-8")}

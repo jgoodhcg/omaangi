@@ -16,7 +16,7 @@
    [clojure.test.check.generators]
 
    [app.colors :refer [material-500-hexes]]
-   [app.helpers :refer [touches chance]]))
+   [app.helpers :refer [touches chance is-color?]]))
 
 ;;
 ;; misc
@@ -213,7 +213,7 @@
 
 (s/def ::time-point (s/with-gen t/instant? #(gen/fmap generate-time-point (s/gen int?))))
 
-(s/def ::color (s/with-gen #(j/contains? % :color)
+(s/def ::color (s/with-gen is-color?
                  #(gen/fmap
                     generate-color
                     (s/gen int?))))
