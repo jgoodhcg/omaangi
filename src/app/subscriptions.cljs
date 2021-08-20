@@ -122,37 +122,50 @@
   (->> session
        (transform []
                   (fn [{c :session/color :as s}]
-                    (if-let [c c]
-                      ;; when there is a session color just hex it
-                      (merge s {:session/color (if hex (hex-if-some c) c)})
-                      ;; when there is NOT a session color mix tag colors
-                      (merge s {:session/color
-                                (->> s
-                                     (select [(sp/keypath :session/tags)
-                                              sp/ALL
-                                              (sp/keypath :tag/color)])
-                                     (reduce (fn [c1 c2]
-                                               (cond
-                                                 (and (is-color? c1)
-                                                      (is-color? c2))
-                                                 (-> c1 (j/call :mix c2))
+                    (let [tag-colors-path  [(sp/keypath :session/tags)
+                                            sp/ALL
+                                            (sp/keypath :tag/color)]
+                          tag-colors       (->> s (select tag-colors-path))
+                          tag-colors-count (count tag-colors)]
+                      (if-let [c c]
+                        ;; when there is a session color just hex it
+                        (merge s {:session/color (if hex (hex-if-some c) c)})
+                        ;; when there is NOT a session color mix tag colors
+                        (merge s {:session/color
+                                  (->> tag-colors
+                                       rest
+                                       vec
+                                       (reduce-kv
+                                         (fn [{:keys [mixed-color]} i c2]
+                                           {:mixed-color
+                                            (cond
+                                              (and (is-color? mixed-color)
+                                                   (is-color? c2))
+                                              (-> mixed-color
+                                                  (j/call :mix c2
+                                                          ;; ratio to mix in
+                                                          ;; the bigger i gets
+                                                          ;; the less c2 is mixed in
+                                                          (min 0.5
+                                                               (-> (-> tag-colors-count (- (+ i 1)))
+                                                                   (/ tag-colors-count)))))
 
-                                                 (is-color? c1)
-                                                 c1
+                                              (is-color? mixed-color)
+                                              mixed-color
 
-                                                 (is-color? c2)
-                                                 c2
+                                              (is-color? c2)
+                                              c2
 
-                                                 ;; TODO is this a good default?
-                                                 ;; should this default live somewhere else?
-                                                 :else
-                                                 (color "#ababab"))))
-                                     ((fn [c]
-                                        (if (some? c)
+                                              ;; TODO is this a good default?
+                                              ;; should this default live somewhere else?
+                                              :else
+                                              (color "#ababab"))})
+                                         {:mixed-color (first tag-colors)})
+                                       :mixed-color
+                                       ((fn [c]
                                           (if hex
                                             (hex-if-some c)
-                                            c)
-                                          (throw (str "not a color: " c))))))}))))))
+                                            c))))})))))))
 
 (defn replace-tag-refs-with-objects
   [indexed-tags session]
@@ -161,16 +174,16 @@
                   (fn [tag-ids] (->> tag-ids (map #(-> indexed-tags (get %))))))))
 
 (defn set-render-props
-  [zoom
-   tags
-   [collision-index
-    {:session/keys    [type
-                       id
-                       start-truncated
-                       stop-truncated
-                       label]
-     session-tag-refs :session/tags
-     :as              session}]]
+[zoom
+ tags
+ [collision-index
+  {:session/keys    [type
+                     id
+                     start-truncated
+                     stop-truncated
+                     label]
+   session-tag-refs :session/tags
+   :as              session}]]
 
   (let [type-offset      (case type
                            :session/plan  0
