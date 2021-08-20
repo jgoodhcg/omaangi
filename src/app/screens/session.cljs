@@ -217,9 +217,11 @@
 
 (def tmp-session-color-state (r/atom nil))
 
-(defn color-override-component [{session-color :color
-                                 session-id    :id}]
-  (let [mode  (if (some? session-color) "contained" "outlined")
+(defn color-override-component [{session-color  :color
+                                 color-override :color-override
+                                 session-id     :id}]
+  (let [mode  (if (and (some? session-color)
+                       color-override) "contained" "outlined")
         label (if (some? session-color) session-color "set session color")]
 
     [:> rn/View {:style (tw "flex flex-col mb-8")}
@@ -253,14 +255,17 @@
 (defn screen [props]
   (r/as-element
     [(fn [props]
-       (let [theme                   (->> [:theme] <sub get-theme)
+       (let [theme (->> [:theme] <sub get-theme)
+
              {:session/keys [id
                              start
                              stop
                              type
                              label
                              tags
+                             color-override
                              color]} (<sub [:selected-session])]
+
          [:> rn/ScrollView {:style {:background-color
                                     (-> theme (j/get :colors) (j/get :background))}}
           [:> paper/Surface {:style (-> (tw "flex flex-1")
@@ -276,7 +281,7 @@
 
             [session-type-component (p/map-of type id)]
 
-            [color-override-component (p/map-of color id)]
+            [color-override-component (p/map-of color id color-override)]
 
             [tags-component (p/map-of tags id)]
 

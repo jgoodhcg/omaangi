@@ -398,6 +398,8 @@
   [[selected-session-id sessions tags] _]
   (->> sessions
        (select-one! [(sp/keypath selected-session-id)])
+       (transform [] (fn [{c :session/color :as s}]
+                       (merge s {:session/color-override (some? c)})))
        (replace-tag-refs-with-objects tags)
        (set-session-color {:hex true})
        (transform [(sp/keypath :session/tags) sp/ALL (sp/keypath :tag/color)]
