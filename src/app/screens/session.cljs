@@ -191,7 +191,7 @@
 
      [:> DateTimePicker {:is-visible           visible
                          :is-dark-mode-enabled true
-                         :value                value
+                         :date                 value
                          :mode                 mode
                          :on-hide              #(do
                                                   (println "wtf")

@@ -44,7 +44,7 @@
 
       [:> DateTimePicker {:is-visible           visible
                           :is-dark-mode-enabled true
-                          :value                value
+                          :date                 value
                           :mode                 mode
                           :on-hide              #(>evt clear-datetime-picker)
                           :on-cancel            #(>evt clear-datetime-picker)

@@ -89,7 +89,11 @@
        (setval [:app-db.view.date-time-picker/field-key] field-key)
        (setval [:app-db.view.date-time-picker/session-id] session-id)
        (setval [:app-db.view.date-time-picker/mode] mode)
-       (setval [:app-db.view.date-time-picker/value] value)
+       (setval [:app-db.view.date-time-picker/value]
+               (cond
+                 (t/date? value)    (-> value (t/at (t/time "00:00")) t/inst)
+                 (t/instant? value) (-> value t/inst)
+                 :else              value))
        (setval [:app-db.view.date-time-picker/visible] visible)))
 (reg-event-db :set-date-time-picker set-date-time-picker)
 
