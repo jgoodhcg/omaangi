@@ -13,7 +13,7 @@
 
    [app.colors :refer [material-500-hexes]]
    [app.components.color-picker :as color-picker]
-   [app.helpers :refer [<sub >evt get-theme clear-datetime-picker]]
+   [app.helpers :refer [<sub >evt get-theme clear-datetime-picker >evt-sync]]
    [app.tailwind :refer [tw]]))
 
 (defn label-component
@@ -132,25 +132,60 @@
 
      [tag-add-modal (p/map-of session-id)]]))
 
+(defn date-button
+  [{:keys [value id label field-key]}]
+  [:> paper/Button {:mode     "contained"
+                    :icon     "calendar"
+                    :style    (tw "mr-4 mt-4 w-40")
+                    :on-press #(>evt [:set-date-time-picker
+                                      #:date-time-picker
+                                      {:value      value
+                                       :mode       "date"
+                                       :session-id id
+                                       :field-key  field-key
+                                       :visible    true}])} label])
+
+(defn time-button
+  [{:keys [value id label field-key]}]
+  [:> paper/Button {:mode     "contained"
+                    :icon     "clock"
+                    :style    (tw "mr-4 mt-4 w-28")
+                    :on-press #(>evt [:set-date-time-picker
+                                      #:date-time-picker
+                                      {:value      value
+                                       :mode       "time"
+                                       :session-id id
+                                       :field-key  field-key
+                                       :visible    true}])} label])
+
+(defn no-stamp-button
+  [{:keys [id set-start set-stop]
+    :or   {set-start false
+           set-stop  false}}]
+  [:> paper/Button {:mode     "outlined"
+                    :icon     "calendar"
+                    :style    (tw "mr-4 mt-4 w-40")
+                    :on-press #(>evt-sync
+                                 [:set-initial-timestamp
+                                  {:set-start  set-start
+                                   :set-stop   set-stop
+                                   :session/id id}])  } "not set"])
+
 (defn time-stamps-component []
-  (let [session-id (random-uuid)
-        now        (t/now)
-        later      (t/+ now (t/new-duration 5 :hours))
-        {:time-stamps/keys [start-date-label
-                            start-time-label
-                            start-value
-                            stop-date-label
-                            stop-time-label
-                            stop-value]}
-        #:time-stamps {:start-date-label (-> now t/date str)
-                       :start-time-label (-> now t/time (#(str (t/hour now) "-" (t/minute now))))
-                       :start-value      (-> now t/inst)
-                       :stop-date-label  (-> later t/date str)
-                       :stop-time-label  (-> later t/time (#(str (t/hour later) "-" (t/minute later))))
-                       :stop-value       (-> later t/inst)}
+  (let [{:session/keys [id
+                        start-date-label
+                        start-time-label
+                        start-value
+                        start-set
+                        stop-date-label
+                        stop-time-label
+                        stop-value
+                        stop-set]}
+        (<sub [:selected-session])
 
         {:date-time-picker/keys [value mode visible field-key]
-         picker-session-id      :date-time-picker/session-id} (<sub [:date-time-picker])]
+         picker-session-id      :date-time-picker/session-id}
+        (<sub [:date-time-picker])]
 
     [:> rn/View {:style (tw "flex flex-col mb-8")}
 
@@ -158,64 +193,51 @@
                          :is-dark-mode-enabled true
                          :value                value
                          :mode                 mode
-                         :on-hide              #(do (tap> "hidden")
-                                                    (>evt clear-datetime-picker))
-                         :on-cancel            #(do (tap> "cancelled")
-                                                    (>evt clear-datetime-picker))
-                         :on-confirm           #(do (tap> (str "Update " field-key " for " picker-session-id " as " (-> % t/instant)))
-                                                    (>evt clear-datetime-picker))}]
+                         :on-hide              #(do
+                                                  (println "wtf")
+                                                  (tap> "wtf")
+                                                  (tap> "hidden")
+                                                  (>evt clear-datetime-picker))
+                         :on-cancel            #(do
+                                                  (println "wtf")
+                                                  (tap> "wtf")
+                                                  (tap> "cancelled")
+                                                  (>evt clear-datetime-picker))
+                         :on-confirm           #(do
+                                                  (println "wtf")
+                                                  (tap> "wtf")
+                                                  (tap> (str "Update " field-key " for " picker-session-id " as " (-> % t/instant)))
+                                                  (>evt clear-datetime-picker))}]
 
-     ;; start
-     [:> rn/View {:style (tw "flex flex-row")}
+     (if start-set
+       [:> rn/View {:style (tw "flex flex-row")}
+        [date-button {:value     start-value
+                      :id        id
+                      :label     start-date-label
+                      :field-key :session/start}]
+        [time-button {:value     start-value
+                      :id        id
+                      :label     start-time-label
+                      :field-key :session/start}]]
 
-      [:> paper/Button {:mode     "contained"
-                        :icon     "calendar"
-                        :style    (tw "mr-4 mt-4 w-40")
-                        :on-press #(>evt [:set-date-time-picker
-                                          #:date-time-picker
-                                          {:value      start-value
-                                           :mode       "date"
-                                           :session-id session-id
-                                           :field-key  :session/start
-                                           :visible    true}])} start-date-label]
+       [:> rn/View {:style (tw "flex flex-row")}
+        [no-stamp-button {:set-start true
+                          :id        id}]])
 
-      [:> paper/Button {:mode     "contained"
-                        :icon     "clock"
-                        :style    (tw "mr-4 mt-4 w-28")
-                        :on-press #(>evt [:set-date-time-picker
-                                          #:date-time-picker
-                                          {:value      start-value
-                                           :mode       "time"
-                                           :session-id session-id
-                                           :field-key  :session/start
-                                           :visible    true}])} start-time-label]]
+     (if stop-set
+       [:> rn/View {:style (tw "flex flex-row")}
+        [date-button {:value     stop-value
+                      :id        id
+                      :label     stop-date-label
+                      :field-key :session/stop}]
+        [time-button {:value     stop-value
+                      :id        id
+                      :label     stop-time-label
+                      :field-key :session/stop}]]
 
-     ;; end
-     [:> rn/View {:style (tw "flex flex-row")}
-
-      [:> paper/Button {:mode     "contained"
-                        :icon     "calendar"
-                        :style    (tw "mr-4 mt-4 w-40")
-                        :on-press #(>evt [:set-date-time-picker
-                                          #:date-time-picker
-                                          {:value      stop-value
-                                           :mode       "date"
-                                           :session-id session-id
-                                           :field-key  :session/stop
-                                           :visible    true}])} stop-date-label]
-
-      [:> paper/Button {:mode     "contained"
-                        :icon     "clock"
-                        :style    (tw "mr-4 mt-4 w-28")
-                        :on-press #(>evt [:set-date-time-picker
-                                          #:date-time-picker
-                                          {:value      stop-value
-                                           :mode       "time"
-                                           :session-id session-id
-                                           :field-key  :session/stop
-                                           :visible    true}])} stop-time-label]]]))
-
-(def tmp-session-color-state (r/atom nil))
+       [:> rn/View {:style (tw "flex flex-row")}
+        [no-stamp-button {:set-stop true
+                          :id       id}]])]))
 
 (defn color-override-component [{session-color  :color
                                  color-override :color-override

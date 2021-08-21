@@ -417,7 +417,31 @@
        (replace-tag-refs-with-objects tags)
        (set-session-color {:hex true})
        (transform [(sp/keypath :session/tags) sp/ALL (sp/keypath :tag/color)]
-                  hex-if-some)))
+                  hex-if-some)
+       (transform []
+                  (fn [{:session/keys [start stop]
+                        :as           session}]
+                    (let [time-label #(str (t/hour %)
+                                           "-"
+                                           (t/minute %))]
+                      (merge session
+                             (if (some? start)
+                               #:session
+                               {:start-date-label (-> start t/date str)
+                                :start-time-label (-> start t/time time-label)
+                                :start-value      (-> start t/inst)
+                                :start-set        true}
+
+                               #:session
+                               {:start-set false})
+                             (if (some? stop)
+                               #:session
+                               {:stop-date-label (-> stop t/date str)
+                                :stop-time-label (-> stop t/time time-label)
+                                :stop-value      (-> stop t/inst)
+                                :stop-set        true}
+                               #:session
+                               {:stop-set false})))))))
 (reg-sub :selected-session
 
          :<- [:selected-session-id]

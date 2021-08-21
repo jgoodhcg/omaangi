@@ -85,7 +85,6 @@
                                   mode
                                   session-id
                                   field-key]}]]
-  (println (p/map-of visible value mode session-id field-key))
   (->> db
        (setval [:app-db.view.date-time-picker/field-key] field-key)
        (setval [:app-db.view.date-time-picker/session-id] session-id)
@@ -142,3 +141,32 @@
        (transform [:app-db/sessions (sp/keypath session-id) :session/tags]
                   (fn [tags] (->> tags (remove #(= % tag-id)) vec)))))
 (reg-event-db :remove-tag-from-session remove-tag-from-session)
+
+;; TODO this is totally untested
+(defn set-initial-timestamp
+  [db [_ {:keys      [set-start set-stop]
+          session-id :session/id}]]
+  (->> db
+       (transform [:app-db/sessions (sp/keypath session-id)]
+                  (fn [{:session/keys [start stop]
+                        :as           session}]
+                    (merge session
+                           (when (and set-start
+                                      (nil? start))
+                             (if (some? stop)
+                               {:session/start
+                                (-> stop
+                                    (t/- (t/new-duration 60 :minutes)))}
+                               ;; TODO inject now
+                               {:session/start (t/now)
+                                :session/stop  (-> (t/now) (t/+ 60 :minutes))}))
+                           (when (and set-stop
+                                      (nil? stop))
+                             (if (some? start)
+                               {:session/stop
+                                (-> start
+                                    (t/+ (t/new-duration 60 :minutes)))}
+                               ;; TODO inject now
+                               {:session/start (t/now)
+                                :session/stop  (-> (t/now) (t/+ 60 :minutes))})))))))
+(reg-event-db :set-initial-timestamp set-initial-timestamp)

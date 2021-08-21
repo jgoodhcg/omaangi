@@ -8,11 +8,13 @@
    [camel-snake-kebab.core :as csk]
    [camel-snake-kebab.extras :as cske]
    [tick.alpha.api :as t]
-   [re-frame.core :refer [subscribe dispatch]]))
+   [re-frame.core :refer [subscribe dispatch dispatch-sync]]))
 
 (def <sub (comp deref subscribe))
 
 (def >evt dispatch)
+
+(def >evt-sync dispatch-sync)
 
 ;; TODO @deprecated
 (defn style-sheet [s]
