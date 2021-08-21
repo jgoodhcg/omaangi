@@ -121,7 +121,8 @@
   [{:keys [hex]} session]
   (->> session
        (transform []
-                  (fn [{c :session/color :as s}]
+                  (fn [{c   :session/color
+                        :as s}]
                     (let [tag-colors-path  [(sp/keypath :session/tags)
                                             sp/ALL
                                             (sp/keypath :tag/color)]

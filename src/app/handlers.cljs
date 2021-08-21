@@ -10,7 +10,8 @@
    [clojure.spec.alpha :as s]
    [app.db :as db :refer [default-app-db app-db-spec]]
    [tick.alpha.api :as t]
-   [potpuri.core :as p]))
+   [potpuri.core :as p]
+   [app.helpers :refer [make-color-if-some]]))
 
 (defn check-and-throw
   "Throw an exception if db doesn't have a valid spec."
@@ -114,10 +115,16 @@
 (reg-event-db :set-selected-session set-selected-session)
 
 (defn update-session
-  "This is not meant to be used with tags, just label start stop type color "
-  [db [_ {:session/keys [id] :as session}]]
-  (->> db
-       (transform [:app-db/sessions (sp/keypath id)] #(merge % session))))
+  "This is not meant to be used with tags, just label start stop type color"
+  [db [_ {:session/keys [id color-hex] :as session}]]
+  (let [c       (make-color-if-some color-hex)
+        session (dissoc session :session/color-hex)]
+    (tap> (p/map-of color-hex session))
+    (->> db
+         (transform [:app-db/sessions (sp/keypath id)]
+                    #(merge %
+                            session
+                            (when (some? c) {:session/color c}) )))))
 (reg-event-db :update-session update-session)
 
 (defn add-tag-to-session

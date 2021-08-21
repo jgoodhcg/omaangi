@@ -76,6 +76,11 @@
   (when (some? color-object)
     (-> color-object (j/call :hex))))
 
+(defn make-color-if-some
+  [hex]
+  (when (some? hex)
+    (-> hex color)))
+
 (defn is-color?
   [c]
   (if (some? c)

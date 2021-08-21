@@ -234,7 +234,10 @@
       label]
 
      [color-picker/component {:input-color session-color
-                              :update-fn   #(reset! tmp-session-color-state %)}]]))
+                              :update-fn
+                              #(>evt [:update-session
+                                      {:session/color-hex %
+                                       :session/id        session-id}]) }]]))
 
 (defn session-type-component []
 (let [{session-type :session/type} {:session/type :session/track}]
