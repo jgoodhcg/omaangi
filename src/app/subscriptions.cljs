@@ -386,6 +386,7 @@
        (select-one [(sp/submap [:app-db.view.date-time-picker/value
                                 :app-db.view.date-time-picker/visible
                                 :app-db.view.date-time-picker/mode
+                                :app-db.view.date-time-picker/id
                                 :app-db.view.date-time-picker/session-id
                                 :app-db.view.date-time-picker/field-key])])
        ;; remove :app-db.view from keyword because legacy subscription consumer
@@ -421,9 +422,9 @@
        (transform []
                   (fn [{:session/keys [start stop]
                         :as           session}]
-                    (let [time-label #(str (t/hour %)
+                    (let [time-label #(str (-> % t/hour prepend-zero)
                                            "-"
-                                           (t/minute %))]
+                                           (-> % t/minute prepend-zero))]
                       (merge session
                              (if (some? start)
                                #:session

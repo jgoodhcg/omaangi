@@ -141,6 +141,7 @@
                                       #:date-time-picker
                                       {:value      value
                                        :mode       "date"
+                                       :id         :session
                                        :session-id id
                                        :field-key  field-key
                                        :visible    true}])} label])
@@ -154,6 +155,7 @@
                                       #:date-time-picker
                                       {:value      value
                                        :mode       "time"
+                                       :id         :session
                                        :session-id id
                                        :field-key  field-key
                                        :visible    true}])} label])
@@ -184,30 +186,34 @@
         (<sub [:selected-session])
 
         {:date-time-picker/keys [value mode visible field-key]
+         dtp-id                 :date-time-picker/id
          picker-session-id      :date-time-picker/session-id}
         (<sub [:date-time-picker])]
 
     [:> rn/View {:style (tw "flex flex-col mb-8")}
 
-     [:> DateTimePicker {:is-visible           visible
-                         :is-dark-mode-enabled true
-                         :date                 value
-                         :mode                 mode
-                         :on-hide              #(do
-                                                  (println "wtf")
-                                                  (tap> "wtf")
-                                                  (tap> "hidden")
-                                                  (>evt clear-datetime-picker))
-                         :on-cancel            #(do
-                                                  (println "wtf")
-                                                  (tap> "wtf")
-                                                  (tap> "cancelled")
-                                                  (>evt clear-datetime-picker))
-                         :on-confirm           #(do
-                                                  (println "wtf")
-                                                  (tap> "wtf")
-                                                  (tap> (str "Update " field-key " for " picker-session-id " as " (-> % t/instant)))
-                                                  (>evt clear-datetime-picker))}]
+     (when (and (some? value)
+                (= dtp-id :session))
+       [:> DateTimePicker
+        {:is-visible           visible
+         :is-dark-mode-enabled true
+         :date                 value
+         :mode                 mode
+
+         :on-hide    #(do
+                        (tap> "hidden")
+                        (>evt clear-datetime-picker))
+         :on-cancel  #(do
+                        (tap> "cancelled")
+                        (>evt clear-datetime-picker))
+         :on-confirm #(do
+                        (tap> (str "Update " field-key
+                                   " for " picker-session-id
+                                   " as " (-> % t/instant)))
+                        (>evt [:update-session
+                               {field-key   %
+                                :session/id picker-session-id}])
+                        (>evt clear-datetime-picker))}])
 
      (if start-set
        [:> rn/View {:style (tw "flex flex-row")}

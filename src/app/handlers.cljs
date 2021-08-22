@@ -84,6 +84,7 @@
                                   value
                                   mode
                                   session-id
+                                  id
                                   field-key]}]]
   (->> db
        (setval [:app-db.view.date-time-picker/field-key] field-key)
@@ -94,7 +95,8 @@
                  (t/date? value)    (-> value (t/at (t/time "00:00")) t/inst)
                  (t/instant? value) (-> value t/inst)
                  :else              value))
-       (setval [:app-db.view.date-time-picker/visible] visible)))
+       (setval [:app-db.view.date-time-picker/visible] visible)
+       (setval [:app-db.view.date-time-picker/id] id)))
 (reg-event-db :set-date-time-picker set-date-time-picker)
 
 (defn set-color-picker
@@ -121,7 +123,10 @@
   "This is not meant to be used with tags, just label start stop type color"
   [db [_ {:session/keys [id color-hex] :as session}]]
   (let [c       (make-color-if-some color-hex)
-        session (dissoc session :session/color-hex)]
+        session (-> session
+                    (dissoc :session/color-hex)
+                    (p/update-if-contains :session/start t/instant)
+                    (p/update-if-contains :session/stop t/instant))]
     (tap> (p/map-of color-hex session))
     (->> db
          (transform [:app-db/sessions (sp/keypath id)]
