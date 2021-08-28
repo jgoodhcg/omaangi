@@ -9,7 +9,7 @@
    [app.helpers :refer [<sub >evt]]
    [app.tailwind :refer [tw]]))
 
-(defn component [{:keys [input-color update-fn]}]
+(defn component [{:keys [input-color update-fn remove-fn]}]
   (let [{:color-picker/keys [visible value]} (<sub [:color-picker])]
     [:> paper/Portal
      [:> paper/Modal {:visible    visible
@@ -43,7 +43,7 @@
         [:> paper/Button {:mode     "contained"
                           :icon     "water-off"
                           :style    (tw "m-4")
-                          :on-press #(do (update-fn nil)
+                          :on-press #(do (remove-fn)
                                          (>evt [:set-color-picker
                                                 #:color-picker {:visible false
                                                                 :value   nil}]))}

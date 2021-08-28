@@ -133,9 +133,7 @@
                                             (sp/keypath :tag/color)]
                           ;; need to put :not-a-color in tag color list so that reduce runs
                           ;; the reducer fn which takes care of the case there are no tag colors
-                          tag-colors       (-> [:not-a-color]
-                                               (concat (->> s (select tag-colors-path)))
-                                               vec)
+                          tag-colors       (->> s (select tag-colors-path))
                           tag-colors-count (count tag-colors)]
                       (if-let [c c]
                         ;; when there is a session color just hex it
@@ -155,21 +153,20 @@
                                                           ;; ratio to mix in
                                                           ;; the bigger i gets
                                                           ;; the less c2 is mixed in
-                                                          (min 0.5
-                                                               (-> (-> tag-colors-count (- (+ i 1)))
+                                                          ;; TODO there might be a better way to do this
+                                                          (min 0.5 ;; at most mix half and half
+                                                               (-> (max 1 (-> tag-colors-count (- i))) ;; at least mix 1/tag-colors-count
                                                                    (/ tag-colors-count)))))
 
                                               (is-color? mixed-color)
                                               mixed-color
 
                                               (is-color? c2)
-                                              c2
-
-                                              ;; TODO is this a good default?
-                                              ;; should this default live somewhere else?
-                                              :else
-                                              (color "#ababab"))})
-                                         {:mixed-color :not-a-color})
+                                              c2)})
+                                         {:mixed-color (or (first tag-colors)
+                                                           ;; TODO is this a good default?
+                                                           ;; should this default live somewhere else?
+                                                           (color "#ababab"))})
                                        :mixed-color
                                        ((fn [c]
                                           (if hex

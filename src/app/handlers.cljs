@@ -169,8 +169,10 @@
 (reg-event-db :re-index-session re-index-session)
 
 (defn update-session
-  "This is not meant to be used with tags, just label start stop type color"
-  [{:keys [db]} [_ {:session/keys [id color-hex] :as session}]]
+  "This is not meant to be used with tags, just label start stop type color.
+  `:session/remove-color` can be used to remove the color attribute.
+  `:session/hex-color` wins over :session/remove-color for setting color."
+  [{:keys [db]} [_ {:session/keys [id color-hex remove-color] :as session}]]
   (let [c              (make-color-if-some color-hex)
         session        (-> session
                            (dissoc :session/color-hex)
@@ -189,18 +191,23 @@
         start          (or start old-start)
         stop           (or stop old-stop)
         old-indexes    (when stamps-changed (get-dates old-start old-stop))
-        new-indexes    (when stamps-changed (get-dates start stop))]
+        new-indexes    (when stamps-changed (get-dates start stop))
+
+        location :update-session]
 
     ;; TODO call db/start-before-stop
 
-    (tap> {:location       :update-session
-           :stamps-changed stamps-changed})
+    (tap> (p/map-of location color-hex remove-color c))
+
     (merge
       {:db (->> db
                 (transform [:app-db/sessions (sp/keypath id)]
-                           #(merge %
-                                   session
-                                   (when (some? c) {:session/color c}))))}
+                           #(merge
+                              (if remove-color
+                                (dissoc % :session/color)
+                                %)
+                              session
+                              (when (some? c) {:session/color c}))))}
       (when stamps-changed
         {:dispatch [:re-index-session (p/map-of old-indexes new-indexes id)]}))))
 (reg-event-fx :update-session update-session)

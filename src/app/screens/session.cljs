@@ -265,23 +265,32 @@
                               :update-fn
                               #(>evt [:update-session
                                       {:session/color-hex %
-                                       :session/id        session-id}]) }]]))
+                                       :session/id        session-id}])
+                              :remove-fn
+                              #(>evt [:update-session
+                                      {:session/remove-color true
+                                       :session/id           session-id}])}]]))
 
-(defn session-type-component []
-(let [{session-type :session/type} {:session/type :session/track}]
+(defn session-type-component [{:keys [type id]}]
   [:> rn/View {:style (tw "flex flex-row mb-8")}
-   [:> paper/Button {:style (tw "mr-4 w-24")
-                     :icon  "circle-outline"
-                     :mode  (case session-type
-                              :session/plan "contained"
-                              "outlined")}
+   [:> paper/Button {:style    (tw "mr-4 w-24")
+                     :icon     "circle-outline"
+                     :mode     (case type
+                                 :session/plan "contained"
+                                 "outlined")
+                     :on-press #(>evt [:update-session
+                                       {:session/type :session/plan
+                                        :session/id   id}])}
     "plan"]
-   [:> paper/Button {:style (tw "w-24")
-                     :icon  "circle-slice-8"
-                     :mode  (case session-type
-                              :session/track "contained"
-                              "outlined")}
-    "track"]]))
+   [:> paper/Button {:style    (tw "w-24")
+                     :icon     "circle-slice-8"
+                     :mode     (case type
+                                 :session/track "contained"
+                                 "outlined")
+                     :on-press #(>evt [:update-session
+                                       {:session/type :session/track
+                                        :session/id   id}])}
+    "track"]])
 
 (defn screen [props]
   (r/as-element
