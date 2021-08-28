@@ -257,7 +257,7 @@
 (def calendar-val-data-spec
   (ds/spec {:name ::calendar-ds
             :spec {:calendar/date     t/date?
-                   :calendar/sessions [uuid?]}}))
+                   :calendar/sessions [uuid?]}})) ;; TODO this should maybe be a set
 
 (s/def ::calendar-val (s/with-gen calendar-val-data-spec #(gen/fmap generate-calendar-val (s/gen int?))))
 

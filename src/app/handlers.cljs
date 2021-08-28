@@ -119,63 +119,133 @@
        (setval [:app-db.selected/session] session-id)))
 (reg-event-db :set-selected-session set-selected-session)
 
+(defn get-dates [start stop]
+  (->> (t/range start stop (t/new-duration 1 :days))
+       (map t/date)
+       vec))
+
+(defn re-index-session
+  [db [_ {:keys [old-indexes new-indexes id]}]]
+  (tap> (merge {:location :re-index-session}
+               (p/map-of old-indexes new-indexes id)))
+  (let [remove-session (fn [sessions]
+                         (tap> (p/map-of sessions))
+                         (->> sessions
+                              (remove #(= % id))
+                              vec))]
+    (->> db
+         ;; add days that don't exist yet to calendar
+         (transform [:app-db/calendar]
+                    #(merge
+                       (->> new-indexes
+                            (map (fn [d] [d {:calendar/date     d
+                                             :calendar/sessions []}]))
+                            flatten
+                            (apply hash-map))
+                       %))
+         ;; remove from old indexes
+         (transform [:app-db/calendar
+                     (sp/submap old-indexes)
+                     sp/MAP-VALS
+                     (sp/keypath :calendar/sessions)]
+
+                    remove-session)
+
+         ;; remove from new indexes (in case they collide with old)
+         (transform [:app-db/calendar
+                     (sp/submap new-indexes)
+                     sp/MAP-VALS
+                     (sp/keypath :calendar/sessions)]
+
+                    remove-session)
+
+         ;; add to new indexes
+         (transform [:app-db/calendar
+                     (sp/submap new-indexes)
+                     sp/MAP-VALS
+                     (sp/keypath :calendar/sessions)]
+
+                    #(conj % id)))))
+(reg-event-db :re-index-session re-index-session)
+
 (defn update-session
   "This is not meant to be used with tags, just label start stop type color"
-  [db [_ {:session/keys [id color-hex] :as session}]]
-  (let [c       (make-color-if-some color-hex)
-        session (-> session
-                    (dissoc :session/color-hex)
-                    (p/update-if-contains :session/start t/instant)
-                    (p/update-if-contains :session/stop t/instant))]
-    (tap> (p/map-of color-hex session))
-    (->> db
-         (transform [:app-db/sessions (sp/keypath id)]
-                    #(merge %
-                            session
-                            (when (some? c) {:session/color c}) )))))
-(reg-event-db :update-session update-session)
+  [{:keys [db]} [_ {:session/keys [id color-hex] :as session}]]
+  (let [c              (make-color-if-some color-hex)
+        session        (-> session
+                           (dissoc :session/color-hex)
+                           (p/update-if-contains :session/start t/instant)
+                           (p/update-if-contains :session/stop t/instant))
+        start          (:session/start session)
+        stop           (:session/stop session)
+        old-session    (->> db
+                            (select-one [:app-db/sessions
+                                         (sp/keypath id)
+                                         (sp/submap [:session/start
+                                                     :session/stop])]))
+        old-start      (:session/start old-session)
+        old-stop       (:session/stop old-session)
+        stamps-changed (or (some? start) (some? stop))
+        start          (or start old-start)
+        stop           (or stop old-stop)
+        old-indexes    (when stamps-changed (get-dates old-start old-stop))
+        new-indexes    (when stamps-changed (get-dates start stop))]
+
+    ;; TODO call db/start-before-stop
+
+    (tap> {:location       :update-session
+           :stamps-changed stamps-changed})
+    (merge
+      {:db (->> db
+                (transform [:app-db/sessions (sp/keypath id)]
+                           #(merge %
+                                   session
+                                   (when (some? c) {:session/color c}))))}
+      (when stamps-changed
+        {:dispatch [:re-index-session (p/map-of old-indexes new-indexes id)]}))))
+(reg-event-fx :update-session update-session)
 
 (defn add-tag-to-session
   [db [_ {session-id :session/id
           tag-id     :tag/id}]]
-  (->> db
-       (transform [:app-db/sessions (sp/keypath session-id) :session/tags]
-                  #(conj % tag-id))))
+(->> db
+     (transform [:app-db/sessions (sp/keypath session-id) :session/tags]
+                #(conj % tag-id))))
 (reg-event-db :add-tag-to-session add-tag-to-session)
 
 (defn remove-tag-from-session
-  [db [_ {session-id :session/id
-          tag-id     :tag/id}]]
-  (->> db
-       (transform [:app-db/sessions (sp/keypath session-id) :session/tags]
-                  (fn [tags] (->> tags (remove #(= % tag-id)) vec)))))
+[db [_ {session-id :session/id
+        tag-id     :tag/id}]]
+(->> db
+     (transform [:app-db/sessions (sp/keypath session-id) :session/tags]
+                (fn [tags] (->> tags (remove #(= % tag-id)) vec)))))
 (reg-event-db :remove-tag-from-session remove-tag-from-session)
 
 ;; TODO this is totally untested
 (defn set-initial-timestamp
-  [db [_ {:keys      [set-start set-stop]
-          session-id :session/id}]]
-  (->> db
-       (transform [:app-db/sessions (sp/keypath session-id)]
-                  (fn [{:session/keys [start stop]
-                        :as           session}]
-                    (merge session
-                           (when (and set-start
-                                      (nil? start))
-                             (if (some? stop)
-                               {:session/start
-                                (-> stop
-                                    (t/- (t/new-duration 60 :minutes)))}
-                               ;; TODO inject now
-                               {:session/start (t/now)
-                                :session/stop  (-> (t/now) (t/+ 60 :minutes))}))
-                           (when (and set-stop
-                                      (nil? stop))
-                             (if (some? start)
-                               {:session/stop
-                                (-> start
-                                    (t/+ (t/new-duration 60 :minutes)))}
-                               ;; TODO inject now
-                               {:session/start (t/now)
-                                :session/stop  (-> (t/now) (t/+ 60 :minutes))})))))))
+[db [_ {:keys      [set-start set-stop]
+        session-id :session/id}]]
+(->> db
+     (transform [:app-db/sessions (sp/keypath session-id)]
+                (fn [{:session/keys [start stop]
+                      :as           session}]
+                  (merge session
+                         (when (and set-start
+                                    (nil? start))
+                           (if (some? stop)
+                             {:session/start
+                              (-> stop
+                                  (t/- (t/new-duration 60 :minutes)))}
+                             ;; TODO inject now
+                             {:session/start (t/now)
+                              :session/stop  (-> (t/now) (t/+ 60 :minutes))}))
+                         (when (and set-stop
+                                    (nil? stop))
+                           (if (some? start)
+                             {:session/stop
+                              (-> start
+                                  (t/+ (t/new-duration 60 :minutes)))}
+                             ;; TODO inject now
+                             {:session/start (t/now)
+                              :session/stop  (-> (t/now) (t/+ 60 :minutes))})))))))
 (reg-event-db :set-initial-timestamp set-initial-timestamp)

@@ -51,8 +51,9 @@
              [color-picker/component {:input-color tag-color
                                       :update-fn   #(tap> (str "set tag color " %))}]
 
-             [:> paper/IconButton {:style    (merge (tw "mr-4")
-                                                    {:background-color tag-color})
+             [:> paper/IconButton {:style (merge (tw "mr-4")
+                                                 {:background-color tag-color})
+                                   ;; TODO move this to a subscription
                                    :color    (if-some [c tag-color]
                                                (if (-> c color (j/call :isLight))
                                                  "black" "white")

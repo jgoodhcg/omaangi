@@ -14,7 +14,12 @@
                                    select-one!]]
    [tick.alpha.api :as t]
    [app.colors :refer [material-500-hexes white black]]
-   [app.helpers :refer [touches chance prepend-zero drop-keyword-sections hex-if-some is-color?]]
+   [app.helpers :refer [touches
+                        chance
+                        prepend-zero
+                        drop-keyword-sections
+                        hex-if-some
+                        is-color?]]
    [potpuri.core :as p]))
 
 (defn version
@@ -126,7 +131,11 @@
                     (let [tag-colors-path  [(sp/keypath :session/tags)
                                             sp/ALL
                                             (sp/keypath :tag/color)]
-                          tag-colors       (->> s (select tag-colors-path))
+                          ;; need to put :not-a-color in tag color list so that reduce runs
+                          ;; the reducer fn which takes care of the case there are no tag colors
+                          tag-colors       (-> [:not-a-color]
+                                               (concat (->> s (select tag-colors-path)))
+                                               vec)
                           tag-colors-count (count tag-colors)]
                       (if-let [c c]
                         ;; when there is a session color just hex it
@@ -134,7 +143,6 @@
                         ;; when there is NOT a session color mix tag colors
                         (merge s {:session/color
                                   (->> tag-colors
-                                       rest
                                        vec
                                        (reduce-kv
                                          (fn [{:keys [mixed-color]} i c2]
@@ -161,7 +169,7 @@
                                               ;; should this default live somewhere else?
                                               :else
                                               (color "#ababab"))})
-                                         {:mixed-color (first tag-colors)})
+                                         {:mixed-color :not-a-color})
                                        :mixed-color
                                        ((fn [c]
                                           (if hex
@@ -175,16 +183,16 @@
                   (fn [tag-ids] (->> tag-ids (map #(-> indexed-tags (get %))))))))
 
 (defn set-render-props
-[zoom
- tags
- [collision-index
-  {:session/keys    [type
-                     id
-                     start-truncated
-                     stop-truncated
-                     label]
-   session-tag-refs :session/tags
-   :as              session}]]
+  [zoom
+   tags
+   [collision-index
+    {:session/keys    [type
+                       id
+                       start-truncated
+                       stop-truncated
+                       label]
+     session-tag-refs :session/tags
+     :as              session}]]
 
   (let [type-offset      (case type
                            :session/plan  0
@@ -207,25 +215,30 @@
                               (replace-tag-refs-with-objects tags)
                               (set-session-color {:hex false})
                               :session/color)
-        text-color-hex   (-> session-color (j/call :isLight) (#(if % black white)))
+        text-color-hex   (if (is-color? session-color)
+                           (-> session-color (j/call :isLight) (#(if % black white)))
+                           ;; TODO is this a good default?
+                           black)
         tag-labels       (->> session-tag-refs
                               (map (fn [tag-id]
                                      (-> tags (get-in [tag-id :tag/label]))))
                               (remove nil?))
         label            (str label "\n" (join "\n" tag-labels))]
 
-    [collision-index
-     (merge session {:session-render/elevation        elevation
-                     :session-render/left             left
-                     :session-render/top              top
-                     :session-render/height           height
-                     :session-render/width            width
-                     :session-render/label            label
-                     :session-render/color-hex        (-> session-color (j/call :hex))
-                     :session-render/ripple-color-hex (-> session-color (j/call :lighten 0.64) (j/call :hex))
-                     :session-render/text-color-hex   text-color-hex
-                     :session-render/id               id
-                     })]))
+    (try
+      [collision-index
+       (merge session {:session-render/elevation        elevation
+                       :session-render/left             left
+                       :session-render/top              top
+                       :session-render/height           height
+                       :session-render/width            width
+                       :session-render/label            label
+                       :session-render/color-hex        (-> session-color hex-if-some)
+                       :session-render/ripple-color-hex (-> session-color (j/call :lighten 0.64) (j/call :hex))
+                       :session-render/text-color-hex   text-color-hex
+                       :session-render/id               id
+                       })]
+      (catch js/Object e (tap> (p/map-of e session session-color))))))
 
 (defn sessions-for-this-day
   [[selected-day calendar sessions zoom tags] _]
@@ -319,7 +332,12 @@
                          :ripple-color-hex    (-> c (j/call :lighten 0.64) (j/call :hex))
                          :relative-width      relative-width
                          :label               label
-                         :text-color-hex      (-> c (j/call :isLight) (#(if % black white)))})))
+                         :text-color-hex      (if (is-color? c)
+                                                (-> c
+                                                    (j/call :isLight)
+                                                    (#(if % black white)))
+                                                ;; TODO is this a good default?
+                                                black)})))
 (reg-sub :tracking tracking)
 
 (defn hours
