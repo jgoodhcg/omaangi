@@ -11,9 +11,10 @@
    [reagent.core :as r]
 
    [app.components.menu :as menu]
-   [app.helpers :refer [<sub >evt get-theme clear-datetime-picker]]
+   [app.helpers :refer [<sub >evt get-theme clear-datetime-picker active-gesture?]]
    [app.screens.core :refer [screens]]
-   [app.tailwind :refer [tw]]))
+   [app.tailwind :refer [tw]]
+   [potpuri.core :as p]))
 
 (defn date-indicator []
   (let [{:keys [day-of-week
@@ -159,22 +160,29 @@
                                   label]
             :as                  s} sessions]
 
-       [:> g/RectButton {:key            (:session/id s)
-                         :style          (-> (tw "absolute")
-                                             (merge {:top              top
-                                                     :left             left
-                                                     :height           height
-                                                     :width            width
-                                                     :elevation        elevation
-                                                     :background-color color-hex
-                                                     :border-radius    (-> theme (j/get :roundness))}))
-                         :on-press       #(do (>evt [:set-selected-session id])
-                                              (>evt [:navigate (:session screens)]))
-                         :ripple-color   ripple-color-hex
-                         :underlay-color ripple-color-hex
-                         :active-opacity 0.7}
-        [:> rn/View {:style (tw "h-full w-full overflow-hidden p-1")}
-         [:> paper/Text {:style {:color text-color-hex}} label]]])]))
+       [:> g/LongPressGestureHandler
+        {:key                     (:session/id s)
+         :min-duration-ms         800
+         :on-handler-state-change (j/fn [^:js {:keys [nativeEvent] :as e}]
+                                    (let [is-active (active-gesture? e)]
+                                      (tap> (p/map-of is-active nativeEvent))))}
+
+        [:> g/RectButton {:key            (:session/id s)
+                          :style          (-> (tw "absolute")
+                                              (merge {:top              top
+                                                      :left             left
+                                                      :height           height
+                                                      :width            width
+                                                      :elevation        elevation
+                                                      :background-color color-hex
+                                                      :border-radius    (-> theme (j/get :roundness))}))
+                          :on-press       #(do (>evt [:set-selected-session id])
+                                               (>evt [:navigate (:session screens)]))
+                          :ripple-color   ripple-color-hex
+                          :underlay-color ripple-color-hex
+                          :active-opacity 0.7}
+         [:> rn/View {:style (tw "h-full w-full overflow-hidden p-1")}
+          [:> paper/Text {:style {:color text-color-hex}} label]]]])]))
 
 (defn now-indicator-component []
   (let [theme                 (->> [:theme] <sub get-theme)

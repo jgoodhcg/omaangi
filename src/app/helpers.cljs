@@ -3,6 +3,7 @@
    ["react-native" :as rn]
    ["react-native-paper" :as paper]
    ["color" :as color]
+   ["react-native-gesture-handler" :as g]
    [clojure.string :refer [join split]]
    [applied-science.js-interop :as j]
    [camel-snake-kebab.core :as csk]
@@ -88,3 +89,9 @@
   (if (some? c)
     (j/contains? c :color)
     false))
+
+(defn active-gesture? [evt]
+  (-> evt
+      (j/get :nativeEvent)
+      (j/get :state)
+      (= (j/get g/State :ACTIVE))))
