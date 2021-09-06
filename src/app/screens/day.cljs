@@ -147,13 +147,14 @@
   (let [theme    (->> [:theme] <sub get-theme)
         sessions (<sub [:sessions-for-this-day])]
 
+    (tap> (->> sessions (mapv :session-render/is-selected)))
     [:> rn/View {:style (tw "ml-20")}
      (for [{:session-render/keys [left
                                   id
                                   top
                                   height
                                   width
-                                  elevation
+                                  ;; elevation
                                   color-hex
                                   ripple-color-hex
                                   text-color-hex
@@ -179,7 +180,7 @@
                                :width  width})}
          [:> g/RectButton {:style
                            (-> (tw "h-full w-full")
-                               (merge {:elevation        elevation
+                               (merge {;; :elevation        elevation
                                        :background-color color-hex
                                        :border-radius    (-> theme (j/get :roundness))}))
                            :on-press       #(do (>evt [:set-selected-session id])

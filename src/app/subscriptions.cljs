@@ -249,25 +249,38 @@
                        :label            "label"   ;; session label and tags depending on settings
                        }])
   ;; TODO include session-id for session editing
-  (let [this-day (get calendar selected-day)]
-    (->> this-day
-         :calendar/sessions
-         (mapv #(get sessions %))
-         (mapv #(truncate-session (:calendar/date this-day) %))
-         ;; session/is-selected gets renamed to session-render/is-selected
-         (mapv #(merge % {:session/is-selected (= (:session/id %) selected-session-id)}))
-         (sort-by (fn [s] (->> s
-                               :session/start
-                               (t/new-interval (t/epoch))
-                               t/duration
-                               t/millis)))
-         (group-by :session/type)
-         (transform [sp/MAP-VALS] get-collision-groups)
-         (transform [sp/MAP-VALS sp/ALL sp/INDEXED-VALS]
-                    ;; set-render-props are the only keys that come out of this subscription
-                    (partial set-render-props zoom tags))
-         (select [sp/MAP-VALS])
-         flatten)))
+  (let [this-day (get calendar selected-day)
+
+        sessions-ready-for-render
+        (->> this-day
+             :calendar/sessions
+             (mapv #(get sessions %))
+             (mapv #(truncate-session (:calendar/date this-day) %))
+             ;; session/is-selected gets renamed to session-render/is-selected
+             (mapv #(merge % {:session/is-selected (= (:session/id %) selected-session-id)}))
+             (sort-by (fn [s] (->> s
+                                   :session/start
+                                   (t/new-interval (t/epoch))
+                                   t/duration
+                                   t/millis)))
+             (group-by :session/type)
+             (transform [sp/MAP-VALS] get-collision-groups)
+             (transform [sp/MAP-VALS sp/ALL sp/INDEXED-VALS]
+                        ;; set-render-props are the only keys that come out of this subscription
+                        (partial set-render-props zoom tags))
+             (select [sp/MAP-VALS])
+             flatten)]
+
+    ;; if there is a selected session put it on the end of the list
+    (if (some? selected-session-id)
+      (let [selected-session
+            (->> sessions-ready-for-render
+                 (some #(when (:session-render/is-selected %) %)))]
+        (-> sessions-ready-for-render
+            (->> (remove :session-render/is-selected))
+            vec
+            (conj selected-session)))
+      sessions-ready-for-render)))
 (reg-sub :sessions-for-this-day
 
          :<- [:selected-day]
