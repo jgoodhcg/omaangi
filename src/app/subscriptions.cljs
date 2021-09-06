@@ -184,7 +184,8 @@
                        id
                        start-truncated
                        stop-truncated
-                       label]
+                       label
+                       is-selected]
      session-tag-refs :session/tags
      :as              session}]]
 
@@ -231,11 +232,12 @@
                        :session-render/ripple-color-hex (-> session-color (j/call :lighten 0.64) (j/call :hex))
                        :session-render/text-color-hex   text-color-hex
                        :session-render/id               id
+                       :session-render/is-selected      is-selected
                        })]
       (catch js/Object e (tap> (p/map-of e session session-color))))))
 
 (defn sessions-for-this-day
-  [[selected-day calendar sessions zoom tags] _]
+  [[selected-day calendar sessions zoom tags selected-session-id] _]
   (comment
     [;; collision groups are an intermediate grouping not in sub result
      #:session-render {:left             0         ;; collision group position and type
@@ -252,6 +254,8 @@
          :calendar/sessions
          (mapv #(get sessions %))
          (mapv #(truncate-session (:calendar/date this-day) %))
+         ;; session/is-selected gets renamed to session-render/is-selected
+         (mapv #(merge % {:session/is-selected (= (:session/id %) selected-session-id)}))
          (sort-by (fn [s] (->> s
                                :session/start
                                (t/new-interval (t/epoch))
@@ -260,6 +264,7 @@
          (group-by :session/type)
          (transform [sp/MAP-VALS] get-collision-groups)
          (transform [sp/MAP-VALS sp/ALL sp/INDEXED-VALS]
+                    ;; set-render-props are the only keys that come out of this subscription
                     (partial set-render-props zoom tags))
          (select [sp/MAP-VALS])
          flatten)))
@@ -270,6 +275,7 @@
          :<- [:sessions]
          :<- [:zoom]
          :<- [:tags]
+         :<- [:selected-session-id]
 
          sessions-for-this-day)
 

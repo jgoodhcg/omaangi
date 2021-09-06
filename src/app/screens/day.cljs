@@ -144,9 +144,8 @@
          val]])]))
 
 (defn sessions-component []
-  (let [theme               (->> [:theme] <sub get-theme)
-        sessions            (<sub [:sessions-for-this-day])
-        selected-session-id (<sub [:selected-session-id])]
+  (let [theme    (->> [:theme] <sub get-theme)
+        sessions (<sub [:sessions-for-this-day])]
 
     [:> rn/View {:style (tw "ml-20")}
      (for [{:session-render/keys [left
@@ -158,9 +157,9 @@
                                   color-hex
                                   ripple-color-hex
                                   text-color-hex
-                                  label]
+                                  label
+                                  is-selected]
             :as                  s} sessions]
-
        [:> g/LongPressGestureHandler
         {:key                     (:session/id s)
          :min-duration-ms         800
@@ -172,7 +171,7 @@
 
         [:> rn/View {:style (merge
                               (tw "absolute p-2")
-                              (when (= selected-session-id id)
+                              (when is-selected
                                 (tw "border-solid border-4 border-white rounded-md"))
                               {:top    top
                                :left   left
