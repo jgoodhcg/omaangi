@@ -19,7 +19,8 @@
                         prepend-zero
                         drop-keyword-sections
                         hex-if-some
-                        is-color?]]
+                        is-color?
+                        time-label]]
    [potpuri.core :as p]))
 
 (defn version
@@ -233,6 +234,8 @@
                        :session-render/text-color-hex   text-color-hex
                        :session-render/id               id
                        :session-render/is-selected      is-selected
+                       :session-render/start-label      (time-label start-truncated)
+                       :session-render/stop-label       (time-label stop-truncated)
                        })]
       (catch js/Object e (tap> (p/map-of e session session-color))))))
 
@@ -377,12 +380,10 @@
 
 (defn now-indicator
   [[zoom selected-day] _]
-  (let [now (t/now)]
+  (let [now (t/now)] ;; TODO this needs to be injected or set on state with a scheduled >evt
     #:now-indicator-render {:position          (instant->top-position now zoom)
                             :display-indicator (= (t/date now) (t/date selected-day))
-                            :label             (str (prepend-zero (t/hour now))
-                                                    "-"
-                                                    (prepend-zero (t/minute now)))}))
+                            :label             (time-label now)}))
 (reg-sub :now-indicator
 
          :<- [:zoom]
@@ -453,27 +454,24 @@
        (transform []
                   (fn [{:session/keys [start stop]
                         :as           session}]
-                    (let [time-label #(str (-> % t/hour prepend-zero)
-                                           "-"
-                                           (-> % t/minute prepend-zero))]
-                      (merge session
-                             (if (some? start)
-                               #:session
-                               {:start-date-label (-> start t/date str)
-                                :start-time-label (-> start t/time time-label)
-                                :start-value      (-> start t/inst)
-                                :start-set        true}
+                    (merge session
+                           (if (some? start)
+                             #:session
+                             {:start-date-label (-> start t/date str)
+                              :start-time-label (-> start t/time time-label)
+                              :start-value      (-> start t/inst)
+                              :start-set        true}
 
-                               #:session
-                               {:start-set false})
-                             (if (some? stop)
-                               #:session
-                               {:stop-date-label (-> stop t/date str)
-                                :stop-time-label (-> stop t/time time-label)
-                                :stop-value      (-> stop t/inst)
-                                :stop-set        true}
-                               #:session
-                               {:stop-set false})))))))
+                             #:session
+                             {:start-set false})
+                           (if (some? stop)
+                             #:session
+                             {:stop-date-label (-> stop t/date str)
+                              :stop-time-label (-> stop t/time time-label)
+                              :stop-value      (-> stop t/inst)
+                              :stop-set        true}
+                             #:session
+                             {:stop-set false}))))))
 (reg-sub :selected-session
 
          :<- [:selected-session-id]

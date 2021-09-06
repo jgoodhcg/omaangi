@@ -147,7 +147,6 @@
   (let [theme    (->> [:theme] <sub get-theme)
         sessions (<sub [:sessions-for-this-day])]
 
-    (tap> (->> sessions (mapv :session-render/is-selected)))
     [:> rn/View {:style (tw "ml-20")}
      (for [{:session-render/keys [left
                                   id
@@ -159,54 +158,74 @@
                                   ripple-color-hex
                                   text-color-hex
                                   label
-                                  is-selected]
+                                  is-selected
+                                  start-label
+                                  stop-label]
             :as                  s} sessions]
-       [:> g/LongPressGestureHandler
-        {:key                     (:session/id s)
-         :min-duration-ms         800
-         :on-handler-state-change (j/fn [^:js {:keys [nativeEvent] :as e}]
-                                    (let [is-active (active-gesture? e)]
-                                      (tap> (p/map-of is-active nativeEvent))
-                                      (when is-active
-                                        (>evt [:set-selected-session id]))))}
 
-        [:> rn/View {:style (merge
-                              (tw "absolute p-2")
-                              (when is-selected
-                                (tw "border-solid border-4 border-white rounded-md"))
-                              {:top    top
-                               :left   left
-                               :height height
-                               :width  width})}
-         [:> g/RectButton {:style
-                           (-> (tw "h-full w-full")
-                               (merge {;; :elevation        elevation
-                                       :background-color color-hex
-                                       :border-radius    (-> theme (j/get :roundness))}))
-                           :on-press       #(do (>evt [:set-selected-session id])
-                                                (>evt [:navigate (:session screens)]))
-                           :ripple-color   ripple-color-hex
-                           :underlay-color ripple-color-hex
-                           :active-opacity 0.7}
-          [:> rn/View {:style (tw "h-full w-full overflow-hidden p-1")}
-           [:> paper/Text {:style {:color text-color-hex}} label]]]]])]))
+       [:> rn/View {:key (:session/id s)}
+
+        (when is-selected
+          [:> rn/View {:style (merge
+                                (tw "absolute flex flex-row items-center")
+                                {:top    (-> top (- 2))
+                                 :height 2
+                                 :left   -50
+                                 :right  0})}
+           [:> paper/Text start-label]
+           [:> rn/View {:style (merge (tw "w-full ml-1")
+                                      {:height           2
+                                       :background-color (-> theme (j/get :colors) (j/get :text))}) }]])
+
+        [:> g/LongPressGestureHandler
+         {:min-duration-ms         800
+          :on-handler-state-change (fn [e]
+                                     (let [is-active (active-gesture? e)]
+                                       (when is-active
+                                         (>evt [:set-selected-session id]))))}
+         [:> rn/View {:style (merge
+                               (tw "absolute")
+                               {:top    top
+                                :left   left
+                                :height height
+                                :width  width})}
+          [:> g/RectButton {:style
+                            (-> (tw "h-full w-full")
+                                (merge {;; :elevation        elevation
+                                        :background-color color-hex}
+                                       (when (not is-selected)
+                                         {:border-radius (-> theme (j/get :roundness))} )))
+                            :on-press       #(do (>evt [:set-selected-session id])
+                                                 (>evt [:navigate (:session screens)]))
+                            :ripple-color   ripple-color-hex
+                            :underlay-color ripple-color-hex
+                            :active-opacity 0.7}
+           [:> rn/View {:style (tw "h-full w-full overflow-hidden p-1")}
+            [:> paper/Text {:style {:color text-color-hex}} label]]]]]
+        ]
+       )]))
 
 (defn now-indicator-component []
   (let [theme                 (->> [:theme] <sub get-theme)
         {:now-indicator-render/keys
          [position
           label
-          display-indicator]} (<sub [:now-indicator])]
+          display-indicator]} (<sub [:now-indicator])
+        text-color            (-> theme (j/get :colors) (j/get :placeholder))]
 
     (when display-indicator
       [:> rn/View {:elevation 99 ;; otherwise the second session in a collision group covers it
                    ;; Theoritically enough items in a collision group will get past this but it isn't practical
-                   :style     (-> (tw "absolute w-full")
-                                  (merge {:top  position
-                                          :left 32})) }
-       [:> rn/View {:style (-> (tw "w-full h-1 rounded-md")
-                               (merge {:background-color (-> theme (j/get :colors) (j/get :text))}))}]
-       [:> paper/Text label]])))
+                   :style     (-> (tw "absolute flex flex-row items-center")
+                                  (merge {:top    position
+                                          :height 2
+                                          :left   32
+                                          :right  0})) }
+       [:> paper/Text {:style {:color text-color}} label]
+       [:> rn/View {:style (-> (tw "w-full ml-1")
+                               (merge {:height           2
+                                       :background-color text-color}))}]
+       ])))
 
 (defn zoom-buttons []
   [:> rn/View {:style (tw "absolute top-0 right-0 opacity-25 w-12 h-3/4")}

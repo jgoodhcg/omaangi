@@ -95,3 +95,8 @@
       (j/get :nativeEvent)
       (j/get :state)
       (= (j/get g/State :ACTIVE))))
+
+(defn time-label [instant]
+  (str (prepend-zero (t/hour instant))
+       "-"
+       (prepend-zero (t/minute instant))))
