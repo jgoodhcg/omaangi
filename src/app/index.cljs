@@ -27,7 +27,8 @@
    [app.screens.settings :as settings]
    [app.screens.session :as session]
    [app.screens.reports :as reports]
-   [app.screens.tags :as tags]))
+   [app.screens.tags :as tags]
+   [potpuri.core :as p]))
 
 ;; must use defonce and must refresh full app so metro can fill these in
 ;; at live-reload time `require` does not exist and will cause errors
@@ -110,7 +111,15 @@
         :on-state-change (fn []
                            (let [current-route-name (-> @!navigation-ref
                                                         (j/call :getCurrentRoute)
-                                                        (j/get :name))]
+                                                        (j/get :name))
+                                 prev-route-name    (->  @!route-name-ref :current)]
+
+                             ;; This is a bit of a hack 😬
+                             ;; I needed a way to "deselect" session when going "back" from session to day screen
+                             (when (and (-> current-route-name (= (:day screens)))
+                                        (-> prev-route-name (= (:session screens))))
+                               (>evt [:set-selected-session nil]))
+
                              (swap! !route-name-ref merge {:current current-route-name})))}
 
        [:> (drawer-navigator) {:drawer-content         custom-drawer
