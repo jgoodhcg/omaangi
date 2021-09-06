@@ -143,6 +143,8 @@
                                   (->> tag-colors
                                        vec
                                        (reduce-kv
+                                         ;; reduce-kv and i are remnants of trying to make
+                                         ;; some sort of mixing algorithm dependent on tag position
                                          (fn [{:keys [mixed-color]} i c2]
                                            {:mixed-color
                                             (cond
@@ -150,13 +152,8 @@
                                                    (is-color? c2))
                                               (-> mixed-color
                                                   (j/call :mix c2
-                                                          ;; ratio to mix in
-                                                          ;; the bigger i gets
-                                                          ;; the less c2 is mixed in
-                                                          ;; TODO there might be a better way to do this
-                                                          (min 0.5 ;; at most mix half and half
-                                                               (-> (max 1 (-> tag-colors-count (- i))) ;; at least mix 1/tag-colors-count
-                                                                   (/ tag-colors-count)))))
+                                                          (max 0.5
+                                                               (-> 1 (/ tag-colors-count)))))
 
                                               (is-color? mixed-color)
                                               mixed-color
