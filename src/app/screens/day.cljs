@@ -177,6 +177,17 @@
                                       {:height           2
                                        :background-color (-> theme (j/get :colors) (j/get :text))}) }]])
 
+        (when is-selected
+          [:> rn/View {:style (merge
+                                (tw "absolute flex flex-row items-center")
+                                {:top    (-> top (+ height) (+ 2))
+                                 :height 2
+                                 :left   -50
+                                 :right  0})}
+           [:> paper/Text stop-label]
+           [:> rn/View {:style (merge (tw "w-full ml-1")
+                                      {:height           2
+                                       :background-color (-> theme (j/get :colors) (j/get :text))}) }]])
         [:> g/LongPressGestureHandler
          {:min-duration-ms         800
           :on-handler-state-change (fn [e]
@@ -201,9 +212,7 @@
                             :underlay-color ripple-color-hex
                             :active-opacity 0.7}
            [:> rn/View {:style (tw "h-full w-full overflow-hidden p-1")}
-            [:> paper/Text {:style {:color text-color-hex}} label]]]]]
-        ]
-       )]))
+            [:> paper/Text {:style {:color text-color-hex}} label]]]]]])]))
 
 (defn now-indicator-component []
   (let [theme                 (->> [:theme] <sub get-theme)
