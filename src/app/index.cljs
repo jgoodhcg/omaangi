@@ -114,12 +114,6 @@
                                                         (j/get :name))
                                  prev-route-name    (->  @!route-name-ref :current)]
 
-                             ;; This is a bit of a hack 😬
-                             ;; I needed a way to "deselect" session when going "back" from session to day screen
-                             (when (and (-> current-route-name (= (:day screens)))
-                                        (-> prev-route-name (= (:session screens))))
-                               (>evt [:set-selected-session nil]))
-
                              (swap! !route-name-ref merge {:current current-route-name})))}
 
        [:> (drawer-navigator) {:drawer-content         custom-drawer

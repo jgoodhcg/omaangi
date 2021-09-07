@@ -270,15 +270,20 @@
             [:> rn/View ;; This allows for zoom buttons to be positioned below top section but _over_ scroll view of sessions
 
              [:> g/ScrollView
-              [:> rn/View
-               {:style {:height        (-> 1440 (* zoom))
-                        :margin-bottom 256}}
+              [:> g/TapGestureHandler
+               {:on-handler-state-change (fn [e]
+                                           (let [is-active (active-gesture? e)]
+                                             (when is-active
+                                               (>evt [:set-selected-session nil]))))}
+               [:> rn/View
+                {:style {:height        (-> 1440 (* zoom))
+                         :margin-bottom 256}}
 
-               [time-indicators]
+                [time-indicators]
 
-               [sessions-component]
+                [sessions-component]
 
-               [now-indicator-component]]]
+                [now-indicator-component]]]]
 
              [zoom-buttons]]
             ]]]))]))
