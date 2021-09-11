@@ -8,7 +8,7 @@
                           debug]]
    [com.rpl.specter :as sp :refer [select select-one setval transform selected-any?]]
    [clojure.spec.alpha :as s]
-   [app.db :as db :refer [default-app-db app-db-spec]]
+   [app.db :as db :refer [default-app-db app-db-spec start-before-stop]]
    [tick.alpha.api :as t]
    [potpuri.core :as p]
    [app.helpers :refer [make-color-if-some]]))
@@ -171,7 +171,8 @@
 (defn update-session
   "This is not meant to be used with tags, just label start stop type color.
   `:session/remove-color` can be used to remove the color attribute.
-  `:session/hex-color` wins over :session/remove-color for setting color."
+  `:session/hex-color` wins over :session/remove-color for setting color.
+  Session will not update (no error thrown yet) when stamps are not valid."
   [{:keys [db]} [_ {:session/keys [id color-hex remove-color] :as session}]]
   (let [c              (make-color-if-some color-hex)
         session        (-> session
@@ -192,24 +193,22 @@
         stop           (or stop old-stop)
         old-indexes    (when stamps-changed (get-dates old-start old-stop))
         new-indexes    (when stamps-changed (get-dates start stop))
+        valid-stamps   (start-before-stop {:session/start start
+                                           :session/stop  stop})]
 
-        location :update-session]
-
-    ;; TODO call db/start-before-stop
-
-    (tap> (p/map-of location color-hex remove-color c))
-
-    (merge
-      {:db (->> db
-                (transform [:app-db/sessions (sp/keypath id)]
-                           #(merge
-                              (if remove-color
-                                (dissoc % :session/color)
-                                %)
-                              session
-                              (when (some? c) {:session/color c}))))}
-      (when stamps-changed
-        {:dispatch [:re-index-session (p/map-of old-indexes new-indexes id)]}))))
+    (tap> (p/map-of valid-stamps start stop))
+    (when valid-stamps
+      (merge
+        {:db (->> db
+                  (transform [:app-db/sessions (sp/keypath id)]
+                             #(merge
+                                (if remove-color
+                                  (dissoc % :session/color)
+                                  %)
+                                session
+                                (when (some? c) {:session/color c}))))}
+        (when stamps-changed
+          {:dispatch [:re-index-session (p/map-of old-indexes new-indexes id)]})))))
 (reg-event-fx :update-session update-session)
 
 (defn add-tag-to-session

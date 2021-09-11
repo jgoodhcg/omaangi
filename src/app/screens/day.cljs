@@ -60,7 +60,8 @@
 
 (defn tracking-sessions []
   (let [theme  (->> [:theme] <sub get-theme)
-        tracks (<sub [:tracking])]
+        tracks [] ;;(<sub [:tracking])
+        ]
     [:> g/ScrollView
      [:> paper/Surface {:style (tw "p-2 mb-2")}
 
