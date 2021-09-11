@@ -11,7 +11,7 @@
    [app.db :as db :refer [default-app-db app-db-spec start-before-stop]]
    [tick.alpha.api :as t]
    [potpuri.core :as p]
-   [app.helpers :refer [make-color-if-some]]))
+   [app.helpers :refer [make-color-if-some native-event->time]]))
 
 (defn check-and-throw
   "Throw an exception if db doesn't have a valid spec."
@@ -67,8 +67,8 @@
 (reg-event-db :set-version [base-interceptors] set-version)
 
 (defn navigate
-  [cofx [_ screen-name]]
-  {:db       (:db cofx)
+  [{:keys [db]} [_ screen-name]]
+  {:db       db
    :navigate screen-name})
 (reg-event-fx :navigate [base-interceptors] navigate)
 
@@ -268,3 +268,17 @@
   [{:keys [now db]} _]
   {:db (->> db (setval [:app-db/current-time] now))})
 (reg-event-fx :tick-tock [insert-now] tick-tock)
+
+(defn create-session-from-event
+  [{:keys [db new-uuid]} [_ event]]
+  (let [zoom  (:app-db.view/zoom db)
+        start (native-event->time (p/map-of event zoom))]
+    (tap> (p/map-of
+            :create-session-from-event
+            start
+            new-uuid
+            zoom
+            event
+            ))
+    {:db db}))
+(reg-event-fx :create-session-from-event [id-gen] create-session-from-event)

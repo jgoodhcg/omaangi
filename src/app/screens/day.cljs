@@ -11,10 +11,13 @@
    [reagent.core :as r]
 
    [app.components.menu :as menu]
-   [app.helpers :refer [<sub >evt get-theme clear-datetime-picker active-gesture?]]
+   [app.helpers :refer [<sub
+                        >evt
+                        get-theme
+                        clear-datetime-picker
+                        active-gesture?]]
    [app.screens.core :refer [screens]]
-   [app.tailwind :refer [tw]]
-   [potpuri.core :as p]))
+   [app.tailwind :refer [tw]]))
 
 (defn date-indicator []
   (let [{:keys [day-of-week
@@ -275,7 +278,7 @@
                 :on-handler-state-change (fn [e]
                                            (let [is-active (active-gesture? e)]
                                              (when is-active
-                                               (tap> "add a session please!"))))}
+                                               (>evt [:create-session-from-event (j/get e :nativeEvent)]))))}
                [:> g/TapGestureHandler
                 {:on-handler-state-change (fn [e]
                                             (let [is-active (active-gesture? e)]

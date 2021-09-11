@@ -100,3 +100,12 @@
   (str (prepend-zero (t/hour instant))
        "-"
        (prepend-zero (t/minute instant))))
+
+(defn native-event->time
+  [{:keys [event zoom]}]
+  (-> event
+      (j/get :y)
+      (/ zoom)
+      (int)
+      (t/new-duration :minutes)
+      (->> (t/+ (t/time "00:00")))))
