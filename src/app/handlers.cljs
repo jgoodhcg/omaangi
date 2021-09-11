@@ -40,6 +40,14 @@
       :after validate-spec)
     ->interceptor))
 
+(def id-gen
+  (->interceptor :id :id-gen
+                 :before #(assoc-in % [:coeffects :new-uuid] (random-uuid))))
+
+(def insert-now
+  (->interceptor :id :insert-now
+                 :before #(assoc-in % [:coeffects :now] (t/now))))
+
 (def base-interceptors  [;; (when ^boolean goog.DEBUG debug) ;; use this for some verbose re-frame logging
                          spec-validation])
 
@@ -214,44 +222,49 @@
 (defn add-tag-to-session
   [db [_ {session-id :session/id
           tag-id     :tag/id}]]
-(->> db
-     (transform [:app-db/sessions (sp/keypath session-id) :session/tags]
-                #(conj % tag-id))))
+  (->> db
+       (transform [:app-db/sessions (sp/keypath session-id) :session/tags]
+                  #(conj % tag-id))))
 (reg-event-db :add-tag-to-session add-tag-to-session)
 
 (defn remove-tag-from-session
-[db [_ {session-id :session/id
-        tag-id     :tag/id}]]
-(->> db
-     (transform [:app-db/sessions (sp/keypath session-id) :session/tags]
-                (fn [tags] (->> tags (remove #(= % tag-id)) vec)))))
+  [db [_ {session-id :session/id
+          tag-id     :tag/id}]]
+  (->> db
+       (transform [:app-db/sessions (sp/keypath session-id) :session/tags]
+                  (fn [tags] (->> tags (remove #(= % tag-id)) vec)))))
 (reg-event-db :remove-tag-from-session remove-tag-from-session)
 
 ;; TODO this is totally untested
 (defn set-initial-timestamp
-[db [_ {:keys      [set-start set-stop]
-        session-id :session/id}]]
-(->> db
-     (transform [:app-db/sessions (sp/keypath session-id)]
-                (fn [{:session/keys [start stop]
-                      :as           session}]
-                  (merge session
-                         (when (and set-start
-                                    (nil? start))
-                           (if (some? stop)
-                             {:session/start
-                              (-> stop
-                                  (t/- (t/new-duration 60 :minutes)))}
-                             ;; TODO inject now
-                             {:session/start (t/now)
-                              :session/stop  (-> (t/now) (t/+ 60 :minutes))}))
-                         (when (and set-stop
-                                    (nil? stop))
-                           (if (some? start)
-                             {:session/stop
-                              (-> start
-                                  (t/+ (t/new-duration 60 :minutes)))}
-                             ;; TODO inject now
-                             {:session/start (t/now)
-                              :session/stop  (-> (t/now) (t/+ 60 :minutes))})))))))
+  [db [_ {:keys      [set-start set-stop]
+          session-id :session/id}]]
+  (->> db
+       (transform [:app-db/sessions (sp/keypath session-id)]
+                  (fn [{:session/keys [start stop]
+                        :as           session}]
+                    (merge session
+                           (when (and set-start
+                                      (nil? start))
+                             (if (some? stop)
+                               {:session/start
+                                (-> stop
+                                    (t/- (t/new-duration 60 :minutes)))}
+                               ;; TODO inject now
+                               {:session/start (t/now)
+                                :session/stop  (-> (t/now) (t/+ 60 :minutes))}))
+                           (when (and set-stop
+                                      (nil? stop))
+                             (if (some? start)
+                               {:session/stop
+                                (-> start
+                                    (t/+ (t/new-duration 60 :minutes)))}
+                               ;; TODO inject now
+                               {:session/start (t/now)
+                                :session/stop  (-> (t/now) (t/+ 60 :minutes))})))))))
 (reg-event-db :set-initial-timestamp set-initial-timestamp)
+
+(defn tick-tock
+  [{:keys [now db]} _]
+  {:db (->> db (setval [:app-db/current-time] now))})
+(reg-event-fx :tick-tock [insert-now] tick-tock)

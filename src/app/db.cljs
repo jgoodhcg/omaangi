@@ -299,6 +299,7 @@
     {:name ::app-db
      :spec
      {:app-db/version                          string?
+      :app-db/current-time                     ::time-point
       :app-db/tracking                         [uuid?]
       :app-db/calendar                         ::calendar
       :app-db/sessions                         ::sessions
@@ -338,6 +339,7 @@
       cal-tag-sessions
       {
        :app-db/version                          "version-not-set"
+       :app-db/current-time                     (t/now)
        :app-db/tracking                         []
        :app-db.selected/session                 nil
        :app-db.selected/day                     (->> cal-tag-sessions

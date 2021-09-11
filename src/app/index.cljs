@@ -169,5 +169,6 @@
 (defn init []
   (dispatch-sync [:initialize-db])
   (dispatch-sync [:set-version version])
+  (js/setInterval #(>evt [:tick-tock]) 1000)
   ;; TODO add a set day event for "today"
   (start))

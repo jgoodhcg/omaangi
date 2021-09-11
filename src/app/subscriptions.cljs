@@ -378,18 +378,24 @@
 
          hours)
 
-(defn now-indicator
-  [[zoom selected-day] _]
-  (let [now (t/now)] ;; TODO this needs to be injected or set on state with a scheduled >evt
-    #:now-indicator-render {:position          (instant->top-position now zoom)
-                            :display-indicator (= (t/date now) (t/date selected-day))
-                            :label             (time-label now)}))
-(reg-sub :now-indicator
+(defn current-time
+  [db _]
+  (->> db (select-one [:app-db/current-time])))
+(reg-sub :current-time current-time)
+
+(defn time-indicator
+  [[zoom selected-day current-time] _]
+  #:current-time-indicator
+  {:position          (instant->top-position current-time zoom)
+   :display-indicator (= (t/date current-time) (t/date selected-day))
+   :label             (time-label current-time)})
+(reg-sub :current-time-indicator
 
          :<- [:zoom]
          :<- [:selected-day]
+         :<- [:current-time]
 
-         now-indicator)
+         time-indicator)
 
 (defn tag-removal-modal
   [db _]

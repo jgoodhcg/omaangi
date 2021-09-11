@@ -215,12 +215,12 @@
            [:> rn/View {:style (tw "h-full w-full overflow-hidden p-1")}
             [:> paper/Text {:style {:color text-color-hex}} label]]]]]])]))
 
-(defn now-indicator-component []
+(defn current-time-indicator-component []
   (let [theme                 (->> [:theme] <sub get-theme)
-        {:now-indicator-render/keys
+        {:current-time-indicator/keys
          [position
           label
-          display-indicator]} (<sub [:now-indicator])
+          display-indicator]} (<sub [:current-time-indicator])
         text-color            (-> theme (j/get :colors) (j/get :placeholder))]
 
     (when display-indicator
@@ -234,8 +234,7 @@
        [:> paper/Text {:style {:color text-color}} label]
        [:> rn/View {:style (-> (tw "w-full ml-1")
                                (merge {:height           2
-                                       :background-color text-color}))}]
-       ])))
+                                       :background-color text-color}))}]])))
 
 (defn zoom-buttons []
   [:> rn/View {:style (tw "absolute top-0 right-0 opacity-25 w-12 h-3/4")}
@@ -290,7 +289,7 @@
 
                  [sessions-component]
 
-                 [now-indicator-component]]]]]
+                 [current-time-indicator-component]]]]]
 
              [zoom-buttons]]
             ]]]))]))
