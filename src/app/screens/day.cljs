@@ -17,7 +17,8 @@
                         clear-datetime-picker
                         active-gesture?]]
    [app.screens.core :refer [screens]]
-   [app.tailwind :refer [tw]]))
+   [app.tailwind :refer [tw]]
+   [potpuri.core :as p]))
 
 (defn date-indicator []
   (let [{:keys [day-of-week
@@ -167,7 +168,7 @@
                                   stop-label]
             :as                  s} sessions]
 
-       [:> rn/View {:key (:session/id s)}
+       [:> rn/View {:key id}
 
         (when is-selected
           [:> rn/View {:style (merge
@@ -271,6 +272,9 @@
             [top-section props]
 
             [:> rn/View ;; This allows for zoom buttons to be positioned below top section but _over_ scroll view of sessions
+             {:on-layout (fn [e]
+                           (let [native-event (j/get e :nativeEvent)]
+                             (>evt [:set-width-from-event native-event])))}
 
              [:> g/ScrollView
               [:> g/LongPressGestureHandler

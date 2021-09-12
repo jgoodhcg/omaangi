@@ -11,7 +11,9 @@
    [app.db :as db :refer [default-app-db app-db-spec start-before-stop]]
    [tick.alpha.api :as t]
    [potpuri.core :as p]
-   [app.helpers :refer [make-color-if-some native-event->time]]))
+   [app.screens.core :refer [screens]]
+   [app.helpers :refer [make-color-if-some native-event->time native-event->type]]
+   [applied-science.js-interop :as j]))
 
 (defn check-and-throw
   "Throw an exception if db doesn't have a valid spec."
@@ -134,10 +136,7 @@
 
 (defn re-index-session
   [db [_ {:keys [old-indexes new-indexes id]}]]
-  (tap> (merge {:location :re-index-session}
-               (p/map-of old-indexes new-indexes id)))
   (let [remove-session (fn [sessions]
-                         (tap> (p/map-of sessions))
                          (->> sessions
                               (remove #(= % id))
                               vec))]
@@ -203,8 +202,6 @@
         new-indexes    (when stamps-changed (get-dates start stop))
         valid-stamps   (start-before-stop {:session/start start
                                            :session/stop  stop})]
-
-    (tap> (p/map-of valid-stamps start stop))
     (when valid-stamps
       (merge
         {:db (->> db
@@ -270,15 +267,31 @@
 (reg-event-fx :tick-tock [insert-now] tick-tock)
 
 (defn create-session-from-event
-  [{:keys [db new-uuid]} [_ event]]
-  (let [zoom  (:app-db.view/zoom db)
-        start (native-event->time (p/map-of event zoom))]
-    (tap> (p/map-of
-            :create-session-from-event
-            start
-            new-uuid
-            zoom
-            event
-            ))
-    {:db db}))
-(reg-event-fx :create-session-from-event [id-gen] create-session-from-event)
+  [{:keys [db new-uuid now]} [_ event]]
+  (let [timezone     (:app-db/current-timezone db)
+        zoom         (:app-db.view/zoom db)
+        width        (:app-db.view/screen-width db)
+        selected-day (:app-db.selected/day db)
+        start-time   (-> (p/map-of event zoom) native-event->time)
+        start        (-> start-time (t/on selected-day) (t/in timezone) t/instant)
+        stop         (-> start (t/+ (t/new-duration 45 :minutes))) ;; TODO make this a setting default
+        type         (-> (p/map-of event width) native-event->type)
+        session      {:session/id          new-uuid
+                      :session/created     now
+                      :session/last-edited now
+                      :session/start       start
+                      :session/stop        stop
+                      :session/type        type}]
+    {:db (->> db (setval [:app-db/sessions (sp/keypath new-uuid)] session))
+     :fx [[:dispatch [:re-index-session {:old-indexes []
+                                         :new-indexes [selected-day]
+                                         :id          new-uuid}]]
+          [:dispatch [:set-selected-session new-uuid]]
+          [:dispatch [:navigate (:session screens)]]]}))
+(reg-event-fx :create-session-from-event [id-gen insert-now] create-session-from-event)
+
+(defn set-width-from-event
+  [db [_ event]]
+  (let [width (-> event (j/get :layout) (j/get :width))]
+    (->> db (setval [:app-db.view/screen-width] width))))
+(reg-event-db :set-width-from-event set-width-from-event)

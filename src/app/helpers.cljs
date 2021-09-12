@@ -109,3 +109,12 @@
       (int)
       (t/new-duration :minutes)
       (->> (t/+ (t/time "00:00")))))
+
+(defn native-event->type
+  [{:keys [event width]}]
+  (let [right-side? (-> event
+                        (j/get :x)
+                        (> (-> width (/ 2))))]
+    (if right-side?
+      :session/track
+      :session/plan)))

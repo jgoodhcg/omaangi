@@ -300,6 +300,7 @@
      :spec
      {:app-db/version                          string?
       :app-db/current-time                     ::time-point
+      :app-db/current-timezone                 t/zone?
       :app-db/tracking                         [uuid?]
       :app-db/calendar                         ::calendar
       :app-db/sessions                         ::sessions
@@ -308,6 +309,7 @@
       :app-db.selected/day                     t/date?
       :app-db.settings/theme                   (s/spec #{:light :dark})
       :app-db.view/zoom                        ::zoom
+      :app-db.view/screen-width                float?
       :app-db.view.tag-remove-modal/id         (ds/maybe uuid?)
       :app-db.view.tag-remove-modal/visible    boolean?
       :app-db.view.tag-remove-modal/label      (ds/maybe string?)
@@ -340,6 +342,7 @@
       {
        :app-db/version                          "version-not-set"
        :app-db/current-time                     (t/now)
+       :app-db/current-timezone                 (-> localization (j/get :timezone) (t/zone))
        :app-db/tracking                         []
        :app-db.selected/session                 nil
        :app-db.selected/day                     (->> cal-tag-sessions
@@ -348,6 +351,7 @@
                                                      rand-nth)
        :app-db.settings/theme                   :dark
        :app-db.view/zoom                        1.25
+       :app-db.view/screen-width                1.0 ;; TODO better default?
        :app-db.view.tag-remove-modal/id         nil
        :app-db.view.tag-remove-modal/visible    false
        :app-db.view.tag-remove-modal/label      nil
