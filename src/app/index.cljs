@@ -118,7 +118,7 @@
 
        [:> (drawer-navigator) {:drawer-content         custom-drawer
                                :drawer-style           drawer-style
-                               ;;:initial-route-name     (:day screens)
+                               :initial-route-name     (:tags screens)
                                :drawer-content-options {:active-tint-color   (-> theme (j/get :colors) (j/get :accent))
                                                         :inactive-tint-color (-> theme (j/get :colors) (j/get :text))}}
         (drawer-screen {:name      (:day screens)

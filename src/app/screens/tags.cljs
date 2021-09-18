@@ -15,24 +15,11 @@
    [app.screens.core :refer [screens]]
    [app.tailwind :refer [tw]]))
 
-(def tmp-tags
-  (r/atom
-    (for [i (range 10)]
-      #:tag {:label (str "tag " i)
-             :color (if (chance :med)
-                      nil
-                      (-> material-500-hexes rand-nth))
-
-             :tmp-update-fn
-             #(swap! tmp-tags (fn [tags] (->> tags (setval [i :color] %))))
-
-             :id (random-uuid)})))
-
 (defn screen [props]
   (r/as-element
     [(fn []
        (let [theme (->> [:theme] <sub get-theme)
-             tags  @tmp-tags]
+             tags  (<sub [:tag-list])]
 
          ;; TODO justin 2021-02-07 Do we need safe area view everywhere?
          [:> rn/ScrollView {:style (merge (tw "flex flex-1")
@@ -51,8 +38,8 @@
              [color-picker/component {:input-color tag-color
                                       :update-fn   #(tap> (str "set tag color " %))}]
 
-             [:> paper/IconButton {:style (merge (tw "mr-4")
-                                                 {:background-color tag-color})
+             [:> paper/IconButton {:style    (merge (tw "mr-4")
+                                                    {:background-color tag-color})
                                    ;; TODO move this to a subscription
                                    :color    (if-some [c tag-color]
                                                (if (-> c color (j/call :isLight))
@@ -65,7 +52,6 @@
 
              ;; TODO justin 2021-02-07 Should this toggle an input or be an input all of the time?
              [:> paper/TextInput {:style          (tw "w-2/3")
-                                  :label          "Label"
                                   :value          tag-label
                                   :on-change-text #(tap> %)}]
 
