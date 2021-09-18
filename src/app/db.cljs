@@ -242,7 +242,8 @@
 
 (def tag-data-spec
   (ds/spec {:name ::tag-ds
-            :spec {:tag/id             uuid?
+            :spec {:tag/id uuid?
+                   ;; TODO justin 2021-09-18 Add created and last-edited
                    (ds/opt :tag/color) (ds/maybe ::color)
                    (ds/opt :tag/label) (ds/maybe string?)}}))
 
@@ -307,6 +308,7 @@
       :app-db/tags                             ::tags
       :app-db.selected/session                 (ds/maybe uuid?)
       :app-db.selected/day                     t/date?
+      :app-db.selected/tag                     (ds/maybe uuid?)
       :app-db.settings/theme                   (s/spec #{:light :dark})
       :app-db.view/zoom                        ::zoom
       :app-db.view/screen-width                float?
@@ -345,6 +347,7 @@
        :app-db/current-timezone                 (-> localization (j/get :timezone) (t/zone))
        :app-db/tracking                         []
        :app-db.selected/session                 nil
+       :app-db.selected/tag                     nil
        :app-db.selected/day                     (->> cal-tag-sessions
                                                      :app-db/calendar
                                                      keys

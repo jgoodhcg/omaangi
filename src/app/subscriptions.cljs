@@ -447,6 +447,11 @@
   (->> db (select-one! [:app-db.selected/session])))
 (reg-sub :selected-session-id selected-session-id)
 
+(defn selected-tag-id
+  [db _]
+  (->> db (select-one! [:app-db.selected/tag])))
+(reg-sub :selected-tag-id selected-tag-id)
+
 (defn selected-session
   [[selected-session-id sessions tags] _]
   (->> sessions
@@ -485,6 +490,18 @@
          :<- [:tags]
 
          selected-session)
+
+(defn selected-tag
+  [[selected-tag-id tags] _]
+  (->> tags
+       (select-one! [(sp/keypath selected-tag-id)])
+       (transform [:tag/color] hex-if-some)))
+(reg-sub :selected-tag
+
+         :<- [:selected-tag-id]
+         :<- [:tags]
+
+         selected-tag)
 
 (defn tag-list
   [indexed-tags _]

@@ -129,6 +129,12 @@
        (setval [:app-db.selected/session] session-id)))
 (reg-event-db :set-selected-session set-selected-session)
 
+(defn set-selected-tag
+  [db [_ tag-id]]
+  (->> db
+       (setval [:app-db.selected/tag] tag-id)))
+(reg-event-db :set-selected-tag set-selected-tag)
+
 (defn get-dates [start stop]
   (->> (t/range start stop (t/new-duration 1 :days))
        (map t/date)
@@ -311,3 +317,52 @@
      :fx [[:dispatch [:re-index-session (p/map-of old-indexes new-indexes id)]]
           [:dispatch [:navigate (:day screens)]]]}))
 (reg-event-fx :delete-session delete-session)
+
+(defn update-tag
+  [db [_ {:tag/keys [id color-hex remove-color] :as tag}]]
+  (let [c       (make-color-if-some color-hex)
+        tag     (-> tag (dissoc :tag/color-hex))
+        old-tag (->> db (select-one [:app-db/tags (sp/keypath id)]))
+        new-tag (merge
+                  (if remove-color
+                    (dissoc old-tag :tag/color)
+                    old-tag)
+                  tag
+                  (when (some? c) {:tag/color c}))]
+    (tap> (p/map-of color-hex id c old-tag new-tag))
+    (->> db (transform [:app-db/tags (sp/keypath id)]
+                       #(merge
+                          (if remove-color
+                            (dissoc % :tag/color)
+                            %)
+                          tag
+                          (when (some? c) {:tag/color c}))))))
+(reg-event-db :update-tag update-tag)
+
+(defn delete-tag
+  [{:keys [db]} [_ {:tag/keys [id]}]]
+  (let [sessions   (->> db (select [:app-db/sesssions
+                                    sp/MAP-VALS
+                                    :session/tags
+                                    #(some? (some #{id} %))]))
+        dispatches (->> sessions
+                        (map (fn [{session-id :session/id}]
+                               [:dispatch [:remove-tag-from-session
+                                           {:session/id session-id
+                                            :tag/id     id}]])))]
+
+    {:db (->> db (transform [:app-db/tags] #(dissoc % id)))
+     :fx (-> [[:dispatch [:navigate (:tags screens)]]]
+             (concat dispatches)
+             vec)}))
+(reg-event-fx :delete-tag delete-tag)
+
+(defn create-tag
+  [{:keys [db new-uuid]} _]
+  {:db (->> db
+            (transform [:app-db/tags]
+                       #(assoc % new-uuid {:tag/id    new-uuid
+                                           :tag/label ""})))
+   :fx [[:dispatch [:set-selected-tag new-uuid]]
+        [:dispatch [:navigate (:tag screens)]]]})
+(reg-event-fx :create-tag [id-gen] create-tag)

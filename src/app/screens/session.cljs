@@ -13,6 +13,7 @@
 
    [app.colors :refer [material-500-hexes]]
    [app.components.color-picker :as color-picker]
+   [app.components.tag-button :as tag-button]
    [app.helpers :refer [<sub >evt get-theme clear-datetime-picker >evt-sync]]
    [app.tailwind :refer [tw]]))
 
@@ -23,18 +24,6 @@
                        :style          (tw "mb-8")
                        :on-change-text #(>evt [:update-session {:session/label %
                                                                 :session/id    id}])}])
-
-(defn tag-button
-  [{:keys [color label on-press style]}]
-  [:> paper/Button
-   (merge
-     (when (some? on-press)
-       {:on-press on-press})
-     (when (some? style)
-       {:style style})
-     {:mode  (if (some? color) "contained" "outlined")
-      :color color})
-   label])
 
 (defn tag-remove-modal [{:keys [session-id]}]
   (let [{:tag-remove-modal/keys [visible id label color]}
@@ -60,8 +49,9 @@
          "Are you sure you want to remove this tag?"]
 
 
-        [tag-button (merge {:style (tw "mb-4")}
-                           (p/map-of color id label))]
+        [tag-button/component
+         (merge {:style (tw "mb-4")}
+                (p/map-of color id label))]
 
         [:> paper/Button {:icon     "close"
                           :mode     "contained"
@@ -93,14 +83,15 @@
 
         [:> rn/View {:style (tw "flex flex-row flex-wrap items-center p-4")}
          (for [{:tag/keys [label color id]} all-tags]
-           [tag-button (merge {:key      id
-                               :style    (tw "m-2")
-                               :on-press #(do (>evt [:add-tag-to-session
-                                                     {:session/id session-id
-                                                      :tag/id     id}])
-                                              (>evt [:set-tag-add-modal
-                                                     #:tag-add-modal {:visible false}]))}
-                              (p/map-of label color id))])]]]]]))
+           [tag-button/component
+            (merge {:key      id
+                    :style    (tw "m-2")
+                    :on-press #(do (>evt [:add-tag-to-session
+                                          {:session/id session-id
+                                           :tag/id     id}])
+                                   (>evt [:set-tag-add-modal
+                                          #:tag-add-modal {:visible false}]))}
+                   (p/map-of label color id))])]]]]]))
 
 (defn tags-component
   [{:keys      [tags]
@@ -118,8 +109,8 @@
                                  :color   color
                                  :label   label}])
                style    (tw "mr-4 mb-4")]
-           [tag-button (merge {:key id}
-                              (p/map-of color id label on-press style))])))
+           [tag-button/component (merge {:key id}
+                                        (p/map-of color id label on-press style))])))
 
      [:> paper/Button {:icon     "plus"
                        :mode     "outlined"

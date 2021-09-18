@@ -11,9 +11,11 @@
    [app.colors :refer [material-500-hexes]]
    [app.components.generic-top-section :as top-section]
    [app.components.color-picker :as color-picker]
+   [app.components.tag-button :as tag-button]
    [app.helpers :refer [<sub >evt get-theme chance]]
    [app.screens.core :refer [screens]]
-   [app.tailwind :refer [tw]]))
+   [app.tailwind :refer [tw]]
+   [potpuri.core :as p]))
 
 (defn screen [props]
   (r/as-element
@@ -29,31 +31,19 @@
 
           [top-section/component props (:tags screens)]
 
-          (for [{tag-color :tag/color
-                 tag-label :tag/label
-                 tag-id    :tag/id} tags]
-            [:> rn/View {:style (tw "flex flex-row mb-4 items-center")
-                         :key   tag-id}
+          [:> rn/View {:style (tw "flex flex-col")}
 
-             [color-picker/component {:input-color tag-color
-                                      :update-fn   #(tap> (str "set tag color " %))}]
+           [:> rn/View {:style (tw "flex flex-row flex-wrap items-center mb-8")}
+            (for [{color :tag/color
+                   label :tag/label
+                   id    :tag/id} tags]
+              (let [on-press #(do (>evt [:set-selected-tag id])
+                                  (>evt [:navigate (:tag screens)]))
+                    style    (tw "ml-4 mb-4")]
+                [:> rn/View {:key   id
+                             :style style}
+                 [tag-button/component (p/map-of color label on-press)]]))]
 
-             [:> paper/IconButton {:style    (merge (tw "mr-4")
-                                                    {:background-color tag-color})
-                                   ;; TODO move this to a subscription
-                                   :color    (if-some [c tag-color]
-                                               (if (-> c color (j/call :isLight))
-                                                 "black" "white")
-                                               (-> theme (j/get :colors) (j/get :disabled)))
-                                   :icon     "palette"
-                                   :on-press #(>evt [:set-color-picker
-                                                     #:color-picker {:visible true
-                                                                     :value   tag-color}])}]
-
-             ;; TODO justin 2021-02-07 Should this toggle an input or be an input all of the time?
-             [:> paper/TextInput {:style          (tw "w-2/3")
-                                  :value          tag-label
-                                  :on-change-text #(tap> %)}]
-
-             ;; TODO justin 2021-02-07 Add ¿generic? delete modal
-             [:> paper/IconButton {:icon "delete-forever"}]])]))]))
+           [:> paper/Button {:mode     "outlined"
+                             :icon     "plus"
+                             :on-press #(>evt [:create-tag])}]]]))]))
