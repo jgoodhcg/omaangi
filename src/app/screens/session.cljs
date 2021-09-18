@@ -292,6 +292,14 @@
                                         :session/id   id}])}
     "track"]])
 
+(defn delete-button
+  [session]
+  [:> paper/Button {:mode     "outlined"
+                    :icon     "delete"
+                    :style    (tw "mr-4 mt-4 w-28")
+                    :on-press #(>evt [:delete-session session])}
+   "Delete Session"])
+
 (defn screen [props]
   (r/as-element
     [(fn [props]
@@ -304,7 +312,8 @@
                              label
                              tags
                              color-override
-                             color]} (<sub [:selected-session])]
+                             color]
+              :as           session} (<sub [:selected-session])]
 
          [:> rn/ScrollView {:style {:background-color
                                     (-> theme (j/get :colors) (j/get :background))}}
@@ -325,4 +334,5 @@
 
             [tags-component (p/map-of tags id)]
 
+            [delete-button session]
             ]]]))]))

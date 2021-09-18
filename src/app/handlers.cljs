@@ -295,3 +295,19 @@
   (let [width (-> event (j/get :layout) (j/get :width))]
     (->> db (setval [:app-db.view/screen-width] width))))
 (reg-event-db :set-width-from-event set-width-from-event)
+
+(defn delete-session
+  [{:keys [db]} [_ {:session/keys [id]}]]
+  (let [{start :session/start
+         stop  :session/stop} (->> db
+                                   (select-one [:app-db/sessions
+                                                (sp/keypath id)
+                                                (sp/submap [:session/start
+                                                            :session/stop])]))
+        old-indexes           (get-dates start stop)
+        new-indexes           []]
+
+    {:db (->> db (transform [:app-db/sessions] #(dissoc % id)))
+     :fx [[:dispatch [:re-index-session (p/map-of old-indexes new-indexes id)]]
+          [:dispatch [:navigate (:day screens)]]]}))
+(reg-event-fx :delete-session delete-session)

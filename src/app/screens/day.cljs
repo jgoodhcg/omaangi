@@ -79,7 +79,7 @@
               ripple-color-hex
               label] :as t} tracks]
 
-        [:> rn/View {:key   (random-uuid)
+        [:> rn/View {:key   (str (random-uuid) "-tracking-session")
                      :style (merge (tw "w-full max-h-32 m-2")
                                    ;; TODO justin 2020-01-23 Add to custom tailwind theme
                                    {:min-height 32}) }
@@ -139,7 +139,7 @@
         hours (<sub [:hours])]
     [:> rn/View
      (for [{:keys [top val]} hours]
-       [:> rn/View {:key   (str (random-uuid))
+       [:> rn/View {:key   (str (random-uuid) "-time-indicator")
                     :style (-> (tw "absolute w-full ml-1")
                                (merge {:top top}))}
         [:> paper/Divider]
@@ -168,7 +168,7 @@
                                   stop-label]
             :as                  s} sessions]
 
-       [:> rn/View {:key id}
+       [:> rn/View {:key (str id "-session")}
 
         (when is-selected
           [:> rn/View {:style (merge
