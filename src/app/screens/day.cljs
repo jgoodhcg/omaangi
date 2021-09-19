@@ -64,8 +64,7 @@
 
 (defn tracking-sessions []
   (let [theme  (->> [:theme] <sub get-theme)
-        tracks [] ;;(<sub [:tracking])
-        ]
+        tracks (<sub [:tracking])]
     [:> g/ScrollView
      [:> paper/Surface {:style (tw "p-2 mb-2")}
 
@@ -101,9 +100,7 @@
                                   (tw "absolute w-2 h-8")
                                   {:top              0
                                    :left             indicator-position
-                                   :background-color indicator-color-hex})}])
-
-          [:> paper/Text {:style {:color text-color-hex}} label]]
+                                   :background-color indicator-color-hex})}])]
 
          ;; selection button needs to go "over" everything
          [:> g/RectButton {:on-press       #(println "selected tracking item")
@@ -113,7 +110,8 @@
                            :style          (-> (tw "absolute h-8 w-full")
                                                (merge {:top           0
                                                        :left          0
-                                                       :border-radius (-> theme (j/get :roundness))}))}]])]]))
+                                                       :border-radius (-> theme (j/get :roundness))}))}
+          [:> paper/Text {:style {:color text-color-hex}} label]]])]]))
 
 (defn top-section [props]
   (let [theme         (->> [:theme] <sub get-theme)
@@ -198,7 +196,8 @@
           :on-handler-state-change (fn [e]
                                      (let [is-active (active-gesture? e)]
                                        (when is-active
-                                         (>evt [:set-selected-session id]))))}
+                                         (>evt [:set-selected-session id])
+                                         (>evt [:navigate (:session screens)]))))}
          [:> rn/View {:style (merge
                                (tw "absolute")
                                {:top    top
@@ -211,8 +210,9 @@
                                         :background-color color-hex}
                                        (when (not is-selected)
                                          {:border-radius (-> theme (j/get :roundness))} )))
-                            :on-press       #(do (>evt [:set-selected-session id])
-                                                 (>evt [:navigate (:session screens)]))
+                            :on-press       #(>evt [:create-track-session-from-other-session id])
+                            ;; #(do (>evt [:set-selected-session id])
+                            ;;      (>evt [:navigate (:session screens)]))
                             :ripple-color   ripple-color-hex
                             :underlay-color ripple-color-hex
                             :active-opacity 0.7}

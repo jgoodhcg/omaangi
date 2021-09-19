@@ -319,41 +319,41 @@
 
 (defn tracking
   [db _]
-  ;; TODO implement once tick and track event is in place
-  (for [x (-> 4 rand-int (max 1) range)]
-    (let [c                  (-> material-500-hexes rand-nth color)
-          intended-duration  (rand)
-          duration           (rand)
-          surpassed          (-> duration (> intended-duration))
-          relative-width     (if surpassed
-                               "100%"
-                               (-> duration (/ intended-duration) (* 100) (str "%")))
-          indicator-position (-> intended-duration (/ duration) (* 100) (str "%"))
-          session-label      (-> :med chance
-                                 (#(if % (-> faker (j/get :random) (j/call :words))
-                                       "")))
-          tag-labels         (for [_ (range (rand-int 10))]
-                               (str (-> :high chance
-                                        (#(if % (-> emoji (j/call :random) (j/get :emoji))
-                                              "")))
-                                    (-> :low chance
-                                        (#(if % (-> faker (j/get :random) (j/call :words))
-                                              "")))))
-          label              (str session-label " " (join " " tag-labels))]
+  (for [session-id (->> db (select [:app-db/tracking sp/ALL]))]
+    (let [{:session/keys [tracked-from
+                          start
+                          stop
+                          label
+                          tags
+                          ]
+           session-color :session/color} (->> db
+                                              (select-one! [:app-db/sessions (sp/keypath session-id)])
+                                              (replace-tag-refs-with-objects (->> db (select-one [:app-db/tags])))
+                                              (set-session-color {:hex false}))
+          {tf-start :session/start
+           tf-stop  :session/stop}       (->> db (select-one! [:app-db/sessions (sp/keypath tracked-from)]))
+          intended-duration              (-> {:tick/beginning tf-start :tick/end tf-stop}
+                                             (t/duration)
+                                             (t/millis))
+          duration                       (-> {:tick/beginning start :tick/end stop}
+                                             (t/duration)
+                                             (t/millis))
+          surpassed                      (-> duration (> intended-duration))
+          relative-width                 (if surpassed
+                                           "100%"
+                                           (-> duration (/ intended-duration) (* 100) (str "%")))
+          indicator-position             (-> intended-duration (/ duration) (* 100) (str "%"))
+          tag-labels                     (->> tags (select [sp/ALL :tag/label]))
+          label                          (str label " " (join " " tag-labels))]
 
-      #:tracking-render {:color-hex           (-> c (j/call :hex))
-                         :indicator-color-hex (-> c (j/call :lighten 0.32) (j/call :hex))
+      #:tracking-render {:color-hex           (-> session-color (j/call :hex))
+                         :indicator-color-hex (-> session-color (j/call :lighten 0.32) (j/call :hex))
                          :indicator-position  indicator-position
                          :show-indicator      surpassed
-                         :ripple-color-hex    (-> c (j/call :lighten 0.64) (j/call :hex))
+                         :ripple-color-hex    (-> session-color (j/call :lighten 0.64) (j/call :hex))
                          :relative-width      relative-width
                          :label               label
-                         :text-color-hex      (if (is-color? c)
-                                                (-> c
-                                                    (j/call :isLight)
-                                                    (#(if % black white)))
-                                                ;; TODO is this a good default?
-                                                black)})))
+                         :text-color-hex      white})))
 (reg-sub :tracking tracking)
 
 (defn hours

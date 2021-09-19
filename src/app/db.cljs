@@ -222,15 +222,16 @@
 
 (def session-data-spec
   (ds/spec {:name ::session-ds
-            :spec {:session/id             uuid?
-                   :session/created        ::time-point
-                   :session/last-edited    ::time-point
-                   :session/start          ::time-point
-                   :session/stop           ::time-point
-                   :session/type           (s/spec #{:session/track :session/plan})
-                   (ds/opt :session/tags)  [uuid?]
-                   (ds/opt :session/label) string?
-                   (ds/opt :session/color) ::color}}))
+            :spec {:session/id                    uuid?
+                   :session/created               ::time-point
+                   :session/last-edited           ::time-point
+                   :session/start                 ::time-point
+                   :session/stop                  ::time-point
+                   :session/type                  (s/spec #{:session/track :session/plan})
+                   (ds/opt :session/tags)         [uuid?]
+                   (ds/opt :session/label)        string?
+                   (ds/opt :session/color)        ::color
+                   (ds/opt :session/tracked-from) uuid?}}))
 
 (s/def ::session (s/with-gen session-data-spec #(gen/fmap generate-session (s/gen int?))))
 

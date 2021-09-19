@@ -269,7 +269,8 @@
 
 (defn tick-tock
   [{:keys [now db]} _]
-  {:db (->> db (setval [:app-db/current-time] now))})
+  {:db (->> db (setval [:app-db/current-time] now))
+   :fx [[:dispatch [:update-tracking]]]})
 (reg-event-fx :tick-tock [insert-now] tick-tock)
 
 (defn create-session-from-event
@@ -366,3 +367,43 @@
    :fx [[:dispatch [:set-selected-tag new-uuid]]
         [:dispatch [:navigate (:tag screens)]]]})
 (reg-event-fx :create-tag [id-gen] create-tag)
+
+(defn start-tracking-session
+  [db [_ session-id]]
+  (->> db (setval [:app-db/tracking sp/END] [session-id])))
+(reg-event-db :start-tracking-session start-tracking-session)
+
+(defn stop-tracking-session
+  [db [_ session-id]]
+  (->> db (transform [:app-db/tracking sp/ALL #(= % session-id)] sp/NONE)))
+(reg-event-db :stop-tracking-session stop-tracking-session)
+
+(defn update-tracking
+  [{:keys [db now]} [_ _]]
+  (let [tracking-ids (->> db (select-one [:app-db/tracking]))]
+    {:db (->> db (setval [:app-db/sessions (sp/submap tracking-ids) sp/MAP-VALS :session/stop] now))}))
+(reg-event-fx :update-tracking [insert-now] update-tracking)
+
+(defn create-track-session-from-other-session
+  [{:keys [db new-uuid now]} [_ from-session-id]]
+  (let [selected-day   (:app-db.selected/day db)
+        {:session/keys
+         [tags color]} (->> db (select-one [:app-db/sessions
+                                            (sp/keypath from-session-id)
+                                            (sp/submap [:session/tags :session/color])]))
+        session        (-> {:session/id           new-uuid
+                            :session/created      now
+                            :session/last-edited  now
+                            :session/start        now
+                            :session/stop         (-> now (t/+ (t/new-duration 1 :seconds)))
+                            :session/type         :session/track
+                            :session/tracked-from from-session-id}
+                           (merge (when (some? tags) {:session/tags tags}))
+                           (merge (when (some? color) {:session/color color})))]
+    (tap> (p/map-of session))
+    {:db (->> db (setval [:app-db/sessions (sp/keypath new-uuid)] session))
+     :fx [[:dispatch [:re-index-session {:old-indexes []
+                                         :new-indexes [selected-day]
+                                         :id          new-uuid}]]
+          [:dispatch [:start-tracking-session new-uuid]]]}))
+(reg-event-fx :create-track-session-from-other-session [id-gen insert-now] create-track-session-from-other-session)
