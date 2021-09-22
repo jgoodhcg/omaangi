@@ -115,6 +115,13 @@
                                                         (j/get :name))
                                  prev-route-name    (->  @!route-name-ref :current)]
 
+                             ;; This is a bit of a hack 😬
+                             ;; I needed a way to "deselect" session when going "back" from session to day screen
+                             ;; TODO figure out a better way to do this
+                             (when (and (-> current-route-name (= (:day screens)))
+                                        (-> prev-route-name (= (:session screens))))
+                               (>evt [:set-selected-session nil]))
+
                              (swap! !route-name-ref merge {:current current-route-name})))}
 
        [:> (drawer-navigator) {:drawer-content         custom-drawer
@@ -170,7 +177,7 @@
                         :component (paper/withTheme settings/screen)})]]]]))
 
 (defn start
-  {:dev/after-load true}
+{:dev/after-load true}
   []
   (expo/render-root
     (r/as-element
