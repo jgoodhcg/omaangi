@@ -20,7 +20,7 @@
   [spec db event]
   (when-not (s/valid? spec db)
     (let [explanation (s/explain-str spec db)]
-      (throw (str "Spec check failed: " explanation))
+      (throw (str "Spec check failed: " event " " explanation))
       true)))
 
 (defn validate-spec
@@ -387,7 +387,7 @@
 
 (defn create-track-session-from-other-session
   [{:keys [db new-uuid now]} [_ from-session-id]]
-  (let [selected-day   (:app-db.selected/day db)
+  (let [today          (t/date now)
         {:session/keys
          [tags color]} (->> db (select-one [:app-db/sessions
                                             (sp/keypath from-session-id)
@@ -404,7 +404,7 @@
     (tap> (p/map-of session))
     {:db (->> db (setval [:app-db/sessions (sp/keypath new-uuid)] session))
      :fx [[:dispatch [:re-index-session {:old-indexes []
-                                         :new-indexes [selected-day]
+                                         :new-indexes [today]
                                          :id          new-uuid}]]
           [:dispatch [:navigate (:day screens)]]
           [:dispatch [:start-tracking-session new-uuid]]]}))

@@ -339,9 +339,25 @@
 ;;
 
 (def default-app-db
-  (let [cal-tag-sessions (generate-calendar-tag-sessions)]
+  (let [
+        ;; uncommen below to use generated data
+        ;; cal-tag-sessions (generate-calendar-tag-sessions)
+        ;; selected-day (->> cal-tag-sessions
+        ;;                   :app-db/calendar
+        ;;                   keys
+        ;;                   rand-nth)
+        selected-day (-> (t/now) (t/date))
+        ]
     (merge
-      cal-tag-sessions
+      ;; blank default
+      {:app-db/calendar {selected-day {:calendar/date     selected-day
+                                       :calendar/sessions []}}
+       :app-db/tags     {}
+       :app-db/sessions {}}
+
+      ;; uncomment bellow to use generated data
+      ;; cal-tag-sessions
+
       {
        :app-db/version                          "version-not-set"
        :app-db/current-time                     (t/now)
@@ -349,10 +365,7 @@
        :app-db/tracking                         []
        :app-db.selected/session                 nil
        :app-db.selected/tag                     nil
-       :app-db.selected/day                     (->> cal-tag-sessions
-                                                     :app-db/calendar
-                                                     keys
-                                                     rand-nth)
+       :app-db.selected/day                     selected-day
        :app-db.settings/theme                   :dark
        :app-db.view/zoom                        1.25
        :app-db.view/screen-width                1.0 ;; TODO better default?
