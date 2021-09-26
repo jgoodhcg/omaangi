@@ -409,3 +409,15 @@
           [:dispatch [:navigate (:day screens)]]
           [:dispatch [:start-tracking-session new-uuid]]]}))
 (reg-event-fx :create-track-session-from-other-session [id-gen insert-now] create-track-session-from-other-session)
+
+(defn start-ticking
+  [{:keys [db]} _]
+  {:db            db
+   :start-ticking true})
+(reg-event-fx :start-ticking start-ticking)
+
+(defn stop-ticking
+  [{:keys [db]} _]
+  {:db           db
+   :stop-ticking true})
+(reg-event-fx :stop-ticking stop-ticking)
