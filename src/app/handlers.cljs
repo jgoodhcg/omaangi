@@ -421,3 +421,8 @@
   {:db           db
    :stop-ticking true})
 (reg-event-fx :stop-ticking stop-ticking)
+
+(defn check-for-saved-db
+  [_ _]
+  {:check-for-saved-db true})
+(reg-event-fx :check-for-saved-db check-for-saved-db)

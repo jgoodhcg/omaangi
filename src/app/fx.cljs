@@ -1,6 +1,7 @@
 (ns app.fx
   (:require
-   [re-frame.core :refer [reg-fx dispatch]]
+   ["@react-native-async-storage/async-storage" :as async-storage]
+   [re-frame.core :refer [reg-fx]]
    [applied-science.js-interop :as j]
    [app.helpers :refer [>evt]]))
 
@@ -31,3 +32,13 @@
           (let [ticker-ref-id @ticker-ref]
             (tap> (str "clearing interval " ticker-ref-id))
             (-> ticker-ref-id (js/clearInterval)))))
+
+(reg-fx :check-for-saved-db
+        (fn [_]
+          (try
+            (-> async-storage
+                (j/get :default)
+                (j/call :getItem "@app_db")
+                (j/call :then #(tap> (str "get item then " {:thing % :nil? (nil? %)})))
+                (j/call :catch #(tap> (str "get item catch " %))))
+            (catch js/Object e (tap> (str "error checking for db " e))))))
