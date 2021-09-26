@@ -50,8 +50,9 @@
   (->interceptor :id :insert-now
                  :before #(assoc-in % [:coeffects :now] (t/now))))
 
-(def base-interceptors  [;; (when ^boolean goog.DEBUG debug) ;; use this for some verbose re-frame logging
-                         spec-validation])
+(def base-interceptors
+  [;; (when ^boolean goog.DEBUG debug) ;; use this for some verbose re-frame logging
+   spec-validation])
 
 (defn initialize-db
   [_ _]
@@ -82,12 +83,12 @@
        (setval [:app-db.view.tag-remove-modal/visible] visible)
        (setval [:app-db.view.tag-remove-modal/label] label)
        (setval [:app-db.view.tag-remove-modal/color] (color hex-color))))
-(reg-event-db :set-tag-remove-modal set-tag-remove-modal)
+(reg-event-db :set-tag-remove-modal [base-interceptors] set-tag-remove-modal)
 
 (defn set-tag-add-modal
   [db [_ {:tag-add-modal/keys [visible]}]]
   (->> db (setval [:app-db.view.tag-add-modal/visible] visible)))
-(reg-event-db :set-tag-add-modal set-tag-add-modal)
+(reg-event-db :set-tag-add-modal [base-interceptors] set-tag-add-modal)
 
 (defn set-date-time-picker
   [db [_ {:date-time-picker/keys [visible
@@ -107,7 +108,7 @@
                  :else              value))
        (setval [:app-db.view.date-time-picker/visible] visible)
        (setval [:app-db.view.date-time-picker/id] id)))
-(reg-event-db :set-date-time-picker set-date-time-picker)
+(reg-event-db :set-date-time-picker [base-interceptors] set-date-time-picker)
 
 (defn set-color-picker
   [db [_ {:color-picker/keys [visible value]}]]
@@ -115,25 +116,25 @@
        (setval [:app-db.view.color-picker/value]
                (if (some? value) (color value) nil))
        (setval [:app-db.view.color-picker/visible] visible)))
-(reg-event-db :set-color-picker set-color-picker)
+(reg-event-db :set-color-picker [base-interceptors] set-color-picker)
 
 (defn set-selected-day
   [db [_ new-date-inst]]
   (->> db
        (setval [:app-db.selected/day] (-> new-date-inst t/date))))
-(reg-event-db :set-selected-day set-selected-day)
+(reg-event-db :set-selected-day [base-interceptors] set-selected-day)
 
 (defn set-selected-session
   [db [_ session-id]]
   (->> db
        (setval [:app-db.selected/session] session-id)))
-(reg-event-db :set-selected-session set-selected-session)
+(reg-event-db :set-selected-session [base-interceptors] set-selected-session)
 
 (defn set-selected-tag
   [db [_ tag-id]]
   (->> db
        (setval [:app-db.selected/tag] tag-id)))
-(reg-event-db :set-selected-tag set-selected-tag)
+(reg-event-db :set-selected-tag [base-interceptors] set-selected-tag)
 
 (defn get-dates [start stop]
   (->> (t/range start stop (t/new-duration 1 :days))
@@ -179,7 +180,7 @@
                      (sp/keypath :calendar/sessions)]
 
                     #(conj % id)))))
-(reg-event-db :re-index-session re-index-session)
+(reg-event-db :re-index-session [base-interceptors] re-index-session)
 
 (defn update-session
   "This is not meant to be used with tags, just label start stop type color.
@@ -220,7 +221,7 @@
                                 (when (some? c) {:session/color c}))))}
         (when stamps-changed
           {:dispatch [:re-index-session (p/map-of old-indexes new-indexes id)]})))))
-(reg-event-fx :update-session update-session)
+(reg-event-fx :update-session [base-interceptors] update-session)
 
 (defn add-tag-to-session
   [db [_ {session-id :session/id
@@ -228,7 +229,7 @@
   (->> db
        (transform [:app-db/sessions (sp/keypath session-id) :session/tags]
                   #(conj % tag-id))))
-(reg-event-db :add-tag-to-session add-tag-to-session)
+(reg-event-db :add-tag-to-session [base-interceptors] add-tag-to-session)
 
 (defn remove-tag-from-session
   [db [_ {session-id :session/id
@@ -236,7 +237,7 @@
   (->> db
        (transform [:app-db/sessions (sp/keypath session-id) :session/tags]
                   (fn [tags] (->> tags (remove #(= % tag-id)) vec)))))
-(reg-event-db :remove-tag-from-session remove-tag-from-session)
+(reg-event-db :remove-tag-from-session [base-interceptors] remove-tag-from-session)
 
 ;; TODO this is totally untested
 (defn set-initial-timestamp
@@ -265,13 +266,14 @@
                                ;; TODO inject now
                                {:session/start (t/now)
                                 :session/stop  (-> (t/now) (t/+ 60 :minutes))})))))))
-(reg-event-db :set-initial-timestamp set-initial-timestamp)
+(reg-event-db :set-initial-timestamp [base-interceptors] set-initial-timestamp)
 
 (defn tick-tock
   [{:keys [now db]} _]
   {:db (->> db (setval [:app-db/current-time] now))
-   :fx [[:dispatch [:update-tracking]]]})
-(reg-event-fx :tick-tock [insert-now] tick-tock)
+   :fx [[:dispatch [:update-tracking]]
+        [:dispatch [:save-db]]]})
+(reg-event-fx :tick-tock [base-interceptors insert-now] tick-tock)
 
 (defn create-session-from-event
   [{:keys [db new-uuid now]} [_ event]]
@@ -295,13 +297,13 @@
                                          :id          new-uuid}]]
           [:dispatch [:set-selected-session new-uuid]]
           [:dispatch [:navigate (:session screens)]]]}))
-(reg-event-fx :create-session-from-event [id-gen insert-now] create-session-from-event)
+(reg-event-fx :create-session-from-event [base-interceptors id-gen insert-now] create-session-from-event)
 
 (defn set-width-from-event
   [db [_ event]]
   (let [width (-> event (j/get :layout) (j/get :width))]
     (->> db (setval [:app-db.view/screen-width] width))))
-(reg-event-db :set-width-from-event set-width-from-event)
+(reg-event-db :set-width-from-event [base-interceptors] set-width-from-event)
 
 (defn delete-session
   [{:keys [db]} [_ {:session/keys [id]}]]
@@ -317,7 +319,7 @@
     {:db (->> db (transform [:app-db/sessions] #(dissoc % id)))
      :fx [[:dispatch [:re-index-session (p/map-of old-indexes new-indexes id)]]
           [:dispatch [:navigate (:day screens)]]]}))
-(reg-event-fx :delete-session delete-session)
+(reg-event-fx :delete-session [base-interceptors] delete-session)
 
 (defn update-tag
   [db [_ {:tag/keys [id color-hex remove-color] :as tag}]]
@@ -338,7 +340,7 @@
                             %)
                           tag
                           (when (some? c) {:tag/color c}))))))
-(reg-event-db :update-tag update-tag)
+(reg-event-db :update-tag [base-interceptors] update-tag)
 
 (defn delete-tag
   [{:keys [db]} [_ {:tag/keys [id]}]]
@@ -356,7 +358,7 @@
      :fx (-> [[:dispatch [:navigate (:tags screens)]]]
              (concat dispatches)
              vec)}))
-(reg-event-fx :delete-tag delete-tag)
+(reg-event-fx :delete-tag [base-interceptors] delete-tag)
 
 (defn create-tag
   [{:keys [db new-uuid]} _]
@@ -366,24 +368,24 @@
                                            :tag/label ""})))
    :fx [[:dispatch [:set-selected-tag new-uuid]]
         [:dispatch [:navigate (:tag screens)]]]})
-(reg-event-fx :create-tag [id-gen] create-tag)
+(reg-event-fx :create-tag [base-interceptors id-gen] create-tag)
 
 (defn start-tracking-session
   [db [_ session-id]]
   (->> db (setval [:app-db/tracking sp/END] [session-id])))
-(reg-event-db :start-tracking-session start-tracking-session)
+(reg-event-db :start-tracking-session [base-interceptors] start-tracking-session)
 
 (defn stop-tracking-session
   [{:keys [db]} [_ session-id]]
   {:db (->> db (transform [:app-db/tracking] (fn [ids] (->> ids (remove #(= % session-id)) vec))))
    :fx [[:navigate (:day screens)]]})
-(reg-event-fx :stop-tracking-session stop-tracking-session)
+(reg-event-fx :stop-tracking-session [base-interceptors] stop-tracking-session)
 
 (defn update-tracking
   [{:keys [db now]} [_ _]]
   (let [tracking-ids (->> db (select-one [:app-db/tracking]))]
     {:db (->> db (setval [:app-db/sessions (sp/submap tracking-ids) sp/MAP-VALS :session/stop] now))}))
-(reg-event-fx :update-tracking [insert-now] update-tracking)
+(reg-event-fx :update-tracking [base-interceptors insert-now] update-tracking)
 
 (defn create-track-session-from-other-session
   [{:keys [db new-uuid now]} [_ from-session-id]]
@@ -408,21 +410,41 @@
                                          :id          new-uuid}]]
           [:dispatch [:navigate (:day screens)]]
           [:dispatch [:start-tracking-session new-uuid]]]}))
-(reg-event-fx :create-track-session-from-other-session [id-gen insert-now] create-track-session-from-other-session)
+(reg-event-fx :create-track-session-from-other-session [base-interceptors id-gen insert-now] create-track-session-from-other-session)
 
 (defn start-ticking
   [{:keys [db]} _]
   {:db            db
    :start-ticking true})
-(reg-event-fx :start-ticking start-ticking)
+(reg-event-fx :start-ticking [base-interceptors] start-ticking)
 
 (defn stop-ticking
   [{:keys [db]} _]
   {:db           db
    :stop-ticking true})
-(reg-event-fx :stop-ticking stop-ticking)
+(reg-event-fx :stop-ticking [base-interceptors] stop-ticking)
 
 (defn check-for-saved-db
   [_ _]
   {:check-for-saved-db true})
+;; no spec check "base-interceptors" here
 (reg-event-fx :check-for-saved-db check-for-saved-db)
+
+(defn load-db
+  [_ [_ new-app-db]]
+  {:db new-app-db
+   :fx [[:dispatch [:get-version-and-dispatch-set-version]]
+        [:dispatch [:start-ticking]]]})
+(reg-event-fx :load-db [base-interceptors] load-db)
+
+(defn save-db
+  [{:keys [db]} _]
+  {:db      db
+   :save-db db})
+(reg-event-fx :save-db [base-interceptors] save-db)
+
+(defn get-version-and-dispatch-set-version
+  [{:keys [db]} _]
+  {:db                                   db
+   :get-version-and-dispatch-set-version true})
+(reg-event-fx :get-version-and-dispatch-set-version [base-interceptors] get-version-and-dispatch-set-version)

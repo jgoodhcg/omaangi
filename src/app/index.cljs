@@ -177,7 +177,7 @@
                         :component (paper/withTheme settings/screen)})]]]]))
 
 (defn start
-{:dev/after-load true}
+  {:dev/after-load true}
   []
   (expo/render-root
     (r/as-element
@@ -186,14 +186,7 @@
        ;; otherwise components nesteded withins screens don't get re-rendered
        {:x (js/Date.now)}])))
 
-(def version (-> expo-constants
-                 (j/get :default)
-                 (j/get :manifest)
-                 (j/get :version)))
-
 (defn init []
-  (dispatch-sync [:initialize-db])
-  (dispatch-sync [:set-version version])
-  (dispatch-sync [:start-ticking])
-  ;; TODO add a set day event for "today"
+  (dispatch-sync [:initialize-db]) ;; this just keepts the subs from blowing up
+  (dispatch-sync [:check-for-saved-db]) ;; load from local-store or default then start ticking
   (start))
