@@ -76,7 +76,8 @@
               indicator-position
               show-indicator
               ripple-color-hex
-              label] :as t} tracks]
+              label
+              id]} tracks]
 
         [:> rn/View {:key   (str (random-uuid) "-tracking-session")
                      :style (merge (tw "w-full max-h-32 m-2")
@@ -103,7 +104,9 @@
                                    :background-color indicator-color-hex})}])]
 
          ;; selection button needs to go "over" everything
-         [:> g/RectButton {:on-press       #(println "selected tracking item")
+         [:> g/RectButton {:on-press       #(do
+                                              (>evt [:set-selected-session id])
+                                              (>evt [:navigate (:session screens)]))
                            :ripple-color   ripple-color-hex
                            :underlay-color ripple-color-hex
                            :active-opacity 0.7
@@ -163,8 +166,8 @@
                                   label
                                   is-selected
                                   start-label
-                                  stop-label]
-            :as                  s} sessions]
+                                  stop-label]}
+           sessions]
 
        [:> rn/View {:key (str id "-session")}
 
@@ -191,33 +194,33 @@
            [:> rn/View {:style (merge (tw "w-full ml-1")
                                       {:height           2
                                        :background-color (-> theme (j/get :colors) (j/get :text))}) }]])
-        [:> g/LongPressGestureHandler
-         {:min-duration-ms         800
-          :on-handler-state-change (fn [e]
-                                     (let [is-active (active-gesture? e)]
-                                       (when is-active
-                                         (>evt [:set-selected-session id])
-                                         (>evt [:navigate (:session screens)]))))}
-         [:> rn/View {:style (merge
-                               (tw "absolute")
-                               {:top    top
-                                :left   left
-                                :height height
-                                :width  width})}
-          [:> g/RectButton {:style
-                            (-> (tw "h-full w-full")
-                                (merge {;; :elevation        elevation
-                                        :background-color color-hex}
-                                       (when (not is-selected)
-                                         {:border-radius (-> theme (j/get :roundness))} )))
-                            :on-press       #(>evt [:create-track-session-from-other-session id])
-                            ;; #(do (>evt [:set-selected-session id])
-                            ;;      (>evt [:navigate (:session screens)]))
-                            :ripple-color   ripple-color-hex
-                            :underlay-color ripple-color-hex
-                            :active-opacity 0.7}
-           [:> rn/View {:style (tw "h-full w-full overflow-hidden p-1")}
-            [:> paper/Text {:style {:color text-color-hex}} label]]]]]])]))
+
+        ;; [:> g/LongPressGestureHandler
+        ;;  {:min-duration-ms         800
+        ;;   :on-handler-state-change (fn [e]
+        ;;                              (let [is-active (active-gesture? e)]
+        ;;                                (when is-active
+        ;;                                  (tap> "long pressed"))))}
+        ;;  ]
+
+        [:> rn/View {:style (merge
+                              (tw "absolute")
+                              {:top    top
+                               :left   left
+                               :height height
+                               :width  width})}
+         [:> g/RectButton {:style          (-> (tw "h-full w-full")
+                                               (merge {:background-color color-hex}
+                                                      (when (not is-selected)
+                                                        {:border-radius (-> theme (j/get :roundness))})))
+                           :on-press       #(do
+                                              (>evt [:navigate (:session screens)])
+                                              (>evt [:set-selected-session id]))
+                           :ripple-color   ripple-color-hex
+                           :underlay-color ripple-color-hex
+                           :active-opacity 0.7}
+          [:> rn/View {:style (tw "h-full w-full overflow-hidden p-1")}
+           [:> paper/Text {:style {:color text-color-hex}} label]]]]])]))
 
 (defn current-time-indicator-component []
   (let [theme                 (->> [:theme] <sub get-theme)
@@ -287,7 +290,8 @@
                 {:on-handler-state-change (fn [e]
                                             (let [is-active (active-gesture? e)]
                                               (when is-active
-                                                (>evt [:set-selected-session nil]))))}
+                                                (tap> "tapped away")
+                                                )))}
                 [:> rn/View
                  {:style {:height        (-> 1440 (* zoom))
                           :margin-bottom 256}}
@@ -298,5 +302,4 @@
 
                  [current-time-indicator-component]]]]]
 
-             [zoom-buttons]]
-            ]]]))]))
+             [zoom-buttons]]]]]))]))

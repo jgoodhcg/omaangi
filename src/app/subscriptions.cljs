@@ -317,21 +317,25 @@
 
          this-day)
 
-(defn tracking
+(defn tracking-ids
   [db _]
-  (for [session-id (->> db (select [:app-db/tracking sp/ALL]))]
+  (->> db (select [:app-db/tracking sp/ALL])))
+(reg-sub :tracking-ids tracking-ids)
+
+(defn tracking
+  [[tracking-ids sessions-indexed tags] _]
+  (for [session-id tracking-ids]
     (let [{:session/keys [tracked-from
                           start
                           stop
                           label
-                          tags
-                          ]
-           session-color :session/color} (->> db
-                                              (select-one! [:app-db/sessions (sp/keypath session-id)])
-                                              (replace-tag-refs-with-objects (->> db (select-one [:app-db/tags])))
+                          tags]
+           session-color :session/color} (->> sessions-indexed
+                                              (select-one! [(sp/keypath session-id)])
+                                              (replace-tag-refs-with-objects tags)
                                               (set-session-color {:hex false}))
           {tf-start :session/start
-           tf-stop  :session/stop}       (->> db (select-one! [:app-db/sessions (sp/keypath tracked-from)]))
+           tf-stop  :session/stop}       (->> sessions-indexed (select-one! [(sp/keypath tracked-from)]))
           intended-duration              (-> {:tick/beginning tf-start :tick/end tf-stop}
                                              (t/duration)
                                              (t/millis))
@@ -346,7 +350,8 @@
           tag-labels                     (->> tags (select [sp/ALL :tag/label]))
           label                          (str label " " (join " " tag-labels))]
 
-      #:tracking-render {:color-hex           (-> session-color (j/call :hex))
+      #:tracking-render {:id                  session-id
+                         :color-hex           (-> session-color (j/call :hex))
                          :indicator-color-hex (-> session-color (j/call :lighten 0.32) (j/call :hex))
                          :indicator-position  indicator-position
                          :show-indicator      surpassed
@@ -354,7 +359,13 @@
                          :relative-width      relative-width
                          :label               label
                          :text-color-hex      white})))
-(reg-sub :tracking tracking)
+(reg-sub :tracking
+
+         :<- [:tracking-ids]
+         :<- [:sessions]
+         :<- [:tags]
+
+         tracking)
 
 (defn hours
   [[selected-day zoom] _]
@@ -529,3 +540,13 @@
          :<- [:selected-session]
 
          tags-not-on-selected-session)
+
+(defn is-selected-playing?
+  [[tracking-ids selected-session-id]]
+  (some? (some  #{selected-session-id} tracking-ids)))
+(reg-sub :is-selected-playing?
+
+         :<- [:tracking-ids]
+         :<- [:selected-session-id]
+
+         is-selected-playing?)

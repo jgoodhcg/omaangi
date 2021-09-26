@@ -374,9 +374,10 @@
 (reg-event-db :start-tracking-session start-tracking-session)
 
 (defn stop-tracking-session
-  [db [_ session-id]]
-  (->> db (transform [:app-db/tracking sp/ALL #(= % session-id)] sp/NONE)))
-(reg-event-db :stop-tracking-session stop-tracking-session)
+  [{:keys [db]} [_ session-id]]
+  {:db (->> db (transform [:app-db/tracking] (fn [ids] (->> ids (remove #(= % session-id)) vec))))
+   :fx [[:navigate (:day screens)]]})
+(reg-event-fx :stop-tracking-session stop-tracking-session)
 
 (defn update-tracking
   [{:keys [db now]} [_ _]]
@@ -405,5 +406,6 @@
      :fx [[:dispatch [:re-index-session {:old-indexes []
                                          :new-indexes [selected-day]
                                          :id          new-uuid}]]
+          [:dispatch [:navigate (:day screens)]]
           [:dispatch [:start-tracking-session new-uuid]]]}))
 (reg-event-fx :create-track-session-from-other-session [id-gen insert-now] create-track-session-from-other-session)

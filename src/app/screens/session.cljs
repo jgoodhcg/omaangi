@@ -17,10 +17,25 @@
    [app.helpers :refer [<sub >evt get-theme clear-datetime-picker >evt-sync]]
    [app.tailwind :refer [tw]]))
 
+(defn start-button
+  [{:keys [id]}]
+  [:> paper/Button {:mode     "outlined"
+                    :icon     "play"
+                    :style    (tw "mr-4 mt-4 mb-4")
+                    :on-press #(>evt [:create-track-session-from-other-session id])}
+   "Start tracking"])
+
+(defn stop-button
+  [{:keys [id]}]
+  [:> paper/Button {:mode     "contained"
+                    :icon     "stop"
+                    :style    (tw "mr-4 mt-4 mb-4")
+                    :on-press #(>evt [:stop-tracking-session id])}
+   "Stop tracking"])
+
 (defn label-component
   [{:keys [id label]}]
-  [:> paper/TextInput {:label          "Label"
-                       :default-value  label
+  [:> paper/TextInput {:default-value  label
                        :style          (tw "mb-8")
                        :on-change-text #(>evt [:update-session {:session/label %
                                                                 :session/id    id}])}])
@@ -304,7 +319,9 @@
                              tags
                              color-override
                              color]
-              :as           session} (<sub [:selected-session])]
+              :as           session} (<sub [:selected-session])
+
+             is-playing (<sub [:is-selected-playing?])]
 
          [:> rn/ScrollView {:style {:background-color
                                     (-> theme (j/get :colors) (j/get :background))}}
@@ -314,6 +331,10 @@
                                         )}
 
            [:> rn/View {:style (tw "flex p-4 flex-col")}
+
+            (if is-playing
+              [stop-button (p/map-of id)]
+              [start-button (p/map-of id)])
 
             [label-component (p/map-of id label)]
 
