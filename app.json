@@ -29,7 +29,9 @@
       "userInterfaceStyle": "dark"
     },
     "android": {
-      "userInterfaceStyle": "dark"
+      "userInterfaceStyle": "dark",
+      "package": "com.jgoodhcg.umeng",
+      "versionCode": 1
     }
   }
 }
