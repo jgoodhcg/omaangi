@@ -453,5 +453,11 @@
 
 (defn zoom
   [db [_ direction]]
-  (->> db (transform [:app-db.view/zoom] #(%))))
-(reg-event-db :set-zoom zoom)
+  (->> db
+       (transform [:app-db.view/zoom]
+                  #(cond-> %
+                     (= direction :zoom/in)
+                     (* 1.1)
+                     (= direction :zoom/out)
+                     (* 0.9)))))
+(reg-event-db :zoom zoom)

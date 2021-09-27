@@ -250,13 +250,13 @@
    [:> paper/IconButton
     {:icon     "magnify-plus-outline"
      :size     32
-     :on-press #(tap> "zoom in")
+     :on-press #(>evt [:zoom :zoom/in])
      :style    (tw "absolute top-80")}]
 
    [:> paper/IconButton
     {:icon     "magnify-minus-outline"
      :size     32
-     :on-press #(tap> "zoom out")
+     :on-press #(>evt [:zoom :zoom/out])
      :style    (tw "absolute top-96")}]])
 
 (def sheet-ref (j/call react :createRef))
