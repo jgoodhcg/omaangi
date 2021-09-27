@@ -137,8 +137,9 @@
 (reg-event-db :set-selected-tag [base-interceptors] set-selected-tag)
 
 (defn get-dates [start stop]
-  (->> (t/range start stop (t/new-duration 1 :days))
+  (->> (t/range start stop (t/new-duration 1 :minutes))
        (map t/date)
+       set
        vec))
 
 (defn re-index-session
@@ -209,6 +210,7 @@
         new-indexes    (when stamps-changed (get-dates start stop))
         valid-stamps   (start-before-stop {:session/start start
                                            :session/stop  stop})]
+    (tap> (p/map-of new-indexes start stop :update-session))
     (when valid-stamps
       (merge
         {:db (->> db
@@ -448,3 +450,8 @@
   {:db                                   db
    :get-version-and-dispatch-set-version true})
 (reg-event-fx :get-version-and-dispatch-set-version [base-interceptors] get-version-and-dispatch-set-version)
+
+(defn zoom
+  [db [_ direction]]
+  (->> db (transform [:app-db.view/zoom] #(%))))
+(reg-event-db :set-zoom zoom)
