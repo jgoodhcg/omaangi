@@ -19,7 +19,7 @@
 
 (defn start-button
   [{:keys [id]}]
-  [:> paper/Button {:mode     "outlined"
+  [:> paper/Button {:mode     "flat"
                     :icon     "play"
                     :style    (tw "mr-4 mt-4 mb-4")
                     :on-press #(>evt [:create-track-session-from-other-session id])}
@@ -128,7 +128,7 @@
                                         (p/map-of color id label on-press style))])))
 
      [:> paper/Button {:icon     "plus"
-                       :mode     "outlined"
+                       :mode     "flat"
                        :on-press #(>evt [:set-tag-add-modal
                                          #:tag-add-modal
                                          {:visible true}])}
@@ -140,7 +140,7 @@
 
 (defn date-button
   [{:keys [value id label field-key]}]
-  [:> paper/Button {:mode     "contained"
+  [:> paper/Button {:mode     "flat"
                     :icon     "calendar"
                     :style    (tw "mr-4 mt-4 w-40")
                     :on-press #(>evt [:set-date-time-picker
@@ -154,7 +154,7 @@
 
 (defn time-button
   [{:keys [value id label field-key]}]
-  [:> paper/Button {:mode     "contained"
+  [:> paper/Button {:mode     "flat"
                     :icon     "clock"
                     :style    (tw "mr-4 mt-4 w-28")
                     :on-press #(>evt [:set-date-time-picker
@@ -255,7 +255,7 @@
                                  color-override :color-override
                                  session-id     :id}]
   (let [mode  (if (and (some? session-color)
-                       color-override) "contained" "outlined")
+                       color-override) "contained" "flat")
         label (if (some? session-color) session-color "set session color")]
 
     [:> rn/View {:style (tw "flex flex-col mb-8")}
@@ -279,28 +279,32 @@
 
 (defn session-type-component [{:keys [type id]}]
   [:> rn/View {:style (tw "flex flex-row mb-8")}
-   [:> paper/Button {:style    (tw "mr-4 w-24")
-                     :icon     "circle-outline"
-                     :mode     (case type
-                                 :session/plan "contained"
-                                 "outlined")
-                     :on-press #(>evt [:update-session
-                                       {:session/type :session/plan
-                                        :session/id   id}])}
+   [:> paper/Button (merge {:style    (tw "mr-4 w-24")
+                            :icon     "circle-outline"
+                            :mode     (case type
+                                        :session/plan "contained"
+                                        "flat")
+                            :on-press #(>evt [:update-session
+                                              {:session/type :session/plan
+                                               :session/id   id}])}
+                           (when (= type :session/plan)
+                             {:disabled true}))
     "plan"]
-   [:> paper/Button {:style    (tw "w-24")
-                     :icon     "circle-slice-8"
-                     :mode     (case type
-                                 :session/track "contained"
-                                 "outlined")
-                     :on-press #(>evt [:update-session
-                                       {:session/type :session/track
-                                        :session/id   id}])}
+   [:> paper/Button (merge {:style    (tw "w-24")
+                            :icon     "circle-slice-8"
+                            :mode     (case type
+                                        :session/track "contained"
+                                        "flat")
+                            :on-press #(>evt [:update-session
+                                              {:session/type :session/track
+                                               :session/id   id}])}
+                           (when (= type :session/track)
+                             {:disabled true}))
     "track"]])
 
 (defn delete-button
   [session]
-  [:> paper/Button {:mode     "outlined"
+  [:> paper/Button {:mode     "flat"
                     :icon     "delete"
                     :style    (tw "mr-4 mt-4 w-28")
                     :on-press #(>evt [:delete-session session])}
@@ -342,9 +346,9 @@
 
             [session-type-component (p/map-of type id)]
 
-            [color-override-component (p/map-of color id color-override)]
-
             [tags-component (p/map-of tags id)]
+
+            [color-override-component (p/map-of color id color-override)]
 
             [delete-button session]
             ]]]))]))
