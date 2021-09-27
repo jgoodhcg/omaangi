@@ -2,6 +2,7 @@
   (:require
    ["@react-native-async-storage/async-storage" :as async-storage]
    ["expo-constants" :as expo-constants]
+   ["react-native" :as rn]
    [re-frame.core :refer [reg-fx]]
    [applied-science.js-interop :as j]
    [app.helpers :refer [>evt]]
@@ -48,7 +49,9 @@
                 (j/call :then (fn [local-store-value]
                                 (if (some? local-store-value)
                                   (>evt [:load-db (-> local-store-value read-string)])
-                                  (>evt [:load-db default-app-db]))))
+                                  (do
+                                    (-> rn/Alert (j/call :alert "no local store data found"))
+                                    (>evt [:load-db default-app-db])))))
                 (j/call :catch #(tap> (str "get item catch " %))))
             (catch js/Object e (tap> (str "error checking for db " e))))))
 
