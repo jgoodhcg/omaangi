@@ -31,7 +31,7 @@
     "android": {
       "userInterfaceStyle": "dark",
       "package": "com.jgoodhcg.umeng",
-      "versionCode": 1
+      "versionCode": 3
     }
   }
 }

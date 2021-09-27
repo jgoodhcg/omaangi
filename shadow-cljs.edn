@@ -2,11 +2,12 @@
 {:deps true
  :builds
  {:app
-  {:target     :react-native
-   :init-fn    app.index/init
-   :output-dir "build"
-   :devtools   {:autoload true
-                :preloads [shadow.expo.keep-awake]}}
+  {:target           :react-native
+   :init-fn          app.index/init
+   :output-dir       "build"
+   :devtools         {:autoload true
+                      :preloads [shadow.expo.keep-awake]}
+   :compiler-options {:optimizations :simple}}
 
   :test
   {:target    :node-test
