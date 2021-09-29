@@ -48,12 +48,18 @@
                 (j/call :getItem app-db-key)
                 (j/call :then (fn [local-store-value]
                                 (if (some? local-store-value)
-                                  (>evt [:load-db (-> local-store-value read-string)])
+                                  (do
+                                    (println {:local-store-value local-store-value})
+                                    (>evt [:load-db (-> local-store-value read-string)]))
                                   (do
                                     (-> rn/Alert (j/call :alert "no local store data found"))
                                     (>evt [:load-db default-app-db])))))
-                (j/call :catch #(tap> (str "get item catch " %))))
-            (catch js/Object e (tap> (str "error checking for db " e))))))
+                (j/call :catch #(do
+                                  (tap> (str "get item catch " %))
+                                  (-> rn/Alert (j/call :alert "js catch on get item " (str %))))))
+            (catch js/Object e
+              (tap> (str "error checking for db " e))
+              (-> rn/Alert (j/call :alert "cljs catch on get Item " (str e)))))))
 
 (reg-fx :save-db
         (fn [app-db]
