@@ -6,7 +6,7 @@
    [re-frame.core :refer [reg-fx]]
    [applied-science.js-interop :as j]
    [app.helpers :refer [>evt]]
-   [app.db :as db :refer [default-app-db]]
+   [app.db :as db :refer [default-app-db serialize de-serialize]]
    [cljs.reader :refer [read-string]] ;; TODO justin 2021-09-26 is this a security threat?
    ))
 
@@ -48,9 +48,7 @@
                 (j/call :getItem app-db-key)
                 (j/call :then (fn [local-store-value]
                                 (if (some? local-store-value)
-                                  (do
-                                    (println {:local-store-value local-store-value})
-                                    (>evt [:load-db (-> local-store-value read-string)]))
+                                  (>evt [:load-db (-> local-store-value de-serialize)])
                                   (do
                                     (-> rn/Alert (j/call :alert "no local store data found"))
                                     (>evt [:load-db default-app-db])))))
@@ -66,7 +64,7 @@
           (try
             (-> async-storage
                 (j/get :default)
-                (j/call :setItem app-db-key (str app-db)))
+                (j/call :setItem app-db-key (serialize app-db)))
             (catch js/Object e (tap> (str "error saving db " e))))))
 
 (def version (-> expo-constants

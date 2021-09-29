@@ -11,12 +11,12 @@
    [spec-tools.core :as st]
    [tick.alpha.api :as t]
    [tick.timezone]
+   [cljs.reader :refer [read-string]] ;; TODO justin 2021-09-26 is this a security threat?
    [clojure.spec.gen.alpha :as gen]
    ;; needed to `gen/sample` or `gen/generate`
    [clojure.test.check.generators]
-
    [app.colors :refer [material-500-hexes]]
-   [app.helpers :refer [touches chance is-color?]]))
+   [app.helpers :refer [touches chance is-color? hex-if-some make-color-if-some]    ]))
 
 ;;
 ;; misc
@@ -382,3 +382,29 @@
        :app-db.view.date-time-picker/id         nil
        :app-db.view.color-picker/visible        false
        :app-db.view.color-picker/value          nil})))
+
+;;
+;; serialization
+;;
+
+(defn serialize
+  [app-db]
+  (->> app-db
+
+       (transform [:app-db.view.tag-remove-modal/color] hex-if-some)
+       (transform [:app-db.view.color-picker/value ] hex-if-some)
+       (transform [:app-db/tags sp/MAP-VALS (sp/must :tag/color)] hex-if-some)
+       (transform [:app-db/sessions sp/MAP-VALS (sp/must :session/color)] hex-if-some)
+
+       str))
+
+(defn de-serialize
+  [app-db]
+  (->> app-db
+
+       read-string
+
+       (transform [:app-db.view.tag-remove-modal/color] make-color-if-some)
+       (transform [:app-db.view.color-picker/value ] make-color-if-some)
+       (transform [:app-db/tags sp/MAP-VALS (sp/must :tag/color)] make-color-if-some)
+       (transform [:app-db/sessions sp/MAP-VALS (sp/must :session/color)] make-color-if-some)))
