@@ -350,15 +350,18 @@
           tag-labels                     (->> tags (select [sp/ALL :tag/label]))
           label                          (str label " " (join " " tag-labels))]
 
-      #:tracking-render {:id                  session-id
-                         :color-hex           (-> session-color (j/call :hex))
-                         :indicator-color-hex (-> session-color (j/call :lighten 0.32) (j/call :hex))
-                         :indicator-position  indicator-position
-                         :show-indicator      surpassed
-                         :ripple-color-hex    (-> session-color (j/call :lighten 0.64) (j/call :hex))
-                         :relative-width      relative-width
-                         :label               label
-                         :text-color-hex      white})))
+      #:tracking-render {:id                   session-id
+                         :color-hex            (-> session-color (j/call :hex))
+                         :background-color-hex (-> session-color (j/call :darken 0.32) (j/call :hex))
+                         :indicator-color-hex  (-> session-color (j/call :lighten 0.32) (j/call :hex))
+                         :indicator-position   indicator-position
+                         :show-indicator       surpassed
+                         :ripple-color-hex     (-> session-color (j/call :lighten 0.64) (j/call :hex))
+                         :relative-width       relative-width
+                         :label                label
+                         :text-color-hex       (-> session-color
+                                                   (j/call :isLight)
+                                                   (#(if % black white)))})))
 (reg-sub :tracking
 
          :<- [:tracking-ids]

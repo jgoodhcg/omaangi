@@ -17,8 +17,7 @@
                         clear-datetime-picker
                         active-gesture?]]
    [app.screens.core :refer [screens]]
-   [app.tailwind :refer [tw]]
-   [potpuri.core :as p]))
+   [app.tailwind :refer [tw]]))
 
 (defn date-indicator []
   (let [{:keys [day-of-week
@@ -76,6 +75,7 @@
               indicator-position
               show-indicator
               ripple-color-hex
+              background-color-hex
               label
               id]} tracks]
 
@@ -83,6 +83,13 @@
                      :style (merge (tw "w-full max-h-32 m-2")
                                    ;; TODO justin 2020-01-23 Add to custom tailwind theme
                                    {:min-height 32}) }
+
+         [:> rn/View {:style (merge
+                               (tw "absolute w-full h-8 p-1")
+                               {:background-color background-color-hex
+                                :border-radius    (-> theme (j/get :roundness))
+                                :left             0
+                                :top              0})}]
 
          ;; session
          [:> rn/View {:style (merge
@@ -110,10 +117,11 @@
                            :ripple-color   ripple-color-hex
                            :underlay-color ripple-color-hex
                            :active-opacity 0.7
-                           :style          (-> (tw "absolute h-8 w-full")
+                           :style          (-> (tw "absolute h-8 w-full flex justify-center items-center")
                                                (merge {:top           0
                                                        :left          0
                                                        :border-radius (-> theme (j/get :roundness))}))}
+
           [:> paper/Text {:style {:color text-color-hex}} label]]])]]))
 
 (defn top-section [props]
