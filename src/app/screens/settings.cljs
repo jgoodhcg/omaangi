@@ -14,7 +14,8 @@
 (defn screen [props]
   (r/as-element
     [(fn []
-       (let [theme (->> [:theme] <sub get-theme)]
+       (let [theme   (->> [:theme] <sub get-theme)
+             version (<sub [:version])]
 
          [:> rn/SafeAreaView {:style (merge (tw "flex flex-1")
                                             {:background-color (-> theme (j/get :colors) (j/get :background))})}
@@ -65,4 +66,8 @@
               [:> paper/Button {:style    (tw "mr-4 w-32")
                                 :disabled true
                                 :mode     "outlined" ;; contained when key is added
-                                :icon     "refresh"} "sync"]]]]]]))]))
+                                :icon     "refresh"} "sync"]]]
+
+
+            [:> rn/View {:style (tw "flex flex-col mb-8")}
+             [:> paper/Caption {} version]]]]]))]))
