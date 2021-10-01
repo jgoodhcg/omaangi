@@ -386,7 +386,13 @@
 (defn update-tracking
   [{:keys [db now]} [_ _]]
   (let [tracking-ids (->> db (select-one [:app-db/tracking]))]
-    {:db (->> db (setval [:app-db/sessions (sp/submap tracking-ids) sp/MAP-VALS :session/stop] now))}))
+    {:db db
+     :fx (->> db
+              (select [:app-db/sessions (sp/submap tracking-ids) sp/MAP-VALS])
+              (mapv (fn [{:session/keys [id]}]
+                      [:dispatch
+                       [:update-session {:session/id   id
+                                         :session/stop now}]]))) }))
 (reg-event-fx :update-tracking [base-interceptors insert-now] update-tracking)
 
 (defn create-track-session-from-other-session
