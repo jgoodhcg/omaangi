@@ -435,7 +435,7 @@
 (defn load-db
   [_ [_ new-app-db]]
   {:db new-app-db
-   :fx [[:dispatch [:get-version-and-dispatch-set-version]]
+   :fx [[:dispatch [:post-load-db]]
         [:dispatch [:start-ticking]]]})
 (reg-event-fx :load-db [base-interceptors] load-db)
 
@@ -445,11 +445,11 @@
    :save-db db})
 (reg-event-fx :save-db [base-interceptors] save-db)
 
-(defn get-version-and-dispatch-set-version
+(defn post-load-db
   [{:keys [db]} _]
-  {:db                                   db
-   :get-version-and-dispatch-set-version true})
-(reg-event-fx :get-version-and-dispatch-set-version [base-interceptors] get-version-and-dispatch-set-version)
+  {:db           db
+   :post-load-db true})
+(reg-event-fx :post-load-db [base-interceptors] post-load-db)
 
 (defn zoom
   [db [_ direction]]

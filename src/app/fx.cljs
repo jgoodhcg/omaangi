@@ -72,5 +72,12 @@
                  (j/get :manifest)
                  (j/get :version)))
 
-(reg-fx :get-version-and-dispatch-set-version
-        #(>evt [:set-version version]))
+(reg-fx :post-load-db
+        (fn [_]
+          (>evt [:set-version version])
+          ;; The tick rate is rather slow (5 sec as of 2021-10-01) because faster rates interfere with buttons
+          ;; Because of that we want to tick when app state changes
+          (-> rn/AppState
+              (j/call :addEventListener
+                      "change"
+                      #(>evt [:tick-tock])))))
