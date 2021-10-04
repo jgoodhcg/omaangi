@@ -80,7 +80,7 @@
               id]} tracks]
 
         [:> rn/View {:key   (str (random-uuid) "-tracking-session")
-                     :style (merge (tw "w-full max-h-32 m-2")
+                     :style (merge (tw "w-full max-h-32 my-2")
                                    ;; TODO justin 2020-01-23 Add to custom tailwind theme
                                    {:min-height 32}) }
 
@@ -158,8 +158,9 @@
          val]])]))
 
 (defn sessions-component []
-  (let [theme    (->> [:theme] <sub get-theme)
-        sessions (<sub [:sessions-for-this-day])]
+  (let [theme         (->> [:theme] <sub get-theme)
+        sessions      (<sub [:sessions-for-this-day])
+        border-radius (-> theme (j/get :roundness))]
 
     [:> rn/View {:style (tw "ml-20")}
      (for [{:session-render/keys [left
@@ -173,6 +174,7 @@
                                   text-color-hex
                                   label
                                   is-selected
+                                  is-tracking
                                   start-label
                                   stop-label]}
            sessions]
@@ -222,7 +224,7 @@
           [:> g/RectButton {:style          (-> (tw "h-full w-full")
                                                 (merge {:background-color color-hex}
                                                        (when (not is-selected)
-                                                         {:border-radius (-> theme (j/get :roundness))})))
+                                                         {:border-radius border-radius})))
                             :on-press       #(do
                                                (>evt [:navigate (:session screens)])
                                                (>evt [:set-selected-session id]))

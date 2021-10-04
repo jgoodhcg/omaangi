@@ -186,7 +186,8 @@
                        start-truncated
                        stop-truncated
                        label
-                       is-selected]
+                       is-selected
+                       is-tracking]
      session-tag-refs :session/tags
      :as              session}]]
 
@@ -234,13 +235,13 @@
                        :session-render/text-color-hex   text-color-hex
                        :session-render/id               id
                        :session-render/is-selected      is-selected
+                       :session-render/is-tracking      is-tracking
                        :session-render/start-label      (time-label start-truncated)
-                       :session-render/stop-label       (time-label stop-truncated)
-                       })]
+                       :session-render/stop-label       (time-label stop-truncated)})]
       (catch js/Object e (tap> (p/map-of e session session-color))))))
 
 (defn sessions-for-this-day
-  [[selected-day calendar sessions zoom tags selected-session-id] _]
+  [[selected-day calendar sessions zoom tags selected-session-id tracking-ids] _]
   (comment
     [;; collision groups are an intermediate grouping not in sub result
      #:session-render {:left             0         ;; collision group position and type
@@ -261,6 +262,7 @@
              (mapv #(truncate-session (:calendar/date this-day) %))
              ;; session/is-selected gets renamed to session-render/is-selected
              (mapv #(merge % {:session/is-selected (= (:session/id %) selected-session-id)}))
+             (mapv #(merge % {:session/is-tracking (-> tracking-ids set (some [(:session/id %)]) some?)}))
              (sort-by (fn [s] (->> s
                                    :session/start
                                    (t/new-interval (t/epoch))
@@ -292,6 +294,7 @@
          :<- [:zoom]
          :<- [:tags]
          :<- [:selected-session-id]
+         :<- [:tracking-ids]
 
          sessions-for-this-day)
 
