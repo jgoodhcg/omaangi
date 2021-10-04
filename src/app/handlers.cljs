@@ -230,7 +230,7 @@
           tag-id     :tag/id}]]
   (->> db
        (transform [:app-db/sessions (sp/keypath session-id) :session/tags]
-                  #(conj % tag-id))))
+                  #(-> % (conj tag-id) vec))))
 (reg-event-db :add-tag-to-session [base-interceptors] add-tag-to-session)
 
 (defn remove-tag-from-session
@@ -397,20 +397,21 @@
 
 (defn create-track-session-from-other-session
   [{:keys [db new-uuid now]} [_ from-session-id]]
-  (let [today          (t/date now)
+  (let [today                (t/date now)
         {:session/keys
-         [tags color]} (->> db (select-one [:app-db/sessions
-                                            (sp/keypath from-session-id)
-                                            (sp/submap [:session/tags :session/color])]))
-        session        (-> {:session/id           new-uuid
-                            :session/created      now
-                            :session/last-edited  now
-                            :session/start        now
-                            :session/stop         (-> now (t/+ (t/new-duration 1 :seconds)))
-                            :session/type         :session/track
-                            :session/tracked-from from-session-id}
-                           (merge (when (some? tags) {:session/tags tags}))
-                           (merge (when (some? color) {:session/color color})))]
+         [tags color label]} (->> db (select-one [:app-db/sessions
+                                                  (sp/keypath from-session-id)
+                                                  (sp/submap [:session/tags :session/color :session/label])]))
+        session              (-> {:session/id           new-uuid
+                                  :session/created      now
+                                  :session/last-edited  now
+                                  :session/label        label
+                                  :session/start        now
+                                  :session/stop         (-> now (t/+ (t/new-duration 1 :seconds)))
+                                  :session/type         :session/track
+                                  :session/tracked-from from-session-id}
+                                 (merge (when (some? tags) {:session/tags tags}))
+                                 (merge (when (some? color) {:session/color color})))]
     (tap> (p/map-of session))
     {:db (->> db (setval [:app-db/sessions (sp/keypath new-uuid)] session))
      :fx [[:dispatch [:re-index-session {:old-indexes []
