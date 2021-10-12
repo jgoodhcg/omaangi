@@ -12,18 +12,32 @@
    [app.db :refer [generate-color]]))
 
 
-(def tmp-contribution-data
-  [{ :date "2017-01-02" :count 1 }
-   { :date "2017-01-03" :count 2 }
-   { :date "2017-01-04" :count 3 }
-   { :date "2017-01-05" :count 4 }
-   { :date "2017-01-06" :count 5 }
-   { :date "2017-01-30" :count 2 }
-   { :date "2017-01-31" :count 3 }
-   { :date "2017-03-01" :count 2 }
-   { :date "2017-04-02" :count 4 }
-   { :date "2017-03-05" :count 2 }
-   { :date "2017-02-30" :count 4 }])
+(def tmp-pie-chart-data
+  [{:name            "Tag 1"
+    :min             1000
+    :color           (-> (generate-color) (j/call :hex))
+    :legendFontColor "#7f7f7f"
+    :legendFontSize  15}
+   {:name            "Tag 2"
+    :min             10300
+    :color           (-> (generate-color) (j/call :hex))
+    :legendFontColor "#7f7f7f"
+    :legendFontSize  15}
+   {:name            "Tag 3"
+    :min             13000
+    :color           (-> (generate-color) (j/call :hex))
+    :legendFontColor "#7f7f7f"
+    :legendFontSize  15}
+   {:name            "Tag 4"
+    :min             5000
+    :color           (-> (generate-color) (j/call :hex))
+    :legendFontColor "#7f7f7f"
+    :legendFontSize  15}
+   {:name            "Tag 5"
+    :min             11100
+    :color           (-> (generate-color) (j/call :hex))
+    :legendFontColor "#7f7f7f"
+    :legendFontSize  15}])
 
 (def tmp-stacked-data
   {:labels    ["mon" "tue" "wed" "thu" "fri" "sat" "sun"]
@@ -71,16 +85,7 @@
  :useShadowColorFromDataset     false})
 
 (defn pattern-graph []
-  [:> rn/View (tw "p-2 mt-4 mb-12")
-   [:> rn/View (tw "flex flex-row justify-around pb-2")
-    [:> paper/Button
-     {:mode     "flat"
-      :on-press #(tap> "hello")}
-     "2021-06-20"]
-    [:> paper/Button
-     {:mode     "flat"
-      :on-press #(tap> "hello")}
-     "2021-06-27"]]
+  [:> rn/View (tw "p-2")
    [:> rn/View (tw "flex flex-col")
     (for [{:keys [day hours]} tmp-pattern-data]
       [:> rn/View {:style (tw "flex flex-row justify-between pb-1")
@@ -92,30 +97,53 @@
                                     {:background-color c})
                       :key   (str (random-uuid))}])])]])
 
+(defn pie-chart []
+  [:> rn/View (tw "p-2")
+   [:> charts/PieChart
+    {:data            (j/lit tmp-pie-chart-data)
+     :width           400
+     :height          250
+     :chartConfig     (j/lit chart-config)
+     :accessor        "min"
+     :backgroundColor "transparent"
+     :paddingLeft     "15"}]])
+
+(defn stacked-bar-chart []
+  [:> rn/View (tw "p-2")
+   [:> charts/StackedBarChart {:data        (j/lit tmp-stacked-data)
+                               :width       400
+                               :height      220
+                               :chartConfig (j/lit chart-config)}]])
+
+(defn interval-buttons []
+  [:> rn/View (tw "flex flex-row justify-around py-4")
+   [:> paper/Button
+    {:mode     "flat"
+     :on-press #(tap> "hello")}
+    "2021-06-20"]
+   [:> paper/Button
+    {:mode     "flat"
+     :on-press #(tap> "hello")}
+    "2021-06-27"]])
+
 (defn screen [props]
-(r/as-element
-  [(fn []
-     (let [theme (->> [:theme] <sub get-theme)]
-       ;; TODO justin 2021-05-01 add safe area view, heading, and pattern
-       ;;
-       [:> rn/SafeAreaView {:style (merge (tw "flex flex-1")
-                                          {:background-color (-> theme (j/get :colors) (j/get :background))})}
-        [:> paper/Surface {:style (-> (tw "flex flex-1")
-                                      (merge {:background-color (-> theme (j/get :colors) (j/get :background))}))}
-         [:> rn/View
-          [:> rn/StatusBar {:visibility "hidden"}]
+  (r/as-element
+    [(fn []
+       (let [theme (->> [:theme] <sub get-theme)]
+         ;; TODO justin 2021-05-01 add safe area view, heading, and pattern
+         ;;
+         [:> rn/SafeAreaView {:style (merge (tw "flex flex-1")
+                                            {:background-color (-> theme (j/get :colors) (j/get :background))})}
+          [:> paper/Surface {:style (-> (tw "flex flex-1")
+                                        (merge {:background-color (-> theme (j/get :colors) (j/get :background))}))}
+           [:> rn/ScrollView
+            [:> rn/View
+             [:> rn/StatusBar {:visibility "hidden"}]
 
-          [:> charts/ContributionGraph {:values      (j/lit tmp-contribution-data)
-                                        :endDate     (js/Date. "2017-04-01")
-                                        :numDays     105
-                                        :width       400
-                                        :height      220
-                                        :chartConfig (j/lit chart-config)}]
+             [interval-buttons]
 
-          ;; TODO justin 2021-05-01 Add pattern component
-          [pattern-graph]
+             [pie-chart]
 
-          [:> charts/StackedBarChart {:data        (j/lit tmp-stacked-data)
-                                      :width       400
-                                      :height      220
-                                      :chartConfig (j/lit chart-config)}]]]]))]))
+             [pattern-graph]
+
+             [stacked-bar-chart]]]]]))]))
