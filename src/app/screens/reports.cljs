@@ -71,14 +71,14 @@
  :useShadowColorFromDataset     false})
 
 (defn pattern-graph []
-  [:> rn/View (tw "p-2 my-4")
+  [:> rn/View (tw "p-2 mt-4 mb-12")
    [:> rn/View (tw "flex flex-row justify-around pb-2")
     [:> paper/Button
-     {:mode     "outlined"
+     {:mode     "flat"
       :on-press #(tap> "hello")}
      "2021-06-20"]
     [:> paper/Button
-     {:mode     "outlined"
+     {:mode     "flat"
       :on-press #(tap> "hello")}
      "2021-06-27"]]
    [:> rn/View (tw "flex flex-col")
