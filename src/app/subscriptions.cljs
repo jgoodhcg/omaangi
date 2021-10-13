@@ -298,12 +298,15 @@
 
          sessions-for-this-day)
 
+(defn now
+  []
+  (t/now))
+(reg-sub :now now)
+
 (defn this-day
-  [selected-day _]
+  [[selected-day now] _]
   (let [month (t/month selected-day)
-        year  (t/year selected-day)
-        ;; TODO move this to injection form sub call or interceptor
-        now   (t/now)]
+        year  (t/year selected-day)]
     {:day-of-week   (->> selected-day
                          t/day-of-week
                          str)
@@ -313,10 +316,13 @@
      :selected-day  selected-day
      :display-year  (not= year (t/year now))
      :display-month (or (not= year (t/year now))
-                        (not= month (t/month now)))}))
+                        (not= month (t/month now)))
+     :behind-now    (-> now (t/date) (t/> selected-day))
+     :beyond-now    (-> now (t/date) (t/< selected-day))}))
 (reg-sub :this-day
 
          :<- [:selected-day]
+         :<- [:now]
 
          this-day)
 

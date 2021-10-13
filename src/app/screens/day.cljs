@@ -17,7 +17,8 @@
                         clear-datetime-picker
                         active-gesture?]]
    [app.screens.core :refer [screens]]
-   [app.tailwind :refer [tw]]))
+   [app.tailwind :refer [tw]]
+   [tick.alpha.api :as t]))
 
 (defn date-indicator []
   (let [{:keys [day-of-week
@@ -26,40 +27,56 @@
                 month
                 selected-day
                 display-year
-                display-month]}
+                display-month
+                behind-now
+                beyond-now]}
         (<sub [:this-day])
 
         {:date-time-picker/keys [value mode visible]
          dtp-id                 :date-time-picker/id}
         (<sub [:date-time-picker])]
 
-    [:> g/RectButton {:style    (tw "flex flex-1 flex-row justify-center")
-                      :on-press #(>evt [:set-date-time-picker
-                                        #:date-time-picker
-                                        {:value   selected-day
-                                         :mode    "date"
-                                         :visible true
-                                         :id      :day}])}
-     [:> rn/View {:style (tw "flex flex-1 flex-row justify-center")}
-      (when display-year
-        [:> paper/Text {:style (tw "font-bold text-center m-2")} year])
-      (when display-month
-        [:> paper/Text {:style (tw "font-bold text-center m-2")} month])
-      [:> paper/Text {:style (tw "font-bold text-center m-2")} day-of-week]
-      [:> paper/Text {:style (tw "font-bold text-center m-2")} day-of-month]
+    [:> rn/View {:style (tw "flex flex-1 flex-row justify-center items-center h-8")}
+     (when beyond-now
+       [:> paper/IconButton
+        {:icon     "less-than"
+         :on-press #(do
+                      (>evt [:set-selected-day (t/now)])
+                      (>evt clear-datetime-picker))}])
 
-      (when (and (some? value)
-                 (= dtp-id :day))
-        [:> DateTimePicker {:is-visible           visible
-                            :is-dark-mode-enabled true
-                            :date                 value
-                            :mode                 mode
-                            :on-hide              #(>evt clear-datetime-picker)
-                            :on-cancel            #(>evt clear-datetime-picker)
-                            :on-confirm           #(do
-                                                     (tap> "day picker")
-                                                     (>evt [:set-selected-day %])
-                                                     (>evt clear-datetime-picker))}])]]))
+     [:> g/RectButton {:style    (tw "flex flex-row justify-center")
+                       :on-press #(>evt [:set-date-time-picker
+                                         #:date-time-picker
+                                         {:value   selected-day
+                                          :mode    "date"
+                                          :visible true
+                                          :id      :day}])}
+      [:> rn/View {:style (tw "flex flex-row justify-center items-center")}
+       (when display-year
+         [:> paper/Text {:style (tw "font-bold text-center m-2")} year])
+       (when display-month
+         [:> paper/Text {:style (tw "font-bold text-center m-2")} month])
+       [:> paper/Text {:style (tw "font-bold text-center m-2")} day-of-week]
+       [:> paper/Text {:style (tw "font-bold text-center m-2")} day-of-month]]]
+
+     (when behind-now
+       [:> paper/IconButton
+        {:icon     "greater-than"
+         :on-press #(do
+                      (>evt [:set-selected-day (t/now)])
+                      (>evt clear-datetime-picker))}])
+
+     (when (and (some? value)
+                (= dtp-id :day))
+       [:> DateTimePicker {:is-visible           visible
+                           :is-dark-mode-enabled true
+                           :date                 value
+                           :mode                 mode
+                           :on-hide              #(>evt clear-datetime-picker)
+                           :on-cancel            #(>evt clear-datetime-picker)
+                           :on-confirm           #(do
+                                                    (>evt [:set-selected-day %])
+                                                    (>evt clear-datetime-picker))}])]))
 
 (defn tracking-sessions []
   (let [theme  (->> [:theme] <sub get-theme)
