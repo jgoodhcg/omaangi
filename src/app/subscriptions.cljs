@@ -134,7 +134,7 @@
                                             (sp/keypath :tag/color)]
                           ;; need to put :not-a-color in tag color list so that reduce runs
                           ;; the reducer fn which takes care of the case there are no tag colors
-                          tag-colors       (->> s (select tag-colors-path))
+                          tag-colors       (->> s (select tag-colors-path) (remove nil?) vec)
                           tag-colors-count (count tag-colors)]
                       (if-let [c c]
                         ;; when there is a session color just hex it
