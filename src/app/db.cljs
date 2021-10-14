@@ -13,6 +13,7 @@
    [tick.timezone]
    [cljs.reader :refer [read-string]] ;; TODO justin 2021-09-26 is this a security threat?
    [clojure.spec.gen.alpha :as gen]
+   [clojure.string :refer [replace]]
    ;; needed to `gen/sample` or `gen/generate`
    [clojure.test.check.generators]
    [app.colors :refer [material-500-hexes]]
@@ -211,6 +212,8 @@
 
 (s/def ::reasonable-number (s/int-in 1 20))
 
+;; TODO justin 2021-10-14 rename this to ::instant because that is what it is.
+;; I want to wrap around it only for a generator
 (s/def ::time-point (s/with-gen t/instant? #(gen/fmap generate-time-point (s/gen int?))))
 
 (s/def ::color (s/with-gen is-color?
@@ -273,15 +276,21 @@
                 (s/and float? pos?)
                 #(gen/fmap (fn [n] (* n 0.1)) (s/gen ::reasonable-number))))
 
-;; I think intentions were meant to be todo items
+;; 2021-08-15 I think intentions were meant to be todo items
 ;; Something to be done but not at any specific time
 ;; Not sure if I want to keep these
+
+;; 2021-10-14 I think these were meant to be put on the session or template as check list items
 (def intention-data-spec
   (ds/spec {:name ::intention-ds
             :spec {:intention/id             uuid?
                    :intention/created        ::time-point
                    :intention/last-edited    ::time-point
                    :intention/date           t/date?
+                   :intention/state          (s/spec #{:intention/completed
+                                                       :intention/started
+                                                       :intention/outstanding
+                                                       :intention/canceled})
                    (ds/opt :intention/tags)  [uuid?]
                    (ds/opt :intention/label) string?
                    (ds/opt :intention/color) ::color}}))
@@ -291,10 +300,20 @@
 
 (s/def ::intentions (s/and map? (s/every-kv uuid? ::intention)))
 
-;; TODO Justin 2021-06-20 make templates
-;; {:template/date       t/date?
-;;  :template/intentions "Everything from intention-ds except date"
-;;  :template/sessions   "Session except start/stop are t/time?"}
+(comment
+  {:template/created     ::time-point
+   :template/last-edited ::time-point
+   ;; :template/intentions  "Everything from intention-ds except date"
+   :template/sessions    (-> session-data-spec
+                             (update :session/start t/time?)
+                             (update :session/stop t/time?)
+                             (dissoc :session/type)
+                             ;; change everything to `:template-session/*`
+                             (->> (transform [sp/MAP-KEYS sp/ALL]
+                                             #(-> %
+                                                  str
+                                                  (replace ":session" "template-session") ;; notice the drop of `:`
+                                                  keyword))))})
 
 (def app-db-spec
   (ds/spec
