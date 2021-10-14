@@ -212,9 +212,7 @@
 
 (s/def ::reasonable-number (s/int-in 1 20))
 
-;; TODO justin 2021-10-14 rename this to ::instant because that is what it is.
-;; I want to wrap around it only for a generator
-(s/def ::time-point (s/with-gen t/instant? #(gen/fmap generate-time-point (s/gen int?))))
+(s/def ::instant (s/with-gen t/instant? #(gen/fmap generate-time-point (s/gen int?))))
 
 (s/def ::color (s/with-gen is-color?
                  #(gen/fmap
@@ -226,10 +224,10 @@
 (def session-data-spec
   (ds/spec {:name ::session-ds
             :spec {:session/id                    uuid?
-                   :session/created               ::time-point
-                   :session/last-edited           ::time-point
-                   :session/start                 ::time-point
-                   :session/stop                  ::time-point
+                   :session/created               ::instant
+                   :session/last-edited           ::instant
+                   :session/start                 ::instant
+                   :session/stop                  ::instant
                    :session/type                  (s/spec #{:session/track :session/plan})
                    (ds/opt :session/tags)         [uuid?]
                    (ds/opt :session/label)        string?
@@ -284,8 +282,8 @@
 (def intention-data-spec
   (ds/spec {:name ::intention-ds
             :spec {:intention/id             uuid?
-                   :intention/created        ::time-point
-                   :intention/last-edited    ::time-point
+                   :intention/created        ::instant
+                   :intention/last-edited    ::instant
                    :intention/date           t/date?
                    :intention/state          (s/spec #{:intention/completed
                                                        :intention/started
@@ -301,8 +299,8 @@
 (s/def ::intentions (s/and map? (s/every-kv uuid? ::intention)))
 
 (comment
-  {:template/created     ::time-point
-   :template/last-edited ::time-point
+  {:template/created     ::instant
+   :template/last-edited ::instant
    ;; :template/intentions  "Everything from intention-ds except date"
    :template/sessions    (-> session-data-spec
                              (update :session/start t/time?)
@@ -320,7 +318,7 @@
     {:name ::app-db
      :spec
      {:app-db/version                          string?
-      :app-db/current-time                     ::time-point
+      :app-db/current-time                     ::instant
       :app-db/current-timezone                 t/zone?
       :app-db/tracking                         [uuid?]
       :app-db/calendar                         ::calendar
