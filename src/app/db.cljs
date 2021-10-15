@@ -310,8 +310,8 @@
    :template/last-edited ::instant
    ;; :template/intentions  "Everything from intention-ds except date"
    :template/sessions    (-> session-data-spec
-                             (update :session/start t/time?)
-                             (update :session/stop t/time?)
+                             (update :session/start ::time)
+                             (update :session/stop ::time)
                              (dissoc :session/type)
                              ;; change everything to `:template-session/*`
                              (->> (transform [sp/MAP-KEYS sp/ALL]
