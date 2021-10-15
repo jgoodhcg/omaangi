@@ -50,10 +50,15 @@
 ;; independent generators
 ;;
 
-(defn generate-time-point []
+(defn generate-instant []
   (->> (reasonable-date-times)
        (rand-nth)
        (t/instant)))
+
+(defn generate-time []
+  (->> (reasonable-date-times)
+       (rand-nth)
+       (t/time)))
 
 (defn generate-color []
   ;; (-> faker (j/get :internet) (j/call :color) color)
@@ -63,23 +68,23 @@
   "By default will make a session that is contained within a day.
   The `:day` option allows you to choose the day.
   When `:within` option is set to _false_ then there is a chance for `:session/start` and/or `:session/stop` to be on the prev or next day respectively."
-  ([] (generate-session {:day    (t/date (generate-time-point))
+  ([] (generate-session {:day    (t/date (generate-instant))
                          :within true}))
-  ([{:keys [day within] :or {day    (t/date (generate-time-point))
+  ([{:keys [day within] :or {day    (t/date (generate-instant))
                              within true}}]
-   (let [time-point     (-> day arbitrary-date-times rand-nth t/instant)
+   (let [instant        (-> day arbitrary-date-times rand-nth t/instant)
          random-minutes (-> (t/new-duration 4 :hours)
                             (t/minutes)
                             (rand-int)
                             (t/new-duration :minutes))
          start          (if within
-                          time-point
-                          (t/- time-point random-minutes))
+                          instant
+                          (t/- instant random-minutes))
          stop           (if within
-                          (-> time-point
+                          (-> instant
                               (t/+ random-minutes)
                               (t/min (-> day (t/bounds) (t/end) (t/instant))))
-                          (-> time-point
+                          (-> instant
                               (t/+ random-minutes)))]
      (merge
        #:session {:id          (random-uuid)
@@ -94,7 +99,7 @@
        (when (chance :low)
          #:session {:color (-> faker (j/get :internet) (j/call :color) color)})))))
 
-(comment (-> {:day    (t/date (generate-time-point))
+(comment (-> {:day    (t/date (generate-instant))
               :within false}
              generate-session
              (select-keys [:session/start :session/stop])))
@@ -113,7 +118,7 @@
 
 (defn generate-calendar-val []
   {:calendar/sessions []
-   :calendar/date     (t/date (generate-time-point))})
+   :calendar/date     (t/date (generate-instant))})
 
 ;;
 ;; coll generators
@@ -143,7 +148,7 @@
 (defn generate-calendar [n]
   (generate-indexed
     n
-    (fn [] (t/date (generate-time-point)))
+    (fn [] (t/date (generate-instant)))
     (fn [d] {:calendar/sessions []
              :calendar/date     (t/date d)})))
 
@@ -212,7 +217,9 @@
 
 (s/def ::reasonable-number (s/int-in 1 20))
 
-(s/def ::instant (s/with-gen t/instant? #(gen/fmap generate-time-point (s/gen int?))))
+(s/def ::instant (s/with-gen t/instant? #(gen/fmap generate-instant (s/gen int?))))
+
+(s/def ::time (s/with-gen t/time? #(gen/fmap generate-time (s/gen int?))))
 
 (s/def ::color (s/with-gen is-color?
                  #(gen/fmap
