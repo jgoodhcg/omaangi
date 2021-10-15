@@ -8,7 +8,8 @@
    [app.helpers :refer [>evt]]
    [app.db :as db :refer [default-app-db serialize de-serialize]]
    [cljs.reader :refer [read-string]] ;; TODO justin 2021-09-26 is this a security threat?
-   ))
+
+   [tick.alpha.api :as t]))
 
 (def !navigation-ref (clojure.core/atom nil))
 
@@ -75,6 +76,7 @@
 (reg-fx :post-load-db
         (fn [_]
           (>evt [:set-version version])
+          (>evt [:set-selected-day (t/now)])
           ;; The tick rate is rather slow (5 sec as of 2021-10-01) because faster rates interfere with buttons
           ;; Because of that we want to tick when app state changes
           (-> rn/AppState
