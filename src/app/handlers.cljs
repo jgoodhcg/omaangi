@@ -468,3 +468,21 @@
                      (= direction :zoom/out)
                      (* 0.9)))))
 (reg-event-db :zoom zoom)
+
+(defn create-track-session-from-nothing
+  [{:keys [db new-uuid now]} _]
+  (let [today   (t/date now)
+        session (-> {:session/id          new-uuid
+                     :session/created     now
+                     :session/last-edited now
+                     :session/label       ""
+                     :session/start       now
+                     :session/stop        (-> now (t/+ (t/new-duration 1 :seconds)))
+                     :session/type        :session/track})]
+    (tap> (p/map-of session :create-track-session-from-nothing))
+    {:db (->> db (setval [:app-db/sessions (sp/keypath new-uuid)] session))
+     :fx [[:dispatch [:re-index-session {:old-indexes []
+                                         :new-indexes [today]
+                                         :id          new-uuid}]]
+          [:dispatch [:start-tracking-session new-uuid]]]}))
+(reg-event-fx :create-track-session-from-nothing [base-interceptors id-gen insert-now] create-track-session-from-nothing)

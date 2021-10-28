@@ -84,62 +84,67 @@
     [:> g/ScrollView
      [:> paper/Surface {:style (tw "p-2 mb-2")}
 
-      (for [{:tracking-render/keys
-             [relative-width
-              color-hex
-              text-color-hex
-              indicator-color-hex
-              indicator-position
-              show-indicator
-              ripple-color-hex
-              background-color-hex
-              label
-              id]} tracks]
+      [:> rn/View
+       (for [{:tracking-render/keys
+              [relative-width
+               color-hex
+               text-color-hex
+               indicator-color-hex
+               indicator-position
+               show-indicator
+               ripple-color-hex
+               background-color-hex
+               label
+               id]} tracks]
 
-        [:> rn/View {:key   (str (random-uuid) "-tracking-session")
-                     :style (merge (tw "w-full max-h-32 my-2")
-                                   ;; TODO justin 2020-01-23 Add to custom tailwind theme
-                                   {:min-height 32}) }
+         [:> rn/View {:key   (str (random-uuid) "-tracking-session")
+                      :style (merge (tw "w-full max-h-32 my-2")
+                                    ;; TODO justin 2020-01-23 Add to custom tailwind theme
+                                    {:min-height 32}) }
 
-         [:> rn/View {:style (merge
-                               (tw "absolute w-full h-8 p-1")
-                               {:background-color background-color-hex
-                                :border-radius    (-> theme (j/get :roundness))
-                                :left             0
-                                :top              0})}]
+          [:> rn/View {:style (merge
+                                (tw "absolute w-full h-8 p-1")
+                                {:background-color background-color-hex
+                                 :border-radius    (-> theme (j/get :roundness))
+                                 :left             0
+                                 :top              0})}]
 
-         ;; session
-         [:> rn/View {:style (merge
-                               (tw "absolute h-8 p-1")
-                               {:position         "absolute"
-                                :top              0
-                                :left             0
-                                :overflow         "hidden"
-                                :width            relative-width
-                                :border-radius    (-> theme (j/get :roundness))
-                                :background-color color-hex})}
+          ;; session
+          [:> rn/View {:style (merge
+                                (tw "absolute h-8 p-1")
+                                {:position         "absolute"
+                                 :top              0
+                                 :left             0
+                                 :overflow         "hidden"
+                                 :width            relative-width
+                                 :border-radius    (-> theme (j/get :roundness))
+                                 :background-color color-hex})}
 
-          ;; intended duration indication
-          (when show-indicator
-            [:> rn/View {:style (merge
-                                  (tw "absolute w-2 h-8")
-                                  {:top              0
-                                   :left             indicator-position
-                                   :background-color indicator-color-hex})}])]
+           ;; intended duration indication
+           (when show-indicator
+             [:> rn/View {:style (merge
+                                   (tw "absolute w-2 h-8")
+                                   {:top              0
+                                    :left             indicator-position
+                                    :background-color indicator-color-hex})}])]
 
-         ;; selection button needs to go "over" everything
-         [:> g/RectButton {:on-press       #(do
-                                              (>evt [:set-selected-session id])
-                                              (>evt [:navigate (:session screens)]))
-                           :ripple-color   ripple-color-hex
-                           :underlay-color ripple-color-hex
-                           :active-opacity 0.7
-                           :style          (-> (tw "absolute h-8 w-full flex justify-center items-center")
-                                               (merge {:top           0
-                                                       :left          0
-                                                       :border-radius (-> theme (j/get :roundness))}))}
+          ;; selection button needs to go "over" everything
+          [:> g/RectButton {:on-press       #(do
+                                               (>evt [:set-selected-session id])
+                                               (>evt [:navigate (:session screens)]))
+                            :ripple-color   ripple-color-hex
+                            :underlay-color ripple-color-hex
+                            :active-opacity 0.7
+                            :style          (-> (tw "absolute h-8 w-full flex justify-center items-center")
+                                                (merge {:top           0
+                                                        :left          0
+                                                        :border-radius (-> theme (j/get :roundness))}))}
 
-          [:> paper/Text {:style {:color text-color-hex}} label]]])]]))
+           [:> paper/Text {:style {:color text-color-hex}} label]]])
+
+       [:> paper/Button {:icon     "play"
+                         :on-press #(>evt [:create-track-session-from-nothing])}
+        "start tracking"]]]]))
 
 (defn top-section [props]
   (let [theme         (->> [:theme] <sub get-theme)

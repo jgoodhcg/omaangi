@@ -345,9 +345,12 @@
                                               (set-session-color {:hex false}))
           {tf-start :session/start
            tf-stop  :session/stop}       (->> sessions-indexed (select-one! [(sp/keypath tracked-from)]))
-          intended-duration              (-> {:tick/beginning tf-start :tick/end tf-stop}
-                                             (t/duration)
-                                             (t/millis))
+          intended-duration              (if (some? tracked-from)
+                                           (-> {:tick/beginning tf-start :tick/end tf-stop}
+                                               (t/duration)
+                                               (t/millis))
+                                           ;; TODO find a better default
+                                           (-> (t/new-duration 45 :minutes) (t/millis)))
           duration                       (-> {:tick/beginning start :tick/end stop}
                                              (t/duration)
                                              (t/millis))
