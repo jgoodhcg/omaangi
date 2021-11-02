@@ -49,7 +49,9 @@
                 (j/call :getItem app-db-key)
                 (j/call :then (fn [local-store-value]
                                 (if (some? local-store-value)
-                                  (>evt [:load-db (-> local-store-value de-serialize)])
+                                  (>evt [:load-db (-> local-store-value de-serialize
+                                                      ;; this merge handles accretion to the db spec
+                                                      (->> (merge default-app-db)))])
                                   (do
                                     (-> rn/Alert (j/call :alert "no local store data found"))
                                     (>evt [:load-db default-app-db])))))

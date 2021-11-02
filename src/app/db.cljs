@@ -60,6 +60,11 @@
        (rand-nth)
        (t/time)))
 
+(defn generate-duration []
+  (-> (rand-int 99)
+      (+ 1)
+      (t/new-duration :minutes)))
+
 (defn generate-color []
   ;; (-> faker (j/get :internet) (j/call :color) color)
   (-> material-500-hexes rand-nth color))
@@ -120,6 +125,12 @@
   {:calendar/sessions []
    :calendar/date     (t/date (generate-instant))})
 
+(defn generate-template []
+  (merge
+    {:template/uuid              (random-uuid)
+     :template/session-templates []}
+    (when (chance :med)
+      {:template/label (-> faker (j/get :random) (j/call :words))})))
 ;;
 ;; coll generators
 ;;
@@ -152,6 +163,15 @@
     (fn [d] {:calendar/sessions []
              :calendar/date     (t/date d)})))
 
+(defn generate-templates [n]
+  (generate-indexed
+    n
+    (fn [] (random-uuid))
+    (fn [id] (merge
+               {:template/uuid              id
+                :template/session-templates []}
+               (when (chance :med)
+                 {:template/label (-> faker (j/get :random) (j/call :words))})))))
 ;;
 ;; relational generators
 ;;
@@ -221,6 +241,8 @@
 
 (s/def ::time (s/with-gen t/time? #(gen/fmap generate-time (s/gen int?))))
 
+(s/def ::duration (s/with-gen t/duration? #(gen/fmap generate-duration (s/gen int?))))
+
 (s/def ::color (s/with-gen is-color?
                  #(gen/fmap
                     generate-color
@@ -239,7 +261,8 @@
                    (ds/opt :session/tags)         [uuid?]
                    (ds/opt :session/label)        string?
                    (ds/opt :session/color)        ::color
-                   (ds/opt :session/tracked-from) uuid?}}))
+                   (ds/opt :session/tracked-from) uuid?
+                   (ds/opt :session/template)     uuid?}}))
 
 (s/def ::session (s/with-gen session-data-spec #(gen/fmap generate-session (s/gen int?))))
 
@@ -251,7 +274,7 @@
 
 (def tag-data-spec
   (ds/spec {:name ::tag-ds
-            :spec {:tag/id uuid?
+            :spec {:tag/id             uuid?
                    ;; TODO justin 2021-09-18 Add created and last-edited
                    (ds/opt :tag/color) (ds/maybe ::color)
                    (ds/opt :tag/label) (ds/maybe string?)}}))
@@ -305,20 +328,33 @@
 
 (s/def ::intentions (s/and map? (s/every-kv uuid? ::intention)))
 
-(comment
-  {:template/created     ::instant
-   :template/last-edited ::instant
-   ;; :template/intentions  "Everything from intention-ds except date"
-   :template/sessions    (-> session-data-spec
-                             (update :session/start ::time)
-                             (update :session/stop ::time)
-                             (dissoc :session/type)
-                             ;; change everything to `:template-session/*`
-                             (->> (transform [sp/MAP-KEYS sp/ALL]
-                                             #(-> %
-                                                  str
-                                                  (replace ":session" "template-session") ;; notice the drop of `:`
-                                                  keyword))))})
+(def session-template-data-spec
+  (ds/spec {:name ::session-template-ds
+            :spec {:session-template/id             uuid?
+                   :session-template/created        ::instant
+                   :session-template/last-edited    ::instant
+                   :session-template/start          ::time
+                   :session-template/stop           ::time
+                   (ds/opt :session-template/tags)  [uuid?]
+                   (ds/opt :session-template/label) string?
+                   (ds/opt :session-template/color) ::color}}))
+
+(s/def ::session-template session-template-data-spec)
+
+(s/def ::session-templates (s/and map? (s/every-kv uuid? ::session-template)))
+
+(def template-data-spec
+  (ds/spec {:name ::template-ds
+            :spec {:template/label             string?
+                   :template/id                uuid?
+                   :template/session-templates [uuid?]}}))  ;; TODO this should maybe be a set
+
+(s/def ::template (s/with-gen template-data-spec #(gen/fmap generate-template (s/gen int?))))
+
+(s/def ::templates (s/with-gen
+                     (s/and map? (s/every-kv uuid? ::template))
+                     #(gen/fmap generate-templates (s/gen ::reasonable-number))))
+
 
 (def app-db-spec
   (ds/spec
@@ -331,7 +367,10 @@
       :app-db/calendar                         ::calendar
       :app-db/sessions                         ::sessions
       :app-db/tags                             ::tags
+      :app-db/templates                        ::templates
+      :app-db/session-templates                ::session-templates
       :app-db.selected/session                 (ds/maybe uuid?)
+      :app-db.selected/template                (ds/maybe uuid?)
       :app-db.selected/day                     t/date?
       :app-db.selected/tag                     (ds/maybe uuid?)
       :app-db.settings/theme                   (s/spec #{:light :dark})
@@ -374,10 +413,12 @@
         ]
     (merge
       ;; blank default
-      {:app-db/calendar {selected-day {:calendar/date     selected-day
-                                       :calendar/sessions []}}
-       :app-db/tags     {}
-       :app-db/sessions {}}
+      {:app-db/calendar          {selected-day {:calendar/date     selected-day
+                                                :calendar/sessions []}}
+       :app-db/tags              {}
+       :app-db/sessions          {}
+       :app-db/templates         {}
+       :app-db/session-templates {}}
 
       ;; uncomment bellow to use generated data
       ;; cal-tag-sessions
@@ -388,6 +429,7 @@
        :app-db/current-timezone                 (-> localization (j/get :timezone) (t/zone))
        :app-db/tracking                         []
        :app-db.selected/session                 nil
+       :app-db.selected/template                nil
        :app-db.selected/tag                     nil
        :app-db.selected/day                     selected-day
        :app-db.settings/theme                   :dark
@@ -419,6 +461,7 @@
        (transform [:app-db.view.color-picker/value ] hex-if-some)
        (transform [:app-db/tags sp/MAP-VALS (sp/must :tag/color)] hex-if-some)
        (transform [:app-db/sessions sp/MAP-VALS (sp/must :session/color)] hex-if-some)
+       (transform [:app-db/templates sp/MAP-VALS (sp/must :template/color)] hex-if-some)
 
        str))
 
@@ -431,4 +474,6 @@
        (transform [:app-db.view.tag-remove-modal/color] make-color-if-some)
        (transform [:app-db.view.color-picker/value ] make-color-if-some)
        (transform [:app-db/tags sp/MAP-VALS (sp/must :tag/color)] make-color-if-some)
-       (transform [:app-db/sessions sp/MAP-VALS (sp/must :session/color)] make-color-if-some)))
+       (transform [:app-db/sessions sp/MAP-VALS (sp/must :session/color)] make-color-if-some)
+       (transform [:app-db/templates sp/MAP-VALS (sp/must :template/color)] make-color-if-some)
+       ))

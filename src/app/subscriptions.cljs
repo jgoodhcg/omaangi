@@ -565,3 +565,29 @@
          :<- [:selected-session-id]
 
          is-selected-playing?)
+
+(defn templates
+  [db _]
+  (->> db (select-one! [:app-db/templates])))
+(reg-sub :templates templates)
+
+(defn tempaltes-list
+  [templates]
+  (->> templates (select [sp/MAP-VALS])))
+(reg-sub :templates-list templates)
+
+(defn selected-template-id
+  [db _]
+  (->> db (select-one! [:app-db.selected/template])))
+(reg-sub :selected-template-id selected-template-id)
+
+(defn selected-template
+  [[selected-template-id templates] _]
+  (->> templates
+       (select-one! [(sp/keypath selected-template-id)])))
+(reg-sub :selected-template
+
+         :<- [:selected-template-id]
+         :<- [:templates]
+
+         selected-template)
