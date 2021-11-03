@@ -78,7 +78,7 @@
                                   end
                                   stop)})))
 
-(defn session-overlaps-collision-group?
+(defn session-ish-overlaps-collision-group?
   [session c-group]
   (some? (->> c-group
               (some #(touches session %)))))
@@ -94,8 +94,8 @@
 
       (sp/cond-path
         ;;put the session in the first group that collides
-        [(sp/subselect sp/ALL (partial session-overlaps-collision-group? session)) sp/FIRST]
-        [(sp/subselect sp/ALL (partial session-overlaps-collision-group? session)) sp/FIRST sp/AFTER-ELEM]
+        [(sp/subselect sp/ALL (partial session-ish-overlaps-collision-group? session)) sp/FIRST]
+        [(sp/subselect sp/ALL (partial session-ish-overlaps-collision-group? session)) sp/FIRST sp/AFTER-ELEM]
 
         ;; otherwise put it in the first empty
         [(sp/subselect sp/ALL empty?) sp/FIRST]
@@ -122,14 +122,31 @@
       t/minutes
       (* zoom)))
 
-(defn set-session-color
+(defn time->top-position
+  [time zoom]
+  (->> time
+       (t/new-interval (t/time "00:00"))
+       t/duration
+       t/minutes
+       (* zoom)))
+
+(defn instant-or-time->top-position
+  [x zoom]
+  (cond (t/time? x)    (time->top-position x zoom)
+        (t/instant? x) (instant->top-position x zoom)))
+
+(defn set-session-ish-color
   "Tag refs must be replaced with values and session/tag colors must be color objects"
-  [{:keys [hex]} session]
-  (->> session
+  [{:keys [hex]} session-ish]
+  (->> session-ish
        (transform []
-                  (fn [{c   :session/color
-                        :as s}]
-                    (let [tag-colors-path  [(sp/keypath :session/tags)
+                  (fn [{session-color          :session/color
+                        session-template-color :session-template/color
+                        :as                    s}]
+                    (let [c                (or session-color session-template-color)
+                          tag-colors-path  [(sp/cond-path
+                                              (sp/must :session/tags) :session/tags
+                                              (sp/must :session-template/tags) :session-template/tags)
                                             sp/ALL
                                             (sp/keypath :tag/color)]
                           ;; need to put :not-a-color in tag color list so that reduce runs
@@ -138,120 +155,138 @@
                           tag-colors-count (count tag-colors)]
                       (if-let [c c]
                         ;; when there is a session color just hex it
-                        (merge s {:session/color (if hex (hex-if-some c) c)})
+                        ;; hopefully it is ok to just add both types ...
+                        (merge s {:session/color          (if hex (hex-if-some c) c)
+                                  :session-template/color (if hex (hex-if-some c) c)})
                         ;; when there is NOT a session color mix tag colors
-                        (merge s {:session/color
-                                  (->> tag-colors
-                                       vec
-                                       (reduce-kv
-                                         ;; reduce-kv and i are remnants of trying to make
-                                         ;; some sort of mixing algorithm dependent on tag position
-                                         (fn [{:keys [mixed-color]} i c2]
-                                           {:mixed-color
-                                            (cond
-                                              (and (is-color? mixed-color)
-                                                   (is-color? c2))
-                                              (-> mixed-color
-                                                  (j/call :mix c2
-                                                          (max 0.5
-                                                               (-> 1 (/ tag-colors-count)))))
+                        (merge s (let [mixed-color (->> tag-colors
+                                                        vec
+                                                        (reduce-kv
+                                                          ;; reduce-kv and i are remnants of trying to make
+                                                          ;; some sort of mixing algorithm dependent on tag position
+                                                          (fn [{:keys [mixed-color]} i c2]
+                                                            {:mixed-color
+                                                             (cond
+                                                               (and (is-color? mixed-color)
+                                                                    (is-color? c2))
+                                                               (-> mixed-color
+                                                                   (j/call :mix c2
+                                                                           (max 0.5
+                                                                                (-> 1 (/ tag-colors-count)))))
 
-                                              (is-color? mixed-color)
-                                              mixed-color
+                                                               (is-color? mixed-color)
+                                                               mixed-color
 
-                                              (is-color? c2)
-                                              c2)})
-                                         {:mixed-color (or (first tag-colors)
-                                                           ;; TODO is this a good default?
-                                                           ;; should this default live somewhere else?
-                                                           (color "#ababab"))})
-                                       :mixed-color
-                                       ((fn [c]
-                                          (if hex
-                                            (hex-if-some c)
-                                            c))))})))))))
+                                                               (is-color? c2)
+                                                               c2)})
+                                                          {:mixed-color (or (first tag-colors)
+                                                                            ;; TODO is this a good default?
+                                                                            ;; should this default live somewhere else?
+                                                                            (color "#ababab"))})
+                                                        :mixed-color
+                                                        ((fn [c]
+                                                           (if hex
+                                                             (hex-if-some c)
+                                                             c))))]
+                                   {:session/color          mixed-color
+                                    :session-template/color mixed-color}))))))))
 
 (defn replace-tag-refs-with-objects
   [indexed-tags session]
   (->> session
-       (transform [(sp/keypath :session/tags)]
+       (transform [(sp/cond-path
+                     (sp/must :session/tags) :session/tags
+                     (sp/must :session-template/tags) :session-template/tags)]
                   (fn [tag-ids] (->> tag-ids (map #(-> indexed-tags (get %))))))))
 
 (defn set-render-props
   [zoom
    tags
    [collision-index
-    {:session/keys    [type
-                       id
-                       start-truncated
-                       stop-truncated
-                       label
-                       is-selected
-                       is-tracking]
-     session-tag-refs :session/tags
-     :as              session}]]
+    {type                         :session/type
+     session-id                   :session/id
+     session-start-truncated      :session/start-truncated
+     session-stop-truncated       :session/stop-truncated
+     session-label                :session/label
+     session-is-selected          :session/is-selected
+     session-is-tracking          :session/is-tracking
+     session-tag-refs             :session/tags
+     session-template-id          :session-template/id
+     session-template-start       :session-template/start
+     session-template-stop        :session-template/stop
+     session-template-label       :session-template/label
+     session-template-tag-refs    :session-template/tags
+     session-template-is-selected :session-template/is-selected
 
-  (let [type-offset      (case type
-                           :session/plan  0
-                           :session/track 50
-                           10)
-        collision-offset (-> collision-index (* 4))
-        total-offset     (-> type-offset (+ collision-offset))
-        left             (str total-offset "%")
-        width            (-> 45                   ;; starting width percentage
-                             (- collision-offset)
-                             (str "%"))
-        elevation        (-> collision-index (* 2)) ;; pulled from old code idk why it works
-        top              (instant->top-position start-truncated zoom)
-        height           (-> (t/duration {:tick/beginning (t/date-time start-truncated)
-                                          :tick/end       (t/date-time stop-truncated)})
-                             t/minutes
-                             (max 1)
-                             (* zoom))
-        session-color    (->> session
-                              (replace-tag-refs-with-objects tags)
-                              (set-session-color {:hex false})
-                              :session/color)
-        text-color-hex   (if (is-color? session-color)
-                           (-> session-color (j/call :isLight) (#(if % black white)))
-                           ;; TODO is this a good default?
-                           black)
-        tag-labels       (->> session-tag-refs
-                              (map (fn [tag-id]
-                                     (-> tags (get-in [tag-id :tag/label]))))
-                              (remove nil?))
-        label            (str label "\n" (join "\n" tag-labels))]
+     :as session-ish}]]
 
-    (try
-      [collision-index
-       (merge session {:session-render/elevation        elevation
-                       :session-render/left             left
-                       :session-render/top              top
-                       :session-render/height           height
-                       :session-render/width            width
-                       :session-render/label            label
-                       :session-render/color-hex        (-> session-color hex-if-some)
-                       :session-render/ripple-color-hex (-> session-color (j/call :lighten 0.64) (j/call :hex))
-                       :session-render/text-color-hex   text-color-hex
-                       :session-render/id               id
-                       :session-render/is-selected      is-selected
-                       :session-render/is-tracking      is-tracking
-                       :session-render/start-label      (time-label start-truncated)
-                       :session-render/stop-label       (time-label stop-truncated)})]
-      (catch js/Object e (tap> (p/map-of e session session-color))))))
+  (let [type                      type
+        id                        (or session-id session-template-id)
+        start                     (or session-start-truncated session-template-start)
+        stop                      (or session-stop-truncated session-template-stop)
+        type-offset               (case type
+                                    :session/plan  0
+                                    :session/track 50
+                                    0)
+        collision-offset          (-> collision-index (* 4))
+        total-offset              (-> type-offset (+ collision-offset))
+        left                      (str total-offset "%")
+        width                     (-> 45                   ;; starting width percentage
+                                      (- collision-offset)
+                                      (str "%"))
+        elevation                 (-> collision-index (* 2)) ;; pulled from old code idk why it works
+        top                       (instant-or-time->top-position start zoom)
+        height                    (-> (t/new-interval start stop)
+                                      t/duration
+                                      t/minutes
+                                      (max 1)
+                                      (* zoom))
+        {session-color
+         :session/color
+         session-template-color
+         :session-template/color} (->> session-ish
+                                       (replace-tag-refs-with-objects tags)
+                                       (set-session-ish-color {:hex false}))
+        session-ish-color         (or session-color session-template-color)
+        text-color-hex            (if (is-color? session-ish-color)
+                                    (-> session-ish-color (j/call :isLight) (#(if % black white)))
+                                    ;; TODO is this a good default?
+                                    black)
+        tag-labels                (->> (or session-tag-refs session-template-tag-refs)
+                                       (map (fn [tag-id]
+                                              (-> tags (get-in [tag-id :tag/label]))))
+                                       (remove nil?))
+        label                     (str (or session-label
+                                           session-template-label) "\n" (join "\n" tag-labels))]
+    [collision-index
+     (merge session-ish {:session-ish-render/elevation        elevation
+                         :session-ish-render/left             left
+                         :session-ish-render/top              top
+                         :session-ish-render/height           height
+                         :session-ish-render/width            width
+                         :session-ish-render/label            label
+                         :session-ish-render/color-hex        (-> session-color hex-if-some)
+                         :session-ish-render/ripple-color-hex (-> session-color (j/call :lighten 0.64) (j/call :hex))
+                         :session-ish-render/text-color-hex   text-color-hex
+                         :session-ish-render/id               id
+                         :session-ish-render/is-selected      (or session-is-selected
+                                                                  session-template-is-selected)
+                         :session-ish-render/is-tracking      session-is-tracking
+                         :session-ish-render/start-label      (time-label start)
+                         :session-ish-render/stop-label       (time-label stop)})]))
 
 (defn sessions-for-this-day
   [[selected-day calendar sessions zoom tags selected-session-id tracking-ids] _]
   (comment
     [;; collision groups are an intermediate grouping not in sub result
-     #:session-render {:left             0         ;; collision group position and type
-                       :top              0         ;; start
-                       :elevation        1         ;; collision group position
-                       :height           10        ;; duration
-                       :color-hex        "#ff00ff" ;; tags mix or :session/color
-                       :ripple-color-hex "#ff00ff" ;; tags mix or :session/color lightened
-                       :label            "label"   ;; session label and tags depending on settings
-                       }])
+     #:session-ish-render {:left             0         ;; collision group position and type
+                           :top              0         ;; start
+                           :elevation        1         ;; collision group position
+                           :height           10        ;; duration
+                           :color-hex        "#ff00ff" ;; tags mix or :session/color
+                           :ripple-color-hex "#ff00ff" ;; tags mix or :session/color lightened
+                           :label            "label"   ;; session label and tags depending on settings
+                           }])
   ;; TODO include session-id for session editing
   (let [this-day (get calendar selected-day)
 
@@ -260,7 +295,7 @@
              :calendar/sessions
              (mapv #(get sessions %))
              (mapv #(truncate-session (:calendar/date this-day) %))
-             ;; session/is-selected gets renamed to session-render/is-selected
+             ;; session/is-selected gets renamed to session-ish-render/is-selected
              (mapv #(merge % {:session/is-selected (= (:session/id %) selected-session-id)}))
              (mapv #(merge % {:session/is-tracking (-> tracking-ids set (some [(:session/id %)]) some?)}))
              (sort-by (fn [s] (->> s
@@ -280,9 +315,9 @@
     (if (some? selected-session-id)
       (let [selected-session
             (->> sessions-ready-for-render
-                 (some #(when (:session-render/is-selected %) %)))]
+                 (some #(when (:session-ish-render/is-selected %) %)))]
         (-> sessions-ready-for-render
-            (->> (remove :session-render/is-selected))
+            (->> (remove :session-ish-render/is-selected))
             vec
             (conj selected-session)))
       sessions-ready-for-render)))
@@ -342,7 +377,7 @@
            session-color :session/color} (->> sessions-indexed
                                               (select-one! [(sp/keypath session-id)])
                                               (replace-tag-refs-with-objects tags)
-                                              (set-session-color {:hex false}))
+                                              (set-session-ish-color {:hex false}))
           {tf-start :session/start
            tf-stop  :session/stop}       (->> sessions-indexed (select-one! [(sp/keypath tracked-from)]))
           intended-duration              (if (some? tracked-from)
@@ -485,7 +520,7 @@
        (transform [] (fn [{c :session/color :as s}]
                        (merge s {:session/color-override (some? c)})))
        (replace-tag-refs-with-objects tags)
-       (set-session-color {:hex true})
+       (set-session-ish-color {:hex true})
        (transform [(sp/keypath :session/tags) sp/ALL (sp/keypath :tag/color)]
                   hex-if-some)
        (transform []
@@ -591,3 +626,66 @@
          :<- [:templates]
 
          selected-template)
+
+(defn session-templates
+  [db _]
+  (->> db (select-one! [:app-db/session-templates])))
+(reg-sub :session-templates session-templates)
+
+(defn selected-session-template-id
+  [db _]
+  (->> db (select-one! [:app-db.selected/session-template])))
+(reg-sub :selected-session-template-id selected-session-template-id)
+
+(defn session-templates-for-selected-template
+  [[selected-template session-templates zoom tags selected-session-template-id] _]
+  (comment
+    [;; collision groups are an intermediate grouping not in sub result
+     #:session-ish-render {:left             0         ;; collision group position and type
+                           :top              0         ;; start
+                           :elevation        1         ;; collision group position
+                           :height           10        ;; duration
+                           :color-hex        "#ff00ff" ;; tags mix or :session/color
+                           :ripple-color-hex "#ff00ff" ;; tags mix or :session/color lightened
+                           :label            "label"   ;; session label and tags depending on settings
+                           }])
+  ;; TODO include session-id for session editing
+  (let [session-templates-ready-for-render
+        (->> selected-template
+             :template/session-templates
+             (mapv #(get session-templates %))
+             ;; no need to truncate yet - justin (2021-11-02)
+             ;; session/is-selected gets renamed to session-ish-render/is-selected
+             (mapv #(merge % {:session-template/is-selected
+                              (= (:session-template/id %) selected-session-template-id)}))
+             (sort-by (fn [s] (->> s
+                                   :session-template/start
+                                   (t/new-interval (t/time "00:00"))
+                                   t/duration
+                                   t/millis)))
+             (transform [sp/MAP-VALS] get-collision-groups)
+             (transform [sp/MAP-VALS sp/ALL sp/INDEXED-VALS]
+                        ;; set-render-props are the only keys that come out of this subscription
+                        (partial set-render-props zoom tags))
+             (select [sp/MAP-VALS])
+             flatten)]
+
+    ;; if there is a selected session put it on the end of the list
+    (if (some? selected-session-template-id)
+      (let [selected-session-template
+            (->> session-templates-ready-for-render
+                 (some #(when (:session-ish-render/is-selected %) %)))]
+        (-> session-templates-ready-for-render
+            (->> (remove :session-ish-render/is-selected))
+            vec
+            (conj selected-session-template)))
+      session-templates-ready-for-render)))
+(reg-sub :session-templates-for-selected-template
+
+         :<- [:selected-template]
+         :<- [:session-templates]
+         :<- [:zoom]
+         :<- [:tags]
+         :<- [:selected-session-template-id]
+
+         session-templates-for-selected-template)

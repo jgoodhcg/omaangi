@@ -26,23 +26,22 @@
 
 (defn get-theme [k] (j/get paper k))
 
-(defn interval? [x] (and (contains? x :tick/beginning)
-                         (contains? x :tick/end)))
+(defn make-session-ish-interval
+  [x]
+  (let [start (or (:session/start x) (:session-template/start x))
+        stop  (or (:session/stop x) (:session-template/stop x))]
+    (merge x {:tick/beginning start
+              :tick/end       stop})))
 
-(defn make-session-interval [x]
-  (if (interval? x)
-    x ;; just return it if it is an interval
-    ;; otherwise make it a valid tick interval
-    (let [{:session/keys [start stop]} x]
-      (merge x {:tick/beginning start
-                :tick/end       stop}))))
-
-(defn touches [a b]
+(defn touches
+  "Works on both sessions and session-templates.
+  Merges in `:tick/beginning` and `:tick/end` to make it a valid interval."
+  [a b]
   (if (and (some? a)
            (some? b))
     (not (some? (some #{:precedes :preceded-by} ;; checks that these are not the relation
-                      [(t/relation (make-session-interval a)
-                                   (make-session-interval b))])))
+                      [(t/relation (make-session-ish-interval a)
+                                   (make-session-ish-interval b))])))
     false))
 
 (defn chance [p]
@@ -96,10 +95,10 @@
       (j/get :state)
       (= (j/get g/State :ACTIVE))))
 
-(defn time-label [instant]
-  (str (prepend-zero (t/hour instant))
+(defn time-label [instant-or-time]
+  (str (prepend-zero (t/hour instant-or-time))
        "-"
-       (prepend-zero (t/minute instant))))
+       (prepend-zero (t/minute instant-or-time))))
 
 (defn native-event->time
   [{:keys [event zoom]}]

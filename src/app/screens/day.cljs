@@ -185,20 +185,20 @@
         border-radius (-> theme (j/get :roundness))]
 
     [:> rn/View {:style (tw "ml-20")}
-     (for [{:session-render/keys [left
-                                  id
-                                  top
-                                  height
-                                  width
-                                  ;; elevation
-                                  color-hex
-                                  ripple-color-hex
-                                  text-color-hex
-                                  label
-                                  is-selected
-                                  is-tracking
-                                  start-label
-                                  stop-label]}
+     (for [{:session-ish-render/keys [left
+                                      id
+                                      top
+                                      height
+                                      width
+                                      ;; elevation
+                                      color-hex
+                                      ripple-color-hex
+                                      text-color-hex
+                                      label
+                                      is-selected
+                                      is-tracking
+                                      start-label
+                                      stop-label]}
            sessions]
 
        [:> rn/View {:key (str id "-session")}
