@@ -192,6 +192,7 @@
   (let [c              (make-color-if-some color-hex)
         session        (-> session
                            (dissoc :session/color-hex)
+                           (dissoc :session/remove-color)
                            (p/update-if-contains :session/start t/instant)
                            (p/update-if-contains :session/stop t/instant))
         start          (:session/start session)
@@ -486,3 +487,79 @@
                                          :id          new-uuid}]]
           [:dispatch [:start-tracking-session new-uuid]]]}))
 (reg-event-fx :create-track-session-from-nothing [base-interceptors id-gen insert-now] create-track-session-from-nothing)
+
+(defn set-selected-template
+  [db [_ template-id]]
+  (->> db
+       (setval [:app-db.selected/template] template-id)))
+(reg-event-db :set-selected-template [base-interceptors] set-selected-template)
+
+(defn set-selected-session-template
+  [db [_ session-template-id]]
+  (->> db
+       (setval [:app-db.selected/session-template] session-template-id)))
+(reg-event-db :set-selected-session-template [base-interceptors] set-selected-session-template)
+
+(defn create-template
+  [db [_ {id :template/id :as template}]]
+  (->> db
+       (setval [:app-db/templates (sp/keypath id)] template)))
+(reg-event-db :create-template [base-interceptors] create-template)
+
+(defn create-session-template
+  [db [_ {id :session-template/id :as session-template}]]
+  (let [selected-template-id (->> db (select-one [:app-db.selected/template]))]
+    (->> db
+         (setval [:app-db/session-templates (sp/keypath id)] session-template)
+         (setval [:app-db/templates (sp/keypath selected-template-id)
+                  :template/session-templates sp/AFTER-ELEM] session-template))))
+(reg-event-db :create-session-template [base-interceptors] create-session-template)
+
+(defn update-template
+  [db [_ {id  :template/id
+          :as template}]]
+  (->> db (transform [:app-db/templates (sp/keypath id)] #(merge % template))))
+(reg-event-db :update-template [base-interceptors] update-template)
+
+(defn update-session-template
+  [db [_ {id           :session-template/id
+          color-hex    :session-template/color-hex
+          remove-color :session-template/remove-color
+          :as          session-template}]]
+  (let [c                (make-color-if-some color-hex)
+        session-template (-> session-template
+                             (dissoc :session-template/color-hex)
+                             (dissoc :session-template/remove-color)
+                             (p/update-if-contains :session-template/start t/time)
+                             (p/update-if-contains :session-template/start t/time))]
+    (->> db
+         (transform [:app-db/session-templates (sp/keypath id)]
+                    #(merge (if remove-color
+                              (dissoc % :session-template/color)
+                              %)
+                            session-template
+                            (when (some? c) {:session-template/color c}))))))
+(reg-event-db :update-session-template [base-interceptors] update-session-template)
+
+(defn delete-template
+  [db [_ {id :template/id}]]
+  (let [session-template-ids (->> db
+                                  (select-one
+                                    [:app-db/templates (sp/keypath id)
+                                     :template/session-templates]))]
+    (->> db
+         (transform [:app-db/templates] #(dissoc % id))
+         (transform [:app-db/session-templates] #(apply dissoc % session-template-ids)))))
+(reg-event-db :delete-template [base-interceptors] delete-template)
+
+(defn delete-session-template
+  [db [_ {id :session-template/id}]]
+  (let [selected-template-id (->> db (select-one [:app-db.selected/template]))]
+    (->> db
+         (transform [:app-db/session-templates] #(dissoc % id))
+         (transform [:app-db/templates (sp/keypath selected-template-id)
+                     :template/session-templates]
+                    (fn [session-templates]
+                      (->> session-templates
+                           (remove #(= id (:session-template/id %)))))))))
+(reg-event-db :delete-session-template [base-interceptors] delete-session-template)

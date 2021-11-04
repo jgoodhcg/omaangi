@@ -371,6 +371,7 @@
       :app-db/session-templates                ::session-templates
       :app-db.selected/session                 (ds/maybe uuid?)
       :app-db.selected/template                (ds/maybe uuid?)
+      :app-db.selected/session-template        (ds/maybe uuid?)
       :app-db.selected/day                     t/date?
       :app-db.selected/tag                     (ds/maybe uuid?)
       :app-db.settings/theme                   (s/spec #{:light :dark})
@@ -430,6 +431,7 @@
        :app-db/tracking                         []
        :app-db.selected/session                 nil
        :app-db.selected/template                nil
+       :app-db.selected/session-template        nil
        :app-db.selected/tag                     nil
        :app-db.selected/day                     selected-day
        :app-db.settings/theme                   :dark
@@ -461,7 +463,7 @@
        (transform [:app-db.view.color-picker/value ] hex-if-some)
        (transform [:app-db/tags sp/MAP-VALS (sp/must :tag/color)] hex-if-some)
        (transform [:app-db/sessions sp/MAP-VALS (sp/must :session/color)] hex-if-some)
-       (transform [:app-db/templates sp/MAP-VALS (sp/must :template/color)] hex-if-some)
+       (transform [:app-db/session-templates sp/MAP-VALS (sp/must :session-template/color)] hex-if-some)
 
        str))
 
@@ -475,5 +477,5 @@
        (transform [:app-db.view.color-picker/value ] make-color-if-some)
        (transform [:app-db/tags sp/MAP-VALS (sp/must :tag/color)] make-color-if-some)
        (transform [:app-db/sessions sp/MAP-VALS (sp/must :session/color)] make-color-if-some)
-       (transform [:app-db/templates sp/MAP-VALS (sp/must :template/color)] make-color-if-some)
+       (transform [:app-db/session-templates sp/MAP-VALS (sp/must :session-template/color)] make-color-if-some)
        ))

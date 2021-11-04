@@ -639,23 +639,12 @@
 
 (defn session-templates-for-selected-template
   [[selected-template session-templates zoom tags selected-session-template-id] _]
-  (comment
-    [;; collision groups are an intermediate grouping not in sub result
-     #:session-ish-render {:left             0         ;; collision group position and type
-                           :top              0         ;; start
-                           :elevation        1         ;; collision group position
-                           :height           10        ;; duration
-                           :color-hex        "#ff00ff" ;; tags mix or :session/color
-                           :ripple-color-hex "#ff00ff" ;; tags mix or :session/color lightened
-                           :label            "label"   ;; session label and tags depending on settings
-                           }])
-  ;; TODO include session-id for session editing
   (let [session-templates-ready-for-render
         (->> selected-template
              :template/session-templates
              (mapv #(get session-templates %))
              ;; no need to truncate yet - justin (2021-11-02)
-             ;; session/is-selected gets renamed to session-ish-render/is-selected
+             ;; session-template/is-selected gets renamed to session-ish-render/is-selected deeper in the call chain
              (mapv #(merge % {:session-template/is-selected
                               (= (:session-template/id %) selected-session-template-id)}))
              (sort-by (fn [s] (->> s
