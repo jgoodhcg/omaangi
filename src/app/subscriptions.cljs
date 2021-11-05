@@ -606,10 +606,18 @@
   (->> db (select-one! [:app-db/templates])))
 (reg-sub :templates templates)
 
-(defn tempaltes-list
-  [templates]
-  (->> templates (select [sp/MAP-VALS])))
-(reg-sub :templates-list templates)
+(defn templates-list
+  [[templates session-templates]]
+  (->> templates
+       (select [sp/MAP-VALS])
+       (transform [sp/ALL :template/session-templates sp/ALL]
+                  #(get session-templates %))))
+(reg-sub :templates-list
+
+         :<- [:templates]
+         :<- [:session-templates]
+
+         templates-list)
 
 (defn selected-template-id
   [db _]
