@@ -14,6 +14,7 @@
    [app.colors :refer [material-500-hexes]]
    [app.components.color-picker :as color-picker]
    [app.components.tag-button :as tag-button]
+   [app.components.label :as label]
    [app.helpers :refer [<sub >evt get-theme clear-datetime-picker >evt-sync]]
    [app.tailwind :refer [tw]]))
 
@@ -32,13 +33,6 @@
                     :style    (tw "mr-4 mt-4 mb-4")
                     :on-press #(>evt [:stop-tracking-session id])}
    "Stop tracking"])
-
-(defn label-component
-  [{:keys [id label]}]
-  [:> paper/TextInput {:default-value  label
-                       :style          (tw "mb-8")
-                       :on-change-text #(>evt [:update-session {:session/label %
-                                                                :session/id    id}])}])
 
 (defn tag-remove-modal [{:keys [session-id]}]
   (let [{:tag-remove-modal/keys [visible id label color]}
@@ -340,7 +334,9 @@
               [stop-button (p/map-of id)]
               [start-button (p/map-of id)])
 
-            [label-component (p/map-of id label)]
+            [label/component {:label     label
+                              :update-fn #(>evt [:update-session {:session/label %
+                                                                  :session/id    id}])}]
 
             [time-stamps-component (p/map-of start stop id)]
 

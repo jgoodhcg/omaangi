@@ -30,6 +30,7 @@
    [app.screens.tags :as tags]
    [app.screens.tag :as tag]
    [app.screens.templates :as templates]
+   [app.screens.template :as template]
    [potpuri.core :as p]))
 
 ;; must use defonce and must refresh full app so metro can fill these in
@@ -180,19 +181,19 @@
                                        (stack-screen {:name      (:templates screens)
                                                       :component (paper/withTheme templates/screen)
                                                       :options   {:headerShown false}})
-                                       ;; (stack-screen {:name      (:tag screens)
-                                       ;;                :options   {:headerTintColor (-> theme
-                                       ;;                                                 (j/get :colors)
-                                       ;;                                                 (j/get :text))
-                                       ;;                            :headerTitleStyle
-                                       ;;                            #js {:display "none"}
-                                       ;;                            :headerStyle
-                                       ;;                            ;; for some reason the :surface color comes out the same as :background when used on paper/Surface
-                                       ;;                            ;; when using :background here it has a weird opacity issue or something
-                                       ;;                            #js {:backgroundColor (-> theme
-                                       ;;                                                      (j/get :colors)
-                                       ;;                                                      (j/get :surface))}}
-                                       ;;                :component (paper/withTheme tag/screen)})
+                                       (stack-screen {:name      (:template screens)
+                                                      :options   {:headerTintColor (-> theme
+                                                                                       (j/get :colors)
+                                                                                       (j/get :text))
+                                                                  :headerTitleStyle
+                                                                  #js {:display "none"}
+                                                                  :headerStyle
+                                                                  ;; for some reason the :surface color comes out the same as :background when used on paper/Surface
+                                                                  ;; when using :background here it has a weird opacity issue or something
+                                                                  #js {:backgroundColor (-> theme
+                                                                                            (j/get :colors)
+                                                                                            (j/get :surface))}}
+                                                      :component (paper/withTheme template/screen)})
                                        ])})
         (drawer-screen {:name      (:settings screens)
                         :options   {:drawerIcon (drawer-icon "tune")}

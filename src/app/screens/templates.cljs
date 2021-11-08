@@ -36,12 +36,12 @@
             (for [{label              :template/label
                    sesssion-templates :template/session-templates
                    id                 :template/id} templates]
-              (let [on-press #(tap> (str "pressed " id))
-                    style    (tw "ml-4 mb-4")]
-                [:> rn/View {:key   id
-                             :style style}
-                 [:> paper/Text label]]))]
+              [:> rn/View {:key id}
+               [:> paper/Button {:mode     "flat"
+                                 :style    (tw "ml-4 mb-4")
+                                 :on-press #(do (>evt [:set-selected-template id])
+                                                (>evt [:navigate (:template screens)]))} label]])]
 
-           [:> paper/Button {:mode     "outlined"
+           [:> paper/Button {:mode     "flat"
                              :icon     "plus"
                              :on-press #(>evt [:create-template])}]]]))]))
