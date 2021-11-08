@@ -11,6 +11,7 @@
    [reagent.core :as r]
 
    [app.components.menu :as menu]
+   [app.components.time-indicators :as time-indicators]
    [app.helpers :refer [<sub
                         >evt
                         get-theme
@@ -165,20 +166,6 @@
 
      [tracking-sessions]]))
 
-(defn time-indicators []
-  (let [theme (->> [:theme] <sub get-theme)
-        hours (<sub [:hours])]
-    [:> rn/View
-     (for [{:keys [top val]} hours]
-       [:> rn/View {:key   (str (random-uuid) "-time-indicator")
-                    :style (-> (tw "absolute w-full ml-1")
-                               (merge {:top top}))}
-        [:> paper/Divider]
-        [:> paper/Text {:style {:color (-> theme
-                                           (j/get :colors)
-                                           (j/get :disabled))}}
-         val]])]))
-
 (defn sessions-component []
   (let [theme         (->> [:theme] <sub get-theme)
         sessions      (<sub [:sessions-for-this-day])
@@ -329,7 +316,7 @@
                  {:style {:height        (-> 1440 (* zoom))
                           :margin-bottom 256}}
 
-                 [time-indicators]
+                 [time-indicators/component]
 
                  [sessions-component]
 

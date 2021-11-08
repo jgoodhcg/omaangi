@@ -13,13 +13,14 @@
 
    [app.helpers :refer [<sub >evt get-theme clear-datetime-picker >evt-sync]]
    [app.components.label :as label]
+   [app.components.time-indicators :as time-indicators]
    [app.tailwind :refer [tw]]))
 
 (defn screen [props]
   (r/as-element
     [(fn [props]
-       (let [theme (->> [:theme] <sub get-theme)
-
+       (let [theme                     (->> [:theme] <sub get-theme)
+             zoom                      (<sub [:zoom])
              {:template/keys [id
                               label
                               session-templates]
@@ -37,5 +38,14 @@
             [label/component {:label     label
                               :update-fn #(>evt [:update-template {:template/label %
                                                                    :template/id    id}])}]
+
+            [:> rn/View
+             {:style {:height        (-> 1440 (* zoom))
+                      :margin-bottom 256
+                      :margin-top    32}}
+
+             [time-indicators/component]
+
+             ]
 
             ]]]))]))
