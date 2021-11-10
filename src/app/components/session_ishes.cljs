@@ -20,7 +20,6 @@
   (let [theme         (->> [:theme] <sub get-theme)
         border-radius (-> theme (j/get :roundness))]
 
-    (tap> (p/map-of :session-ishes-component session-ishes))
     [:> rn/View {:style (tw "ml-20")}
      (for [{:session-ish-render/keys [left
                                       id

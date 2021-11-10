@@ -592,7 +592,6 @@
                               :session-template/start       start
                               :session-template/stop        stop
                               :session-template/tags        []}]
-    (tap> (p/map-of :st-from-event-2 session-template selected-template-id))
     {:db (->> db
               (setval [:app-db/session-templates (sp/keypath new-uuid)] session-template)
               (setval [:app-db/templates (sp/keypath selected-template-id)
