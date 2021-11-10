@@ -105,8 +105,8 @@
       collision-groups-with-trailing-empty)))
 
 (defn get-collision-groups
-  [sessions]
-  (->> sessions
+  [session-ishes]
+  (->> session-ishes
        (reduce insert-into-collision-group [[]])
        (remove empty?)
        vec))
@@ -647,6 +647,7 @@
 
 (defn session-templates-for-selected-template
   [[selected-template session-templates zoom tags selected-session-template-id] _]
+
   (let [session-templates-ready-for-render
         (->> selected-template
              :template/session-templates
@@ -660,12 +661,14 @@
                                    (t/new-interval (t/time "00:00"))
                                    t/duration
                                    t/millis)))
+             vec ;; get-collision-groups doesn't seem to like empty lists `'()`
              (transform [sp/MAP-VALS] get-collision-groups)
              (transform [sp/MAP-VALS sp/ALL sp/INDEXED-VALS]
                         ;; set-render-props are the only keys that come out of this subscription
                         (partial set-render-props zoom tags))
              (select [sp/MAP-VALS])
-             flatten)]
+             flatten
+             vec)]
 
     ;; if there is a selected session put it on the end of the list
     (if (some? selected-session-template-id)

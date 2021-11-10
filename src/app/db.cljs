@@ -258,7 +258,7 @@
                    :session/start                 ::instant
                    :session/stop                  ::instant
                    :session/type                  (s/spec #{:session/track :session/plan})
-                   (ds/opt :session/tags)         [uuid?]
+                   :session/tags                  [uuid?]
                    (ds/opt :session/label)        string?
                    (ds/opt :session/color)        ::color
                    (ds/opt :session/tracked-from) uuid?
@@ -335,7 +335,7 @@
                    :session-template/last-edited    ::instant
                    :session-template/start          ::time
                    :session-template/stop           ::time
-                   (ds/opt :session-template/tags)  [uuid?]
+                   :session-template/tags           [uuid?]
                    (ds/opt :session-template/label) string?
                    (ds/opt :session-template/color) ::color}}))
 
@@ -347,6 +347,8 @@
   (ds/spec {:name ::template-ds
             :spec {:template/label             string?
                    :template/id                uuid?
+                   :template/created           ::instant
+                   :template/last-edited       ::instant
                    :template/session-templates [uuid?]}}))  ;; TODO this should maybe be a set
 
 (s/def ::template (s/with-gen template-data-spec #(gen/fmap generate-template (s/gen int?))))

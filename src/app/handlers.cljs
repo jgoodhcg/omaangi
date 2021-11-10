@@ -293,7 +293,8 @@
                       :session/last-edited now
                       :session/start       start
                       :session/stop        stop
-                      :session/type        type}]
+                      :session/type        type
+                      :session/tags        []}]
     {:db (->> db (setval [:app-db/sessions (sp/keypath new-uuid)] session))
      :fx [[:dispatch [:re-index-session {:old-indexes []
                                          :new-indexes [selected-day]
@@ -410,7 +411,8 @@
                                   :session/start        now
                                   :session/stop         (-> now (t/+ (t/new-duration 1 :seconds)))
                                   :session/type         :session/track
-                                  :session/tracked-from from-session-id}
+                                  :session/tracked-from from-session-id
+                                  :session/tags         []}
                                  (merge (when (some? tags) {:session/tags tags}))
                                  (merge (when (some? color) {:session/color color})))]
     (tap> (p/map-of session))
@@ -479,7 +481,8 @@
                      :session/label       ""
                      :session/start       now
                      :session/stop        (-> now (t/+ (t/new-duration 1 :seconds)))
-                     :session/type        :session/track})]
+                     :session/type        :session/track
+                     :session/tags        []})]
     (tap> (p/map-of session :create-track-session-from-nothing))
     {:db (->> db (setval [:app-db/sessions (sp/keypath new-uuid)] session))
      :fx [[:dispatch [:re-index-session {:old-indexes []
@@ -500,12 +503,24 @@
        (setval [:app-db.selected/session-template] session-template-id)))
 (reg-event-db :set-selected-session-template [base-interceptors] set-selected-session-template)
 
+;; TODO remove this because it is unused?
 (defn create-template
   [db [_ {id :template/id :as template}]]
   (->> db
        (setval [:app-db/templates (sp/keypath id)] template)))
 (reg-event-db :create-template [base-interceptors] create-template)
 
+(defn create-template-from-nothing
+  [{:keys [db now new-uuid]} _]
+  {:db (->> db
+            (setval [:app-db/templates (sp/keypath new-uuid)]
+                    {:template/id                new-uuid
+                     :template/created           now
+                     :template/last-edited       now
+                     :template/label             "new template" ;; TODO make a better default
+                     :template/session-templates []}))})
+(reg-event-fx :create-template-from-nothing [base-interceptors id-gen insert-now] create-template-from-nothing)
+;; TODO remove this because it is unused?
 (defn create-session-template
   [db [_ {id :session-template/id :as session-template}]]
   (let [selected-template-id (->> db (select-one [:app-db.selected/template]))]
@@ -563,3 +578,25 @@
                       (->> session-templates
                            (remove #(= id (:session-template/id %)))))))))
 (reg-event-db :delete-session-template [base-interceptors] delete-session-template)
+
+(defn create-session-template-from-event
+  [{:keys [db new-uuid now]} [_ event]]
+  (let [selected-template-id (->> db (select-one [:app-db.selected/template]))
+        zoom                 (:app-db.view/zoom db)
+        start                (-> (p/map-of event zoom) native-event->time)
+        stop                 (-> start (t/+ (t/new-duration 45 :minutes))) ;; TODO make this a setting default
+        session-template     {:session-template/id          new-uuid
+                              :session-template/created     now
+                              :session-template/last-edited now
+                              :session-template/start       start
+                              :session-template/stop        stop
+                              :session-template/tags        []}]
+    {:db (->> db
+              (setval [:app-db/session-templates (sp/keypath new-uuid)] session-template)
+              (setval [:app-db/templates (sp/keypath selected-template-id)
+                       :template/session-templates sp/AFTER-ELEM] session-template))
+     :fx [[:dispatch [:set-selected-session-template new-uuid]]
+          ;; TODO enable when screen is available
+          ;; [:dispatch [:navigate (:session-template screens)]]
+          ]}))
+(reg-event-fx :create-session-template-from-event [base-interceptors id-gen insert-now] create-session-template-from-event)

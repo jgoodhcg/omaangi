@@ -44,4 +44,4 @@
 
            [:> paper/Button {:mode     "flat"
                              :icon     "plus"
-                             :on-press #(>evt [:create-template])}]]]))]))
+                             :on-press #(>evt [:create-template-from-nothing])}]]]))]))

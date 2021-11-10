@@ -12,6 +12,7 @@
 
    [app.components.menu :as menu]
    [app.components.time-indicators :as time-indicators]
+   [app.components.session-ishes :as session-ishes]
    [app.helpers :refer [<sub
                         >evt
                         get-theme
@@ -283,8 +284,9 @@
 (defn screen [props]
   (r/as-element
     [(fn [] ;; don't pass props here I guess that isn't how `r/as-element` works
-       (let [theme (->> [:theme] <sub get-theme)
-             zoom  (<sub [:zoom])]
+       (let [theme    (->> [:theme] <sub get-theme)
+             sessions (<sub [:sessions-for-this-day])
+             zoom     (<sub [:zoom])]
 
          [:> rn/SafeAreaView {:style (merge (tw "flex flex-1")
                                             {:background-color (-> theme (j/get :colors) (j/get :background))})}
@@ -318,7 +320,19 @@
 
                  [time-indicators/component]
 
-                 [sessions-component]
+                 [session-ishes/component
+                  {:session-ishes sessions
+                   :long-press-handler
+                   (fn [is-selected id e]
+                     (let [is-active (active-gesture? e)]
+                       (when is-active
+                         (if is-selected
+                           (>evt [:set-selected-session nil])
+                           (>evt [:set-selected-session id])))))
+                   :button-handler
+                   (fn [_ id _]
+                     (>evt [:navigate (:session screens)])
+                     (>evt [:set-selected-session id]))}]
 
                  [current-time-indicator-component]]]]]
 

@@ -11,8 +11,12 @@
    [reagent.core :as r]
    [tick.alpha.api :as t]
 
-   [app.helpers :refer [<sub >evt get-theme clear-datetime-picker >evt-sync]]
+   [app.helpers :refer [<sub
+                        >evt
+                        get-theme
+                        active-gesture?]]
    [app.components.label :as label]
+   [app.components.session-ishes :as session-ishes]
    [app.components.time-indicators :as time-indicators]
    [app.tailwind :refer [tw]]))
 
@@ -20,6 +24,7 @@
   (r/as-element
     [(fn [props]
        (let [theme                     (->> [:theme] <sub get-theme)
+             session-templates         (<sub [:session-templates-for-selected-template])
              zoom                      (<sub [:zoom])
              {:template/keys [id
                               label
@@ -39,13 +44,24 @@
                               :update-fn #(>evt [:update-template {:template/label %
                                                                    :template/id    id}])}]
 
-            [:> rn/View
-             {:style {:height        (-> 1440 (* zoom))
-                      :margin-bottom 256
-                      :margin-top    32}}
+            [:> g/LongPressGestureHandler
+             {:min-duration-ms 800
+              :on-handler-state-change
+              (fn [e]
+                (let [is-active (active-gesture? e)]
+                  (when is-active
+                    (>evt [:create-session-template-from-event
+                           (j/get e :nativeEvent)]))))}
+             [:> rn/View
+              {:style {:height        (-> 1440 (* zoom))
+                       :margin-bottom 256
+                       :margin-top    32}}
 
-             [time-indicators/component]
+              [time-indicators/component]
 
-             ]
+              [session-ishes/component
+               {:session-ishes      session-templates
+                :long-press-handler (fn [_ _ _])
+                :button-handler     (fn [_ _ _])}]
 
-            ]]]))]))
+              ]]]]]))]))
