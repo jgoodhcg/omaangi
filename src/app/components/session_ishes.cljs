@@ -11,7 +11,8 @@
                         get-theme
                         active-gesture?]]
    [app.screens.core :refer [screens]]
-   [app.tailwind :refer [tw]]))
+   [app.tailwind :refer [tw]]
+   [potpuri.core :as p]))
 
 (defn component
   "handlers are wrapped with partial to inject is-selected and id as first args"
@@ -19,6 +20,7 @@
   (let [theme         (->> [:theme] <sub get-theme)
         border-radius (-> theme (j/get :roundness))]
 
+    (tap> (p/map-of :session-ishes-component session-ishes))
     [:> rn/View {:style (tw "ml-20")}
      (for [{:session-ish-render/keys [left
                                       id

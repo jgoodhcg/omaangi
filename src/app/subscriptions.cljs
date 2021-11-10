@@ -79,12 +79,13 @@
                                   stop)})))
 
 (defn session-ish-overlaps-collision-group?
-  [session c-group]
+  [session-ish c-group]
+  (tap> (p/map-of :overlaps? session-ish c-group))
   (some? (->> c-group
-              (some #(touches session %)))))
+              (some #(touches session-ish %)))))
 
 (defn insert-into-collision-group
-  [collision-groups session]
+  [collision-groups session-ish]
   (let [collision-groups-with-trailing-empty
         (if (empty? (last collision-groups))
           collision-groups
@@ -94,21 +95,24 @@
 
       (sp/cond-path
         ;;put the session in the first group that collides
-        [(sp/subselect sp/ALL (partial session-ish-overlaps-collision-group? session)) sp/FIRST]
-        [(sp/subselect sp/ALL (partial session-ish-overlaps-collision-group? session)) sp/FIRST sp/AFTER-ELEM]
+        [(sp/subselect sp/ALL (partial session-ish-overlaps-collision-group? session-ish)) sp/FIRST]
+        [(sp/subselect sp/ALL (partial session-ish-overlaps-collision-group? session-ish)) sp/FIRST sp/AFTER-ELEM]
 
         ;; otherwise put it in the first empty
         [(sp/subselect sp/ALL empty?) sp/FIRST]
         [(sp/subselect sp/ALL empty?) sp/FIRST sp/AFTER-ELEM])
 
-      session
+      session-ish
       collision-groups-with-trailing-empty)))
 
 (defn get-collision-groups
   [session-ishes]
   (->> session-ishes
+       ((fn [x] (tap> (p/map-of :cllsn-1 x)) x))
        (reduce insert-into-collision-group [[]])
+       ((fn [x] (tap> (p/map-of :cllsn-2 x)) x))
        (remove empty?)
+       ((fn [x] (tap> (p/map-of :cllsn-3 x)) x))
        vec))
 
 (defn instant->top-position
@@ -648,26 +652,34 @@
 (defn session-templates-for-selected-template
   [[selected-template session-templates zoom tags selected-session-template-id] _]
 
+  (tap> (p/map-of :stfst-1 selected-template session-templates selected-session-template-id))
+
   (let [session-templates-ready-for-render
         (->> selected-template
              :template/session-templates
              (mapv #(get session-templates %))
              ;; no need to truncate yet - justin (2021-11-02)
              ;; session-template/is-selected gets renamed to session-ish-render/is-selected deeper in the call chain
+             ((fn [x] (tap> (p/map-of :stfst-2 x)) x))
              (mapv #(merge % {:session-template/is-selected
                               (= (:session-template/id %) selected-session-template-id)}))
+             ((fn [x] (tap> (p/map-of :stfst-3 x)) x))
              (sort-by (fn [s] (->> s
                                    :session-template/start
                                    (t/new-interval (t/time "00:00"))
                                    t/duration
                                    t/millis)))
+             ((fn [x] (tap> (p/map-of :stfst-4 x)) x))
              vec ;; get-collision-groups doesn't seem to like empty lists `'()`
-             (transform [sp/MAP-VALS] get-collision-groups)
-             (transform [sp/MAP-VALS sp/ALL sp/INDEXED-VALS]
+             ((fn [x] (tap> (p/map-of :stfst-4.1 x)) x))
+             (get-collision-groups)
+             ((fn [x] (tap> (p/map-of :stfst-5 x)) x))
+             (transform [sp/ALL sp/INDEXED-VALS]
                         ;; set-render-props are the only keys that come out of this subscription
                         (partial set-render-props zoom tags))
-             (select [sp/MAP-VALS])
+             ((fn [x] (tap> (p/map-of :stfst-6 x)) x))
              flatten
+             ((fn [x] (tap> (p/map-of :stfst-7 x)) x))
              vec)]
 
     ;; if there is a selected session put it on the end of the list

@@ -27,8 +27,7 @@
              session-templates         (<sub [:session-templates-for-selected-template])
              zoom                      (<sub [:zoom])
              {:template/keys [id
-                              label
-                              session-templates]
+                              label]
               :as            template} (<sub [:selected-template])]
 
          [:> rn/ScrollView {:style {:background-color
