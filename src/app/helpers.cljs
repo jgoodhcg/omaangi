@@ -29,7 +29,6 @@
 
 (defn make-session-ish-interval
   [x]
-  (tap> (p/map-of :make-session-ish-interval x))
   (let [start (or (:session/start x) (:session-template/start x))
         stop  (or (:session/stop x) (:session-template/stop x))]
     (merge x {:tick/beginning start
@@ -39,7 +38,6 @@
   "Works on both sessions and session-templates.
   Merges in `:tick/beginning` and `:tick/end` to make it a valid interval."
   [a b]
-  (tap> (p/map-of :touches a b))
   (if (and (some? a)
            (some? b))
     (not (some? (some #{:precedes :preceded-by} ;; checks that these are not the relation

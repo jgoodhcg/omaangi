@@ -646,6 +646,41 @@
   (->> db (select-one! [:app-db.selected/session-template])))
 (reg-sub :selected-session-template-id selected-session-template-id)
 
+(defn selected-session-template
+  [[selected-session-template-id session-templates tags] _]
+  (->> session-templates
+       (select-one! [(sp/keypath selected-session-template-id)])
+       (transform [] (fn [{c :session-template/color :as s}]
+                       (merge s {:session-template/color-override (some? c)})))
+       (replace-tag-refs-with-objects tags)
+       (set-session-ish-color {:hex true})
+       (transform [(sp/keypath :session-template/tags) sp/ALL (sp/keypath :tag/color)]
+                  hex-if-some)
+       (transform []
+                  (fn [{:session-template/keys [start stop]
+                        :as                    session-template}]
+                    (merge session-template
+                           (if (some? start)
+                             #:session-template
+                             {:start-time-label (-> start t/time time-label)
+                              :start-set        true}
+
+                             #:session-template
+                             {:start-set false})
+                           (if (some? stop)
+                             #:session-template
+                             {:stop-time-label (-> stop t/time time-label)
+                              :stop-set        true}
+                             #:session-template
+                             {:stop-set false}))))))
+(reg-sub :selected-session-template
+
+         :<- [:selected-session-template-id]
+         :<- [:session-templates]
+         :<- [:tags]
+
+         selected-session-template)
+
 (defn session-templates-for-selected-template
   [[selected-template session-templates zoom tags selected-session-template-id] _]
 

@@ -15,7 +15,7 @@
    [potpuri.core :as p]))
 
 (defn component
-  "handlers are wrapped with partial to inject is-selected and id as first args"
+  "handlers are wrapped with partial to inject `is-selected` and `id` as first args"
   [{:keys [long-press-handler button-handler session-ishes]}]
   (let [theme         (->> [:theme] <sub get-theme)
         border-radius (-> theme (j/get :roundness))]

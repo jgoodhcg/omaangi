@@ -15,6 +15,7 @@
                         >evt
                         get-theme
                         active-gesture?]]
+   [app.screens.core :refer [screens]]
    [app.components.label :as label]
    [app.components.session-ishes :as session-ishes]
    [app.components.time-indicators :as time-indicators]
@@ -61,6 +62,8 @@
               [session-ishes/component
                {:session-ishes      session-templates
                 :long-press-handler (fn [_ _ _])
-                :button-handler     (fn [_ _ _])}]
+                :button-handler     (fn [_ id _]
+                                      (>evt [:navigate (:session-template screens)])
+                                      (>evt [:set-selected-session-template id]))}]
 
               ]]]]]))]))
