@@ -1,20 +1,14 @@
-(ns app.screens.tag  (:require
-                      ["color" :as color]
-                      ["react-native" :as rn]
-                      ["react-native-paper" :as paper]
+(ns app.screens.tag
+  (:require
+   ["react-native" :as rn]
+   ["react-native-paper" :as paper]
 
-                      [applied-science.js-interop :as j]
-                      [com.rpl.specter :as sp :refer [setval]]
-                      [reagent.core :as r]
+   [applied-science.js-interop :as j]
+   [reagent.core :as r]
 
-                      [app.colors :refer [material-500-hexes]]
-                      [app.components.generic-top-section :as top-section]
-                      [app.components.color-picker :as color-picker]
-                      [app.components.tag-button :as tag-button]
-                      [app.helpers :refer [<sub >evt get-theme chance]]
-                      [app.screens.core :refer [screens]]
-                      [app.tailwind :refer [tw]]
-                      [potpuri.core :as p]))
+   [app.components.color-picker :as color-picker]
+   [app.helpers :refer [<sub >evt get-theme]]
+   [app.tailwind :refer [tw]]))
 
 (defn screen [props]
   (r/as-element

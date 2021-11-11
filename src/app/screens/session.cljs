@@ -1,8 +1,6 @@
 (ns app.screens.session
   (:require
    ["react-native" :as rn]
-   ["react-native-color-picker" :as c]
-   ["react-native-gesture-handler" :as g]
    ["react-native-paper" :as paper]
    ["react-native-modal-datetime-picker" :default DateTimePicker]
 
@@ -11,9 +9,8 @@
    [reagent.core :as r]
    [tick.alpha.api :as t]
 
-   [app.colors :refer [material-500-hexes]]
    [app.components.color-picker :as color-picker]
-   [app.components.tag-button :as tag-button]
+   [app.components.tag-related :as tags]
    [app.components.label :as label]
    [app.helpers :refer [<sub >evt get-theme clear-datetime-picker >evt-sync]]
    [app.tailwind :refer [tw]]))
@@ -34,48 +31,6 @@
                     :on-press #(>evt [:stop-tracking-session id])}
    "Stop tracking"])
 
-(defn tag-remove-modal [{:keys [session-id]}]
-  (let [{:tag-remove-modal/keys [visible id label color]}
-        (<sub [:tag-remove-modal])]
-
-    [:> paper/Portal
-     [:> paper/Modal {:visible    visible
-                      :on-dismiss #(>evt [:set-tag-remove-modal
-                                          #:tag-remove-modal {:visible false
-                                                              :id      nil
-                                                              :label   nil}])}
-      [:> paper/Surface
-       [:> rn/View {:style (tw "p-2 flex-col")}
-        ;; close button
-        [:> paper/IconButton {:icon     "close"
-                              :on-press #(>evt [:set-tag-remove-modal
-                                                #:tag-remove-modal {:visible false
-                                                                    :id      nil
-                                                                    :label   nil}])}]
-
-        [:> paper/Paragraph
-         {:style (tw "mb-4")}
-         "Are you sure you want to remove this tag?"]
-
-
-        [tag-button/component
-         (merge {:style (tw "mb-4")}
-                (p/map-of color id label))]
-
-        [:> paper/Button {:icon     "close"
-                          :mode     "contained"
-                          :style    (tw "mb-4")
-                          :color    "red"
-                          :on-press #(do (>evt [:set-tag-remove-modal
-                                                #:tag-remove-modal
-                                                {:visible false
-                                                 :id      nil
-                                                 :label   nil}])
-                                         (>evt [:remove-tag-from-session
-                                                {:session/id session-id
-                                                 :tag/id     id}]))}
-         "remove it"]]]]]))
-
 (defn tag-add-modal [{:keys [session-id]}]
   (let [all-tags                        (<sub [:tags-not-on-selected-session])
         {:tag-add-modal/keys [visible]} (<sub [:tag-add-modal])]
@@ -92,7 +47,7 @@
 
         [:> rn/View {:style (tw "flex flex-row flex-wrap items-center p-4")}
          (for [{:tag/keys [label color id]} all-tags]
-           [tag-button/component
+           [tags/tag-button
             (merge {:key      id
                     :style    (tw "m-2")
                     :on-press #(do (>evt [:add-tag-to-session
@@ -118,8 +73,8 @@
                                  :color   color
                                  :label   label}])
                style    (tw "mr-4 mb-4")]
-           [tag-button/component (merge {:key id}
-                                        (p/map-of color id label on-press style))])))
+           [tags/tag-button (merge {:key id}
+                                   (p/map-of color id label on-press style))])))
 
      [:> paper/Button {:icon     "plus"
                        :mode     "flat"
@@ -128,7 +83,20 @@
                                          {:visible true}])}
       "Add tag"]
 
-     [tag-remove-modal (p/map-of session-id)]
+     [tags/tag-remove-modal
+      {:close-fn  #(>evt [:set-tag-remove-modal
+                          #:tag-remove-modal {:visible false
+                                              :id      nil
+                                              :label   nil}])
+       :remove-fn (fn [tag-id]
+                    (>evt [:set-tag-remove-modal
+                           #:tag-remove-modal
+                           {:visible false
+                            :id      nil
+                            :label   nil}])
+                    (>evt [:remove-tag-from-session
+                           {:session/id session-id
+                            :tag/id     tag-id}]))}]
 
      [tag-add-modal (p/map-of session-id)]]))
 

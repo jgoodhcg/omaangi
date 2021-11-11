@@ -220,7 +220,7 @@
 
      :as session-ish}]]
 
-  (let [is-template               (some? :session-template/id)
+  (let [is-template               (some? session-template-id)
         type                      type
         id                        (or session-id session-template-id)
         start                     (or session-start-truncated session-template-start)

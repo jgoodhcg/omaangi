@@ -11,7 +11,7 @@
    [app.colors :refer [material-500-hexes]]
    [app.components.generic-top-section :as top-section]
    [app.components.color-picker :as color-picker]
-   [app.components.tag-button :as tag-button]
+   [app.components.tag-related :as components]
    [app.helpers :refer [<sub >evt get-theme chance]]
    [app.screens.core :refer [screens]]
    [app.tailwind :refer [tw]]
@@ -42,7 +42,7 @@
                     style    (tw "ml-4 mb-4")]
                 [:> rn/View {:key   id
                              :style style}
-                 [tag-button/component (p/map-of color label on-press)]]))]
+                 [components/tag-button (p/map-of color label on-press)]]))]
 
            [:> paper/Button {:mode     "outlined"
                              :icon     "plus"

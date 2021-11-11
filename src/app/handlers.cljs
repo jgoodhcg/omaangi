@@ -327,16 +327,8 @@
 
 (defn update-tag
   [db [_ {:tag/keys [id color-hex remove-color] :as tag}]]
-  (let [c       (make-color-if-some color-hex)
-        tag     (-> tag (dissoc :tag/color-hex))
-        old-tag (->> db (select-one [:app-db/tags (sp/keypath id)]))
-        new-tag (merge
-                  (if remove-color
-                    (dissoc old-tag :tag/color)
-                    old-tag)
-                  tag
-                  (when (some? c) {:tag/color c}))]
-    (tap> (p/map-of color-hex id c old-tag new-tag))
+  (let [c   (make-color-if-some color-hex)
+        tag (-> tag (dissoc :tag/color-hex))]
     (->> db (transform [:app-db/tags (sp/keypath id)]
                        #(merge
                           (if remove-color
@@ -541,6 +533,7 @@
           color-hex    :session-template/color-hex
           remove-color :session-template/remove-color
           :as          session-template}]]
+  (tap> (p/map-of :u-s-t session-template))
   (let [c                (make-color-if-some color-hex)
         session-template (-> session-template
                              (dissoc :session-template/color-hex)

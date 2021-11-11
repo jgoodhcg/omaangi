@@ -1,21 +1,13 @@
 (ns app.screens.session-template
   (:require
    ["react-native" :as rn]
-   ["react-native-color-picker" :as c]
-   ["react-native-gesture-handler" :as g]
    ["react-native-paper" :as paper]
-   ["react-native-modal-datetime-picker" :default DateTimePicker]
 
    [applied-science.js-interop :as j]
-   [potpuri.core :as p]
    [reagent.core :as r]
-   [tick.alpha.api :as t]
 
-   [app.colors :refer [material-500-hexes]]
-   [app.components.color-picker :as color-picker]
-   [app.components.tag-button :as tag-button]
    [app.components.label :as label]
-   [app.helpers :refer [<sub >evt get-theme clear-datetime-picker >evt-sync]]
+   [app.helpers :refer [<sub >evt get-theme]]
    [app.tailwind :refer [tw]]))
 
 (defn screen [props]
