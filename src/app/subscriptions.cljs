@@ -220,7 +220,8 @@
 
      :as session-ish}]]
 
-  (let [type                      type
+  (let [is-template               (some? :session-template/id)
+        type                      type
         id                        (or session-id session-template-id)
         start                     (or session-start-truncated session-template-start)
         stop                      (or session-stop-truncated session-template-stop)
@@ -231,7 +232,7 @@
         collision-offset          (-> collision-index (* 4))
         total-offset              (-> type-offset (+ collision-offset))
         left                      (str total-offset "%")
-        width                     (-> 45                   ;; starting width percentage
+        width                     (-> (if is-template 90 45)                   ;; starting width percentage
                                       (- collision-offset)
                                       (str "%"))
         elevation                 (-> collision-index (* 2)) ;; pulled from old code idk why it works
