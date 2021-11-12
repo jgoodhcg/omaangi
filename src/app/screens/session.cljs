@@ -31,75 +31,6 @@
                     :on-press #(>evt [:stop-tracking-session id])}
    "Stop tracking"])
 
-(defn tag-add-modal [{:keys [session-id]}]
-  (let [all-tags                        (<sub [:tags-not-on-selected-session])
-        {:tag-add-modal/keys [visible]} (<sub [:tag-add-modal])]
-
-    [:> paper/Portal
-     [:> paper/Modal {:visible    visible
-                      :on-dismiss #(>evt [:set-tag-add-modal
-                                          #:tag-add-modal {:visible false}])}
-      [:> paper/Surface {:style (tw "m-1")}
-       [:> rn/ScrollView
-        [:> paper/IconButton {:icon     "close"
-                              :on-press #(>evt [:set-tag-add-modal
-                                                #:tag-add-modal {:visible false}])}]
-
-        [:> rn/View {:style (tw "flex flex-row flex-wrap items-center p-4")}
-         (for [{:tag/keys [label color id]} all-tags]
-           [tags/tag-button
-            (merge {:key      id
-                    :style    (tw "m-2")
-                    :on-press #(do (>evt [:add-tag-to-session
-                                          {:session/id session-id
-                                           :tag/id     id}])
-                                   (>evt [:set-tag-add-modal
-                                          #:tag-add-modal {:visible false}]))}
-                   (p/map-of label color id))])]]]]]))
-
-(defn tags-component
-  [{:keys      [tags]
-    session-id :id}]
-  (let [there-are-tags (-> tags count (> 0))]
-
-    [:> rn/View {:style (tw "flex flex-row flex-wrap items-center mb-8")}
-
-     (when there-are-tags
-       (for [{:tag/keys [label color id]} tags]
-         (let [on-press #(>evt [:set-tag-remove-modal
-                                #:tag-remove-modal
-                                {:visible true
-                                 :id      id
-                                 :color   color
-                                 :label   label}])
-               style    (tw "mr-4 mb-4")]
-           [tags/tag-button (merge {:key id}
-                                   (p/map-of color id label on-press style))])))
-
-     [:> paper/Button {:icon     "plus"
-                       :mode     "flat"
-                       :on-press #(>evt [:set-tag-add-modal
-                                         #:tag-add-modal
-                                         {:visible true}])}
-      "Add tag"]
-
-     [tags/tag-remove-modal
-      {:close-fn  #(>evt [:set-tag-remove-modal
-                          #:tag-remove-modal {:visible false
-                                              :id      nil
-                                              :label   nil}])
-       :remove-fn (fn [tag-id]
-                    (>evt [:set-tag-remove-modal
-                           #:tag-remove-modal
-                           {:visible false
-                            :id      nil
-                            :label   nil}])
-                    (>evt [:remove-tag-from-session
-                           {:session/id session-id
-                            :tag/id     tag-id}]))}]
-
-     [tag-add-modal (p/map-of session-id)]]))
-
 (defn date-button
   [{:keys [value id label field-key]}]
   [:> paper/Button {:mode     "flat"
@@ -310,7 +241,13 @@
 
             [session-type-component (p/map-of type id)]
 
-            [tags-component (p/map-of tags id)]
+            [tags/tags-component {:add-fn    #(>evt [:add-tag-to-session
+                                                     {:session/id id
+                                                      :tag/id     %}])
+                                  :remove-fn #(>evt [:remove-tag-from-session
+                                                     {:session/id id
+                                                      :tag/id     %}])
+                                  :tags      tags}]
 
             [color-override-component (p/map-of color id color-override)]
 
