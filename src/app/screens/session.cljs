@@ -9,8 +9,9 @@
    [reagent.core :as r]
    [tick.alpha.api :as t]
 
-   [app.components.color-picker :as color-picker]
+   [app.components.color-override :as color-override]
    [app.components.tag-related :as tags]
+   [app.components.time-related :as tm]
    [app.components.label :as label]
    [app.helpers :refer [<sub >evt get-theme clear-datetime-picker >evt-sync]]
    [app.tailwind :refer [tw]]))
@@ -30,47 +31,6 @@
                     :style    (tw "mr-4 mt-4 mb-4")
                     :on-press #(>evt [:stop-tracking-session id])}
    "Stop tracking"])
-
-(defn date-button
-  [{:keys [value id label field-key]}]
-  [:> paper/Button {:mode     "flat"
-                    :icon     "calendar"
-                    :style    (tw "mr-4 mt-4 w-40")
-                    :on-press #(>evt [:set-date-time-picker
-                                      #:date-time-picker
-                                      {:value      value
-                                       :mode       "date"
-                                       :id         :session
-                                       :session-id id
-                                       :field-key  field-key
-                                       :visible    true}])} label])
-
-(defn time-button
-  [{:keys [value id label field-key]}]
-  [:> paper/Button {:mode     "flat"
-                    :icon     "clock"
-                    :style    (tw "mr-4 mt-4 w-28")
-                    :on-press #(>evt [:set-date-time-picker
-                                      #:date-time-picker
-                                      {:value      value
-                                       :mode       "time"
-                                       :id         :session
-                                       :session-id id
-                                       :field-key  field-key
-                                       :visible    true}])} label])
-
-(defn no-stamp-button
-  [{:keys [id set-start set-stop]
-    :or   {set-start false
-           set-stop  false}}]
-  [:> paper/Button {:mode     "outlined"
-                    :icon     "calendar"
-                    :style    (tw "mr-4 mt-4 w-40")
-                    :on-press #(>evt-sync
-                                 [:set-initial-timestamp
-                                  {:set-start  set-start
-                                   :set-stop   set-stop
-                                   :session/id id}])  } "not set"])
 
 (defn time-stamps-component []
   (let [{:session/keys [id
@@ -116,59 +76,33 @@
 
      (if start-set
        [:> rn/View {:style (tw "flex flex-row")}
-        [date-button {:value     start-value
-                      :id        id
-                      :label     start-date-label
-                      :field-key :session/start}]
-        [time-button {:value     start-value
-                      :id        id
-                      :label     start-time-label
-                      :field-key :session/start}]]
+        [tm/date-button {:value     start-value
+                         :id        id
+                         :label     start-date-label
+                         :field-key :session/start}]
+        [tm/time-button {:value     start-value
+                         :id        id
+                         :label     start-time-label
+                         :field-key :session/start}]]
 
        [:> rn/View {:style (tw "flex flex-row")}
-        [no-stamp-button {:set-start true
-                          :id        id}]])
+        [tm/no-stamp-button {:set-start true
+                             :id        id}]])
 
      (if stop-set
        [:> rn/View {:style (tw "flex flex-row")}
-        [date-button {:value     stop-value
-                      :id        id
-                      :label     stop-date-label
-                      :field-key :session/stop}]
-        [time-button {:value     stop-value
-                      :id        id
-                      :label     stop-time-label
-                      :field-key :session/stop}]]
+        [tm/date-button {:value     stop-value
+                         :id        id
+                         :label     stop-date-label
+                         :field-key :session/stop}]
+        [tm/time-button {:value     stop-value
+                         :id        id
+                         :label     stop-time-label
+                         :field-key :session/stop}]]
 
        [:> rn/View {:style (tw "flex flex-row")}
-        [no-stamp-button {:set-stop true
-                          :id       id}]])]))
-
-(defn color-override-component [{session-color  :color
-                                 color-override :color-override
-                                 session-id     :id}]
-  (let [mode  (if (and (some? session-color)
-                       color-override) "contained" "flat")
-        label (if (some? session-color) session-color "set session color")]
-
-    [:> rn/View {:style (tw "flex flex-col mb-8")}
-     [:> paper/Button {:mode     mode
-                       :icon     "palette"
-                       :color    session-color
-                       :on-press #(>evt [:set-color-picker
-                                         #:color-picker {:visible true
-                                                         :value   session-color}])}
-      label]
-
-     [color-picker/component {:input-color session-color
-                              :update-fn
-                              #(>evt [:update-session
-                                      {:session/color-hex %
-                                       :session/id        session-id}])
-                              :remove-fn
-                              #(>evt [:update-session
-                                      {:session/remove-color true
-                                       :session/id           session-id}])}]]))
+        [tm/no-stamp-button {:set-stop true
+                             :id       id}]])]))
 
 (defn session-type-component [{:keys [type id]}]
   [:> rn/View {:style (tw "flex flex-row mb-8")}
@@ -249,7 +183,14 @@
                                                       :tag/id     %}])
                                   :tags      tags}]
 
-            [color-override-component (p/map-of color id color-override)]
+            [color-override/component {:update-fn      #(>evt [:update-session
+                                                               {:session/color-hex %
+                                                                :session/id        id}])
+                                       :remove-fn      #(>evt [:update-session
+                                                               {:session/remove-color true
+                                                                :session/id           id}])
+                                       :color          color
+                                       :color-override color-override}]
 
             [delete-button session]
             ]]]))]))
