@@ -13,6 +13,7 @@
    [app.components.tag-related :as tags]
    [app.components.time-related :as tm]
    [app.components.label :as label]
+   [app.components.delete-button :as delete-button]
    [app.helpers :refer [<sub >evt get-theme clear-datetime-picker >evt-sync]]
    [app.tailwind :refer [tw]]))
 
@@ -129,14 +130,6 @@
                              {:disabled true}))
     "track"]])
 
-(defn delete-button
-  [session]
-  [:> paper/Button {:mode     "flat"
-                    :icon     "delete"
-                    :style    (tw "mr-4 mt-4 w-28")
-                    :on-press #(>evt [:delete-session session])}
-   "Delete Session"])
-
 (defn screen [props]
   (r/as-element
     [(fn [props]
@@ -192,5 +185,4 @@
                                        :color          color
                                        :color-override color-override}]
 
-            [delete-button session]
-            ]]]))]))
+            [delete-button/component {:on-press #(>evt [:delete-session session])}]]]]))]))
