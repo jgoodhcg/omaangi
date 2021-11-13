@@ -569,7 +569,8 @@
                      :template/session-templates]
                     (fn [session-templates]
                       (->> session-templates
-                           (remove #(= id (:session-template/id %)))))))))
+                           (remove #(= id (:session-template/id %)))
+                           vec))))))
 (reg-event-db :delete-session-template [base-interceptors] delete-session-template)
 
 (defn create-session-template-from-event
@@ -590,7 +591,21 @@
               (setval [:app-db/templates (sp/keypath selected-template-id)
                        :template/session-templates sp/AFTER-ELEM] new-uuid))
      :fx [[:dispatch [:set-selected-session-template new-uuid]]
-          ;; TODO enable when screen is available
-          ;; [:dispatch [:navigate (:session-template screens)]]
-          ]}))
+          [:dispatch [:navigate (:session-template screens)]]]}))
 (reg-event-fx :create-session-template-from-event [base-interceptors id-gen insert-now] create-session-template-from-event)
+
+(defn add-tag-to-session-template
+  [db [_ {session-template-id :session-template/id
+          tag-id              :tag/id}]]
+  (->> db
+       (transform [:app-db/session-templates (sp/keypath session-template-id) :session-template/tags]
+                  #(-> % (conj tag-id) vec))))
+(reg-event-db :add-tag-to-session-template [base-interceptors] add-tag-to-session-template)
+
+(defn remove-tag-from-session-template
+  [db [_ {session-template-id :session-template/id
+          tag-id              :tag/id}]]
+  (->> db
+       (transform [:app-db/session-templates (sp/keypath session-template-id) :session-template/tags]
+                  (fn [tags] (->> tags (remove #(= % tag-id)) vec)))))
+(reg-event-db :remove-tag-from-session-template [base-interceptors] remove-tag-from-session-template)

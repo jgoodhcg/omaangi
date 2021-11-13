@@ -31,6 +31,7 @@
    [app.screens.tag :as tag]
    [app.screens.templates :as templates]
    [app.screens.template :as template]
+   [app.screens.session-template :as session-template]
    [potpuri.core :as p]))
 
 ;; must use defonce and must refresh full app so metro can fill these in
@@ -124,11 +125,15 @@
                                         (-> prev-route-name (= (:session screens))))
                                (>evt [:set-selected-session nil]))
 
+                             ;; same hack but different set of screens
+                             (when (and (-> current-route-name (= (:template screens)))
+                                        (-> prev-route-name (= (:session-template screens))))
+                               (>evt [:set-selected-session-template nil]))
                              (swap! !route-name-ref merge {:current current-route-name})))}
 
        [:> (drawer-navigator) {:drawer-content         custom-drawer
                                :drawer-style           drawer-style
-                               ;; :initial-route-name     (:reports screens)
+                               :initial-route-name     (:day screens)
                                :drawer-content-options {:active-tint-color   (-> theme (j/get :colors) (j/get :accent))
                                                         :inactive-tint-color (-> theme (j/get :colors) (j/get :text))}}
         (drawer-screen {:name      (:day screens)
@@ -194,6 +199,19 @@
                                                                                             (j/get :colors)
                                                                                             (j/get :surface))}}
                                                       :component (paper/withTheme template/screen)})
+                                       (stack-screen {:name      (:session-template screens)
+                                                      :options   {:headerTintColor (-> theme
+                                                                                       (j/get :colors)
+                                                                                       (j/get :text))
+                                                                  :headerTitleStyle
+                                                                  #js {:display "none"}
+                                                                  :headerStyle
+                                                                  ;; for some reason the :surface color comes out the same as :background when used on paper/Surface
+                                                                  ;; when using :background here it has a weird opacity issue or something
+                                                                  #js {:backgroundColor (-> theme
+                                                                                            (j/get :colors)
+                                                                                            (j/get :surface))}}
+                                                      :component (paper/withTheme session-template/screen)})
                                        ])})
         (drawer-screen {:name      (:settings screens)
                         :options   {:drawerIcon (drawer-icon "tune")}

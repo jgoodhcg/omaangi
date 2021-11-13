@@ -7,6 +7,10 @@
    [reagent.core :as r]
 
    [app.components.label :as label]
+   [app.components.tag-related :as tags]
+   [app.components.color-override :as color-override]
+   [app.components.time-related :as tm]
+   [app.components.delete-button :as delete-button]
    [app.helpers :refer [<sub >evt get-theme]]
    [app.tailwind :refer [tw]]))
 
@@ -40,4 +44,22 @@
                                                  {:session-template/label %
                                                   :session-template/id    id}])}]
 
+            [tags/tags-component {:add-fn    #(>evt [:add-tag-to-session-template
+                                                     {:session-template/id id
+                                                      :tag/id              %}])
+                                  :remove-fn #(>evt [:remove-tag-from-session-template
+                                                     {:session-template/id id
+                                                      :tag/id              %}])
+                                  :tags      tags}]
+
+            [color-override/component {:update-fn      #(>evt [:update-session-template
+                                                               {:session-template/color-hex %
+                                                                :session-template/id        id}])
+                                       :remove-fn      #(>evt [:update-session-template
+                                                               {:session-template/remove-color true
+                                                                :session-template/id           id}])
+                                       :color          color
+                                       :color-override color-override}]
+
+            [delete-button/component {:on-press #(>evt [:delete-session-template session-template])}]
             ]]]))]))
