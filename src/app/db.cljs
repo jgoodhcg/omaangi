@@ -363,36 +363,37 @@
   (ds/spec
     {:name ::app-db
      :spec
-     {:app-db/version                          string?
-      :app-db/current-time                     ::instant
-      :app-db/current-timezone                 t/zone?
-      :app-db/tracking                         [uuid?]
-      :app-db/calendar                         ::calendar
-      :app-db/sessions                         ::sessions
-      :app-db/tags                             ::tags
-      :app-db/templates                        ::templates
-      :app-db/session-templates                ::session-templates
-      :app-db.selected/session                 (ds/maybe uuid?)
-      :app-db.selected/template                (ds/maybe uuid?)
-      :app-db.selected/session-template        (ds/maybe uuid?)
-      :app-db.selected/day                     t/date?
-      :app-db.selected/tag                     (ds/maybe uuid?)
-      :app-db.settings/theme                   (s/spec #{:light :dark})
-      :app-db.view/zoom                        ::zoom
-      :app-db.view/screen-width                float?
-      :app-db.view.tag-remove-modal/id         (ds/maybe uuid?)
-      :app-db.view.tag-remove-modal/visible    boolean?
-      :app-db.view.tag-remove-modal/label      (ds/maybe string?)
-      :app-db.view.tag-remove-modal/color      (ds/maybe ::color)
-      :app-db.view.tag-add-modal/visible       boolean?
-      :app-db.view.date-time-picker/visible    boolean?
-      :app-db.view.date-time-picker/value      (ds/maybe inst?)
-      :app-db.view.date-time-picker/mode       (ds/maybe (s/spec #{"date" "time"}))
-      :app-db.view.date-time-picker/session-id (ds/maybe uuid?)
-      :app-db.view.date-time-picker/field-key  (ds/maybe keyword?)
-      :app-db.view.date-time-picker/id         (ds/maybe (s/spec #{:day :session}))
-      :app-db.view.color-picker/visible        boolean?
-      :app-db.view.color-picker/value          (ds/maybe ::color)}}))
+     {:app-db/version                                   string?
+      :app-db/current-time                              ::instant
+      :app-db/current-timezone                          t/zone?
+      :app-db/tracking                                  [uuid?]
+      :app-db/calendar                                  ::calendar
+      :app-db/sessions                                  ::sessions
+      :app-db/tags                                      ::tags
+      :app-db/templates                                 ::templates
+      :app-db/session-templates                         ::session-templates
+      :app-db.selected/session                          (ds/maybe uuid?)
+      :app-db.selected/template                         (ds/maybe uuid?)
+      :app-db.selected/session-template                 (ds/maybe uuid?)
+      :app-db.selected/day                              t/date?
+      :app-db.selected/tag                              (ds/maybe uuid?)
+      :app-db.settings/theme                            (s/spec #{:light :dark})
+      :app-db.view/zoom                                 ::zoom
+      :app-db.view/screen-width                         float?
+      :app-db.view.tag-remove-modal/id                  (ds/maybe uuid?)
+      :app-db.view.tag-remove-modal/visible             boolean?
+      :app-db.view.tag-remove-modal/label               (ds/maybe string?)
+      :app-db.view.tag-remove-modal/color               (ds/maybe ::color)
+      :app-db.view.tag-add-modal/visible                boolean?
+      :app-db.view.date-time-picker/visible             boolean?
+      :app-db.view.date-time-picker/value               (ds/maybe inst?)
+      :app-db.view.date-time-picker/mode                (ds/maybe (s/spec #{"date" "time"}))
+      :app-db.view.date-time-picker/session-id          (ds/maybe uuid?)
+      :app-db.view.date-time-picker/session-template-id (ds/maybe uuid?)
+      :app-db.view.date-time-picker/field-key           (ds/maybe keyword?)
+      :app-db.view.date-time-picker/id                  (ds/maybe (s/spec #{:day :session :session-template}))
+      :app-db.view.color-picker/visible                 boolean?
+      :app-db.view.color-picker/value                   (ds/maybe ::color)}}))
 
 (comment
   (s/explain app-db-spec (merge {:settings {:theme :dark}
@@ -428,31 +429,32 @@
       ;; cal-tag-sessions
 
       {
-       :app-db/version                          "version-not-set"
-       :app-db/current-time                     (t/now)
-       :app-db/current-timezone                 (-> localization (j/get :timezone) (t/zone))
-       :app-db/tracking                         []
-       :app-db.selected/session                 nil
-       :app-db.selected/template                nil
-       :app-db.selected/session-template        nil
-       :app-db.selected/tag                     nil
-       :app-db.selected/day                     selected-day
-       :app-db.settings/theme                   :dark
-       :app-db.view/zoom                        1.25
-       :app-db.view/screen-width                1.0 ;; TODO better default?
-       :app-db.view.tag-remove-modal/id         nil
-       :app-db.view.tag-remove-modal/visible    false
-       :app-db.view.tag-remove-modal/label      nil
-       :app-db.view.tag-remove-modal/color      nil
-       :app-db.view.tag-add-modal/visible       false
-       :app-db.view.date-time-picker/visible    false
-       :app-db.view.date-time-picker/value      nil
-       :app-db.view.date-time-picker/mode       nil
-       :app-db.view.date-time-picker/session-id nil
-       :app-db.view.date-time-picker/field-key  nil
-       :app-db.view.date-time-picker/id         nil
-       :app-db.view.color-picker/visible        false
-       :app-db.view.color-picker/value          nil})))
+       :app-db/version                                   "version-not-set"
+       :app-db/current-time                              (t/now)
+       :app-db/current-timezone                          (-> localization (j/get :timezone) (t/zone))
+       :app-db/tracking                                  []
+       :app-db.selected/session                          nil
+       :app-db.selected/template                         nil
+       :app-db.selected/session-template                 nil
+       :app-db.selected/tag                              nil
+       :app-db.selected/day                              selected-day
+       :app-db.settings/theme                            :dark
+       :app-db.view/zoom                                 1.25
+       :app-db.view/screen-width                         1.0 ;; TODO better default?
+       :app-db.view.tag-remove-modal/id                  nil
+       :app-db.view.tag-remove-modal/visible             false
+       :app-db.view.tag-remove-modal/label               nil
+       :app-db.view.tag-remove-modal/color               nil
+       :app-db.view.tag-add-modal/visible                false
+       :app-db.view.date-time-picker/visible             false
+       :app-db.view.date-time-picker/value               nil
+       :app-db.view.date-time-picker/mode                nil
+       :app-db.view.date-time-picker/session-id          nil
+       :app-db.view.date-time-picker/session-template-id nil
+       :app-db.view.date-time-picker/field-key           nil
+       :app-db.view.date-time-picker/id                  nil
+       :app-db.view.color-picker/visible                 false
+       :app-db.view.color-picker/value                   nil})))
 
 ;;
 ;; serialization

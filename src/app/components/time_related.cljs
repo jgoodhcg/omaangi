@@ -6,42 +6,33 @@
    [app.tailwind :refer [tw]]))
 
 (defn date-button
-  [{:keys [value id label field-key]}]
+  [{:keys [value id label field-key dtp-id session-ish-id-key]}]
   [:> paper/Button {:mode     "flat"
                     :icon     "calendar"
                     :style    (tw "mr-4 mt-4 w-40")
                     :on-press #(>evt [:set-date-time-picker
-                                      #:date-time-picker
-                                      {:value      value
-                                       :mode       "date"
-                                       :id         :session
-                                       :session-id id
-                                       :field-key  field-key
-                                       :visible    true}])} label])
+                                      {:date-time-picker/value     value
+                                       :date-time-picker/mode      "date"
+                                       :date-time-picker/id        dtp-id
+                                       session-ish-id-key          id
+                                       :date-time-picker/field-key field-key
+                                       :date-time-picker/visible   true}])} label])
 
 (defn time-button
-  [{:keys [value id label field-key]}]
+  [{:keys [value id label field-key dtp-id session-ish-id-key]}]
   [:> paper/Button {:mode     "flat"
                     :icon     "clock"
                     :style    (tw "mr-4 mt-4 w-28")
                     :on-press #(>evt [:set-date-time-picker
-                                      #:date-time-picker
-                                      {:value      value
-                                       :mode       "time"
-                                       :id         :session
-                                       :session-id id
-                                       :field-key  field-key
-                                       :visible    true}])} label])
+                                      {:date-time-picker/value     value
+                                       :date-time-picker/mode      "time"
+                                       :date-time-picker/id        dtp-id
+                                       session-ish-id-key          id
+                                       :date-time-picker/field-key field-key
+                                       :date-time-picker/visible   true}])} label])
 
 (defn no-stamp-button
   [{:keys [id set-start set-stop]
     :or   {set-start false
            set-stop  false}}]
-  [:> paper/Button {:mode     "outlined"
-                    :icon     "calendar"
-                    :style    (tw "mr-4 mt-4 w-40")
-                    :on-press #(>evt-sync
-                                 [:set-initial-timestamp
-                                  {:set-start  set-start
-                                   :set-stop   set-stop
-                                   :session/id id}])  } "not set"])
+  [:> paper/Text "missing required timestamp value"])

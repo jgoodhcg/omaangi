@@ -60,11 +60,12 @@
 
 (def clear-datetime-picker [:set-date-time-picker
                             #:date-time-picker
-                            {:value      nil
-                             :mode       nil
-                             :session-id nil
-                             :field-key  nil
-                             :visible    false}] )
+                            {:value               nil
+                             :mode                nil
+                             :session-id          nil
+                             :session-template-id nil
+                             :field-key           nil
+                             :visible             false}] )
 
 (defn drop-keyword-sections [n k]
   (-> k

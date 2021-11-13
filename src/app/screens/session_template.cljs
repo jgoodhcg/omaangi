@@ -2,8 +2,10 @@
   (:require
    ["react-native" :as rn]
    ["react-native-paper" :as paper]
+   ["react-native-modal-datetime-picker" :default DateTimePicker]
 
    [applied-science.js-interop :as j]
+   [potpuri.core :as p]
    [reagent.core :as r]
 
    [app.components.label :as label]
@@ -11,8 +13,74 @@
    [app.components.color-override :as color-override]
    [app.components.time-related :as tm]
    [app.components.delete-button :as delete-button]
-   [app.helpers :refer [<sub >evt get-theme]]
+   [app.helpers :refer [<sub >evt get-theme clear-datetime-picker]]
    [app.tailwind :refer [tw]]))
+
+(defn time-stamps-component []
+  (let [{:session-template/keys [id
+                                 start-time-label
+                                 start-value
+                                 start-set
+                                 stop-time-label
+                                 stop-value
+                                 stop-set]}
+        (<sub [:selected-session-template])
+
+        {:date-time-picker/keys     [value mode visible field-key]
+         dtp-id                     :date-time-picker/id
+         picker-session-template-id :date-time-picker/session-template-id}
+        (<sub [:date-time-picker])]
+
+    [:> rn/View {:style (tw "flex flex-col mb-8")}
+
+     (when (and (some? value)
+                (= dtp-id :session-template))
+       [:> DateTimePicker
+        {:is-visible           visible
+         :is-dark-mode-enabled true
+         :date                 value
+         :mode                 mode
+
+         :on-hide    #(do
+                        (tap> "hidden")
+                        (>evt clear-datetime-picker))
+         :on-cancel  #(do
+                        (tap> "cancelled")
+                        (>evt clear-datetime-picker))
+         :on-confirm #(do
+                        (tap> (str "Update " field-key
+                                   " for " picker-session-template-id
+                                   " as " %))
+                        (>evt [:update-session-template
+                               {field-key            %
+                                :session-template/id picker-session-template-id}])
+                        (>evt clear-datetime-picker))}])
+
+     (if start-set
+       [:> rn/View {:style (tw "flex flex-row")}
+        [tm/time-button {:value              start-value
+                         :id                 id
+                         :dtp-id             :session-template
+                         :session-ish-id-key :date-time-picker/session-template-id
+                         :label              start-time-label
+                         :field-key          :session-template/start}]]
+
+       [:> rn/View {:style (tw "flex flex-row")}
+        [tm/no-stamp-button {:set-start true
+                             :id        id}]])
+
+     (if stop-set
+       [:> rn/View {:style (tw "flex flex-row")}
+        [tm/time-button {:value              stop-value
+                         :id                 id
+                         :dtp-id             :session-template
+                         :session-ish-id-key :date-time-picker/session-template-id
+                         :label              stop-time-label
+                         :field-key          :session-template/stop}]]
+
+       [:> rn/View {:style (tw "flex flex-row")}
+        [tm/no-stamp-button {:set-stop true
+                             :id       id}]])]))
 
 (defn screen [props]
   (r/as-element
@@ -23,7 +91,6 @@
               [id
                start
                stop
-               type
                label
                tags
                color-override
@@ -43,6 +110,9 @@
                               :update-fn #(>evt [:update-session-template
                                                  {:session-template/label %
                                                   :session-template/id    id}])}]
+
+
+            [time-stamps-component (p/map-of start stop id)]
 
             [tags/tags-component {:add-fn    #(>evt [:add-tag-to-session-template
                                                      {:session-template/id id

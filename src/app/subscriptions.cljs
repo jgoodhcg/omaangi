@@ -488,6 +488,7 @@
                                 :app-db.view.date-time-picker/mode
                                 :app-db.view.date-time-picker/id
                                 :app-db.view.date-time-picker/session-id
+                                :app-db.view.date-time-picker/session-template-id
                                 :app-db.view.date-time-picker/field-key])])
        ;; remove :app-db.view from keyword because legacy subscription consumer
        (transform [sp/MAP-KEYS] #(drop-keyword-sections 2 %))))
@@ -663,6 +664,7 @@
                            (if (some? start)
                              #:session-template
                              {:start-time-label (-> start t/time time-label)
+                              :start-value      (-> start (t/on (t/epoch)) t/inst) ;; it has to be an inst for date time picker
                               :start-set        true}
 
                              #:session-template
@@ -670,6 +672,7 @@
                            (if (some? stop)
                              #:session-template
                              {:stop-time-label (-> stop t/time time-label)
+                              :stop-value      (-> stop (t/on (t/epoch)) t/inst) ;; it has to be an inst for date time picker
                               :stop-set        true}
                              #:session-template
                              {:stop-set false}))))))

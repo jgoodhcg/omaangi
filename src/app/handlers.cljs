@@ -95,11 +95,13 @@
                                   value
                                   mode
                                   session-id
+                                  session-template-id
                                   id
                                   field-key]}]]
   (->> db
        (setval [:app-db.view.date-time-picker/field-key] field-key)
        (setval [:app-db.view.date-time-picker/session-id] session-id)
+       (setval [:app-db.view.date-time-picker/session-template-id] session-template-id)
        (setval [:app-db.view.date-time-picker/mode] mode)
        (setval [:app-db.view.date-time-picker/value]
                (cond
@@ -538,8 +540,9 @@
         session-template (-> session-template
                              (dissoc :session-template/color-hex)
                              (dissoc :session-template/remove-color)
-                             (p/update-if-contains :session-template/start t/time)
-                             (p/update-if-contains :session-template/start t/time))]
+                             (p/update-if-contains :session-template/start #(-> % t/instant t/time))
+                             (p/update-if-contains :session-template/stop #(-> % t/instant t/time)))]
+    (tap> (p/map-of :u-s-t-2 session-template))
     (->> db
          (transform [:app-db/session-templates (sp/keypath id)]
                     #(merge (if remove-color

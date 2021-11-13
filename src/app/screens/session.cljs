@@ -77,14 +77,18 @@
 
      (if start-set
        [:> rn/View {:style (tw "flex flex-row")}
-        [tm/date-button {:value     start-value
-                         :id        id
-                         :label     start-date-label
-                         :field-key :session/start}]
-        [tm/time-button {:value     start-value
-                         :id        id
-                         :label     start-time-label
-                         :field-key :session/start}]]
+        [tm/date-button {:value              start-value
+                         :id                 id
+                         :dtp-id             :session
+                         :session-ish-id-key :date-time-picker/session-id
+                         :label              start-date-label
+                         :field-key          :session/start}]
+        [tm/time-button {:value              start-value
+                         :id                 id
+                         :dtp-id             :session
+                         :session-ish-id-key :date-time-picker/session-id
+                         :label              start-time-label
+                         :field-key          :session/start}]]
 
        [:> rn/View {:style (tw "flex flex-row")}
         [tm/no-stamp-button {:set-start true
@@ -92,14 +96,18 @@
 
      (if stop-set
        [:> rn/View {:style (tw "flex flex-row")}
-        [tm/date-button {:value     stop-value
-                         :id        id
-                         :label     stop-date-label
-                         :field-key :session/stop}]
-        [tm/time-button {:value     stop-value
-                         :id        id
-                         :label     stop-time-label
-                         :field-key :session/stop}]]
+        [tm/date-button {:value              stop-value
+                         :id                 id
+                         :dtp-id             :session
+                         :session-ish-id-key :date-time-picker/session-id
+                         :label              stop-date-label
+                         :field-key          :session/stop}]
+        [tm/time-button {:value              stop-value
+                         :id                 id
+                         :dtp-id             :session
+                         :session-ish-id-key :date-time-picker/session-id
+                         :label              stop-time-label
+                         :field-key          :session/stop}]]
 
        [:> rn/View {:style (tw "flex flex-row")}
         [tm/no-stamp-button {:set-stop true
