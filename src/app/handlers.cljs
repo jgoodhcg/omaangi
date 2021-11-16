@@ -409,7 +409,9 @@
                                   :session/tags         []}
                                  (merge (when (some? tags) {:session/tags tags}))
                                  (merge (when (some? color) {:session/color color})))]
-    (tap> (p/map-of session))
+
+    (tap> (p/map-of :create-track-session-from-other-session session))
+
     {:db (->> db (setval [:app-db/sessions (sp/keypath new-uuid)] session))
      :fx [[:dispatch [:re-index-session {:old-indexes []
                                          :new-indexes [today]
@@ -612,3 +614,60 @@
        (transform [:app-db/session-templates (sp/keypath session-template-id) :session-template/tags]
                   (fn [tags] (->> tags (remove #(= % tag-id)) vec)))))
 (reg-event-db :remove-tag-from-session-template [base-interceptors] remove-tag-from-session-template)
+
+(defn create-plan-session-from-session-template
+  [{:keys [db new-uuid now]} [_ {session-template-id :session-template/id
+                                 template-id         :template/id}]]
+  (let [today    (t/date now)
+        {:session-template/keys
+         [tags
+          color
+          label
+          start
+          stop]} (->> db (select-one [:app-db/session-templates
+                                      (sp/must session-template-id)
+                                      (sp/submap [:session-template/tags
+                                                  :session-template/color
+                                                  :session-template/label
+                                                  :session-template/start
+                                                  :session-template/stop])]))
+        session  (-> {:session/id                              new-uuid
+                      :session/created                         now
+                      :session/last-edited                     now
+                      :session/label                           label
+                      :session/start                           (-> start (t/on (t/date now)) t/instant)
+                      :session/stop                            (-> stop (t/on (t/date now)) t/instant)
+                      :session/type                            :session/plan
+                      :session/generated-from-template         template-id
+                      :session/generated-from-session-template session-template-id
+                      :session/tags                            []}
+                     (merge (when (some? tags) {:session/tags tags}))
+                     (merge (when (some? color) {:session/color color})))]
+
+    (tap> (p/map-of :create-plan-session-from-session-template session))
+
+    {:db (->> db (setval [:app-db/sessions (sp/keypath new-uuid)] session))
+     :fx [[:dispatch [:re-index-session {:old-indexes []
+                                         :new-indexes [today]
+                                         :id          new-uuid}]]]}))
+(reg-event-fx :create-plan-session-from-session-template [base-interceptors id-gen insert-now] create-plan-session-from-session-template)
+
+(defn apply-template-to-selected-day
+  [{:keys [db]} [_ {template-id :template/id}]]
+  (let [session-template-ids (->> db
+                                  (select-one [:app-db/templates
+                                               (sp/must template-id)
+                                               :template/session-templates]))
+        session-creates      (->> session-template-ids
+                                  (mapv (fn [st-id]
+                                          [:dispatch
+                                           [:create-plan-session-from-session-template
+                                            {:session-template/id st-id
+                                             :template/id         template-id}]])))
+        all-dispatches       (conj session-creates [:dispatch [:navigate (:day screens)]])]
+
+    (tap> (p/map-of :apply-template-to-selected-day all-dispatches))
+
+    {:db db
+     :fx all-dispatches}))
+(reg-event-fx :apply-template-to-selected-day [base-interceptors] apply-template-to-selected-day)

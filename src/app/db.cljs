@@ -252,18 +252,18 @@
 
 (def session-data-spec
   (ds/spec {:name ::session-ds
-            :spec {:session/id                        uuid?
-                   :session/created                   ::instant
-                   :session/last-edited               ::instant
-                   :session/start                     ::instant
-                   :session/stop                      ::instant
-                   :session/type                      (s/spec #{:session/track :session/plan})
-                   :session/tags                      [uuid?]
-                   (ds/opt :session/label)            string?
-                   (ds/opt :session/color)            ::color
-                   (ds/opt :session/tracked-from)     uuid?
-                   (ds/opt :session/session-template) uuid?
-                   (ds/opt :session/template)         uuid?}}))
+            :spec {:session/id                                       uuid?
+                   :session/created                                  ::instant
+                   :session/last-edited                              ::instant
+                   :session/start                                    ::instant
+                   :session/stop                                     ::instant
+                   :session/type                                     (s/spec #{:session/track :session/plan})
+                   :session/tags                                     [uuid?]
+                   (ds/opt :session/label)                           string?
+                   (ds/opt :session/color)                           ::color
+                   (ds/opt :session/tracked-from)                    uuid?
+                   (ds/opt :session/generated-from-session-template) uuid?
+                   (ds/opt :session/generated-from-template)         uuid?}}))
 
 (s/def ::session (s/with-gen session-data-spec #(gen/fmap generate-session (s/gen int?))))
 

@@ -21,6 +21,14 @@
    [app.components.time-indicators :as time-indicators]
    [app.tailwind :refer [tw]]))
 
+(defn apply-button
+  [{:keys [id]}]
+  [:> paper/Button {:mode     "flat"
+                    :icon     "plus-circle-multiple-outline"
+                    :style    (tw "mr-4 mt-4 mb-4")
+                    :on-press #(>evt [:apply-template-to-selected-day {:template/id id}])}
+   "Apply Template"])
+
 (defn screen [props]
   (r/as-element
     [(fn [props]
@@ -39,6 +47,8 @@
                                         )}
 
            [:> rn/View {:style (tw "flex p-4 flex-col")}
+
+            [apply-button (p/map-of id)]
 
             [label/component {:label     label
                               :update-fn #(>evt [:update-template {:template/label %
