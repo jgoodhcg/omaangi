@@ -32,6 +32,7 @@
    [app.screens.templates :as templates]
    [app.screens.template :as template]
    [app.screens.session-template :as session-template]
+   [app.screens.backups :as backups]
    [potpuri.core :as p]))
 
 ;; must use defonce and must refresh full app so metro can fill these in
@@ -215,7 +216,10 @@
                                        ])})
         (drawer-screen {:name      (:settings screens)
                         :options   {:drawerIcon (drawer-icon "tune")}
-                        :component (paper/withTheme settings/screen)})]]]]))
+                        :component (paper/withTheme settings/screen)})
+        (drawer-screen {:name      (:backups screens)
+                        :options   {:drawerIcon (drawer-icon "tune")}
+                        :component (paper/withTheme backups/screen)})]]]]))
 
 (defn start
   {:dev/after-load true}

@@ -7,8 +7,8 @@
    [applied-science.js-interop :as j]
    [app.helpers :refer [>evt]]
    [app.db :as db :refer [default-app-db serialize de-serialize]]
-   [cljs.reader :refer [read-string]] ;; TODO justin 2021-09-26 is this a security threat?
-
+   [cljs.core.async :refer [go <!]]
+   [cljs.core.async.interop :refer [<p!]]
    [tick.alpha.api :as t]))
 
 (def !navigation-ref (clojure.core/atom nil))
@@ -42,6 +42,7 @@
 (def app-db-key "@app_db")
 
 (reg-fx :check-for-saved-db
+        ;; TODO justin 2021-11-17 convert to core.async
         (fn [_]
           (try
             (-> async-storage
@@ -85,3 +86,41 @@
               (j/call :addEventListener
                       "change"
                       #(>evt [:tick-tock])))))
+
+(reg-fx :load-backup-keys
+        (fn [_]
+          (go
+            (try
+              (-> async-storage
+                  (j/get :default)
+                  (j/call :getAllKeys)
+                  <p!
+                  (->> (mapv
+                         (fn [k]
+                           (when (not= k app-db-key)
+                             (go
+                               (-> async-storage
+                                   (j/get :default)
+                                   (j/call :getItem k)
+                                   <p!
+                                   de-serialize
+                                   (select-keys [:app-db/current-time
+                                                 :app-db/version])
+                                   tap>)))))))
+              (catch js/Object e
+                (tap> (str "error getting all async storage keys " e))
+                (-> rn/Alert (j/call :alert "error getting all async storage keys " (str e))))))
+          ))
+
+(reg-fx :create-backup
+        (fn [{version :app-db/version
+              t       :app-db/current-time
+              :as     app-db}]
+          (go
+            (try
+              (-> async-storage
+                  (j/get :default)
+                  (j/call :setItem (str "@-" t "-" version) (serialize app-db)))
+              (catch js/Object e
+                (tap> (str "error creating backup " e))
+                (-> rn/Alert (j/call :alert "error creating backup " (str e))))))))

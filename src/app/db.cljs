@@ -358,7 +358,6 @@
                      (s/and map? (s/every-kv uuid? ::template))
                      #(gen/fmap generate-templates (s/gen ::reasonable-number))))
 
-
 (def app-db-spec
   (ds/spec
     {:name ::app-db
@@ -372,6 +371,7 @@
       :app-db/tags                                      ::tags
       :app-db/templates                                 ::templates
       :app-db/session-templates                         ::session-templates
+      :app-db/backup-keys                               [string?]
       :app-db.selected/session                          (ds/maybe uuid?)
       :app-db.selected/template                         (ds/maybe uuid?)
       :app-db.selected/session-template                 (ds/maybe uuid?)
@@ -433,6 +433,7 @@
        :app-db/current-time                              (t/now)
        :app-db/current-timezone                          (-> localization (j/get :timezone) (t/zone))
        :app-db/tracking                                  []
+       :app-db/backup-keys                               []
        :app-db.selected/session                          nil
        :app-db.selected/template                         nil
        :app-db.selected/session-template                 nil

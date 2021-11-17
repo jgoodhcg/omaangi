@@ -6,6 +6,7 @@
          metosin/spec-tools                  {:mvn/version "0.10.4"}
          metosin/potpuri                     {:mvn/version "0.5.3"}
          org.clojure/test.check              {:mvn/version "1.1.0"} ;; TODO dev dep?
+         org.clojure/core.async              {:mvn/version "1.4.627"}
          reagent/reagent                     {:mvn/version "1.0.0-alpha2"}
          re-frame/re-frame                   {:mvn/version "1.1.1"}
          tick/tick                           {:mvn/version "0.4.27-alpha"}

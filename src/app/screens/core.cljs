@@ -8,5 +8,5 @@
               :settings         "Settings"
               :templates        "Templates"
               :template         "Template"
-              :day-template     "day-template"
-              :session-template "Session-template"})
+              :session-template "Session-template"
+              :backups          "Backups"})

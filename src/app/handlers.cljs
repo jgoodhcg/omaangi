@@ -671,3 +671,9 @@
     {:db db
      :fx all-dispatches}))
 (reg-event-fx :apply-template-to-selected-day [base-interceptors] apply-template-to-selected-day)
+
+(defn create-backup
+  [{:keys [db]} _]
+  {:db            db
+   :create-backup db})
+(reg-event-fx :create-backup [base-interceptors] create-backup)
