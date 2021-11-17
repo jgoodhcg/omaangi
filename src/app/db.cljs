@@ -470,6 +470,7 @@
        (transform [:app-db/tags sp/MAP-VALS (sp/must :tag/color)] hex-if-some)
        (transform [:app-db/sessions sp/MAP-VALS (sp/must :session/color)] hex-if-some)
        (transform [:app-db/session-templates sp/MAP-VALS (sp/must :session-template/color)] hex-if-some)
+       (setval [:app-db/backup-keys] []) ;; don't backup backup keys
 
        str))
 

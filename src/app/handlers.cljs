@@ -677,3 +677,14 @@
   {:db            db
    :create-backup db})
 (reg-event-fx :create-backup [base-interceptors] create-backup)
+
+(defn set-backup-keys
+  [db [_ ks]]
+  (->> db (setval [:app-db/backup-keys] ks)))
+(reg-event-db :set-backup-keys [base-interceptors] set-backup-keys)
+
+(defn load-backup-keys
+  [{:keys [db]} _]
+  {:db               db
+   :load-backup-keys true})
+(reg-event-fx :load-backup-keys [base-interceptors] load-backup-keys)

@@ -80,8 +80,9 @@
         (fn [_]
           (>evt [:set-version version])
           (>evt [:set-selected-day (t/now)])
+          (>evt [:load-backup-keys])
           ;; The tick rate is rather slow (5 sec as of 2021-10-01) because faster rates interfere with buttons
-          ;; Because of that we want to tick when app state changes
+          ;; Because of that we want to tick when app state changes -- so the user doesn't have to wait 5 seconds after opening
           (-> rn/AppState
               (j/call :addEventListener
                       "change"
@@ -95,32 +96,25 @@
                   (j/get :default)
                   (j/call :getAllKeys)
                   <p!
-                  (->> (mapv
-                         (fn [k]
-                           (when (not= k app-db-key)
-                             (go
-                               (-> async-storage
-                                   (j/get :default)
-                                   (j/call :getItem k)
-                                   <p!
-                                   de-serialize
-                                   (select-keys [:app-db/current-time
-                                                 :app-db/version])
-                                   tap>)))))))
+                  js->clj
+                  (->> (remove (fn [k] (= app-db-key k))))
+                  vec
+                  (#(>evt [:set-backup-keys %])))
               (catch js/Object e
                 (tap> (str "error getting all async storage keys " e))
                 (-> rn/Alert (j/call :alert "error getting all async storage keys " (str e))))))
           ))
 
 (reg-fx :create-backup
-        (fn [{version :app-db/version
-              t       :app-db/current-time
-              :as     app-db}]
+        (fn [{version   :app-db/version
+              timestamp :app-db/current-time
+              :as       app-db}]
           (go
             (try
               (-> async-storage
                   (j/get :default)
-                  (j/call :setItem (str "@-" t "-" version) (serialize app-db)))
+                  (j/call :setItem (str "@-" (t/date-time timestamp)  "--" version) (serialize app-db)))
+              (>evt [:load-backup-keys])
               (catch js/Object e
                 (tap> (str "error creating backup " e))
                 (-> rn/Alert (j/call :alert "error creating backup " (str e))))))))

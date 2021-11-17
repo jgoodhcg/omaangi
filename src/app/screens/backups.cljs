@@ -20,8 +20,8 @@
 (defn screen [props]
   (r/as-element
     [(fn []
-       (let [theme (->> [:theme] <sub get-theme)
-             ]
+       (let [theme       (->> [:theme] <sub get-theme)
+             backup-keys (<sub [:backup-keys])]
 
          ;; TODO justin 2021-02-07 Do we need safe area view everywhere?
          [:> rn/ScrollView {:style (merge (tw "flex flex-1")
@@ -34,10 +34,9 @@
           [:> rn/View {:style (tw "flex flex-col")}
 
            [:> rn/View {:style (tw "flex flex-row flex-wrap items-center mb-8")}
-            (for [{version :version
-                   date    :date} [{:version 1 :date "2021-11-1"} {:version 2 :date "2021-11-2"}]]
+            (for [k backup-keys]
               [:> rn/View {:key (str (random-uuid))}
-               [:> paper/Text (str "version: " version " date: " date)]])]
+               [:> paper/Text k]])]
 
            [:> paper/Button {:mode     "outlined"
                              :icon     "plus"
