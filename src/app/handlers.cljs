@@ -694,3 +694,9 @@
   {:db            db
    :delete-backup k})
 (reg-event-fx :delete-backup [base-interceptors] delete-backup)
+
+(defn restore-backup
+  [{:keys [db]} [_ k]]
+  {:db             db
+   :restore-backup k})
+(reg-event-fx :restore-backup [base-interceptors] restore-backup)

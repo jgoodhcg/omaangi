@@ -3,13 +3,17 @@
    ["@react-native-async-storage/async-storage" :as async-storage]
    ["expo-constants" :as expo-constants]
    ["react-native" :as rn]
-   [re-frame.core :refer [reg-fx]]
+
    [applied-science.js-interop :as j]
-   [app.helpers :refer [>evt]]
-   [app.db :as db :refer [default-app-db serialize de-serialize]]
    [cljs.core.async :refer [go <!]]
    [cljs.core.async.interop :refer [<p!]]
-   [tick.alpha.api :as t]))
+   [re-frame.core :refer [reg-fx]]
+   [tick.alpha.api :as t]
+
+   [app.helpers :refer [>evt]]
+   [app.db :as db :refer [default-app-db serialize de-serialize]]
+   [app.screens.core :refer [screens]]))
+
 
 (def !navigation-ref (clojure.core/atom nil))
 
@@ -131,3 +135,23 @@
               (catch js/Object e
                 (tap> (str "error deleting backup " e))
                 (-> rn/Alert (j/call :alert "error deleting backup " (str e))))))))
+
+(reg-fx :restore-backup
+        (fn [k]
+          (go
+            (try
+              (-> async-storage
+                  (j/get :default)
+                  (j/call :getItem k)
+                  <p!
+                  ((fn [local-store-value]
+                     (if (some? local-store-value)
+                       (do
+                         (>evt [:load-db (-> local-store-value de-serialize
+                                             ;; this merge handles accretion to the db spec
+                                             (->> (merge default-app-db)))])
+                         (>evt [:navigate (:day screens)]))
+                       (-> rn/Alert (j/call :alert "Unable to restore backup"))))))
+              (catch js/Object e
+                (tap> (str "error restoring backup " e))
+                (-> rn/Alert (j/call :alert "error restoring backup " (str e))))))))
