@@ -688,3 +688,9 @@
   {:db               db
    :load-backup-keys true})
 (reg-event-fx :load-backup-keys [base-interceptors] load-backup-keys)
+
+(defn delete-backup
+  [{:keys [db]} [_ k]]
+  {:db            db
+   :delete-backup k})
+(reg-event-fx :delete-backup [base-interceptors] delete-backup)

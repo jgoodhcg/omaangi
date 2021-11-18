@@ -118,3 +118,16 @@
               (catch js/Object e
                 (tap> (str "error creating backup " e))
                 (-> rn/Alert (j/call :alert "error creating backup " (str e))))))))
+
+(reg-fx :delete-backup
+        (fn [k]
+          (go
+            (try
+              (-> async-storage
+                  (j/get :default)
+                  (j/call :removeItem k)
+                  <p!
+                  (#(>evt [:load-backup-keys])))
+              (catch js/Object e
+                (tap> (str "error deleting backup " e))
+                (-> rn/Alert (j/call :alert "error deleting backup " (str e))))))))

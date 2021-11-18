@@ -46,4 +46,4 @@
                 [:> paper/Subheading {:style (tw "pl-2")} k]
                 [:> paper/Button {:icon "history" :on-press #(tap> "I live again!")} "restore"]
                 [:> paper/Button {:icon "share" :on-press #(tap> "Share me with the world!")} "export"]
-                [:> paper/Button {:icon "delete" :on-press #(tap> "Nooooooooo!")} "delete"]]])]]]))]))
+                [:> paper/Button {:icon "delete" :on-press #(>evt [:delete-backup k])} "delete"]]])]]]))]))
