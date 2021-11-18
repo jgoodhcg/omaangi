@@ -45,5 +45,5 @@
                [:> paper/Surface {:style (tw "flex flex-col w-full mb-2 p-2 items-start")}
                 [:> paper/Subheading {:style (tw "pl-2")} k]
                 [:> paper/Button {:icon "history" :on-press #(>evt [:restore-backup k])} "restore"]
-                [:> paper/Button {:icon "share" :on-press #(tap> "Share me with the world!")} "export"]
+                [:> paper/Button {:icon "share" :on-press #(>evt [:export-backup k])} "export"]
                 [:> paper/Button {:icon "delete" :on-press #(>evt [:delete-backup k])} "delete"]]])]]]))]))

@@ -700,3 +700,9 @@
   {:db             db
    :restore-backup k})
 (reg-event-fx :restore-backup [base-interceptors] restore-backup)
+
+(defn export-backup
+  [{:keys [db]} [_ k]]
+  {:db            db
+   :export-backup k})
+(reg-event-fx :export-backup [base-interceptors] export-backup)

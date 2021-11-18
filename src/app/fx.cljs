@@ -155,3 +155,20 @@
               (catch js/Object e
                 (tap> (str "error restoring backup " e))
                 (-> rn/Alert (j/call :alert "error restoring backup " (str e))))))))
+
+(reg-fx :export-backup
+        (fn [k]
+          (go
+            (try
+              (-> async-storage
+                  (j/get :default)
+                  (j/call :getItem k)
+                  <p!
+                  ((fn [local-store-value]
+                     (if (some? local-store-value)
+                       (-> rn/Share (j/call :share #js {:message local-store-value :title k}))
+                       (-> rn/Alert (j/call :alert "Unable to export backup")))
+                     )))
+              (catch js/Object e
+                (tap> (str "error exporting backup " e))
+                (-> rn/Alert (j/call :alert "error exporting backup " (str e))))))))
