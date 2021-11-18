@@ -31,13 +31,19 @@
 
           [top-section/component props (:backups screens)]
 
-          [:> rn/View {:style (tw "flex flex-col")}
+          [:> rn/View {:style (tw "flex flex-col p-2")}
 
-           [:> rn/View {:style (tw "flex flex-row flex-wrap items-center mb-8")}
+           [:> paper/Button {:mode     "contained"
+                             :icon     "content-save"
+                             :style    (tw "mb-8")
+                             :on-press #(>evt [:create-backup])}
+            "Save a backup"]
+
+           [:> rn/View {:style (tw "flex flex-row flex-wrap items-center")}
             (for [k backup-keys]
-              [:> rn/View {:key (str (random-uuid))}
-               [:> paper/Text k]])]
-
-           [:> paper/Button {:mode     "outlined"
-                             :icon     "plus"
-                             :on-press #(>evt [:create-backup])}]]]))]))
+              [:> rn/View {:key k :style (tw "w-full")}
+               [:> paper/Surface {:style (tw "flex flex-col w-full mb-2 p-2 items-start")}
+                [:> paper/Subheading {:style (tw "pl-2")} k]
+                [:> paper/Button {:icon "history" :on-press #(tap> "I live again!")} "restore"]
+                [:> paper/Button {:icon "share" :on-press #(tap> "Share me with the world!")} "export"]
+                [:> paper/Button {:icon "delete" :on-press #(tap> "Nooooooooo!")} "delete"]]])]]]))]))
