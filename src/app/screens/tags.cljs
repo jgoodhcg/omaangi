@@ -44,6 +44,6 @@
                              :style style}
                  [components/tag-button (p/map-of color label on-press)]]))]
 
-           [:> paper/Button {:mode     "outlined"
+           [:> paper/Button {:mode     "flat"
                              :icon     "plus"
-                             :on-press #(>evt [:create-tag])}]]]))]))
+                             :on-press #(>evt [:create-tag])} "Add new tag"]]]))]))

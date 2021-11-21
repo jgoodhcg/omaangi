@@ -38,4 +38,4 @@
 
            [:> paper/Button {:mode     "flat"
                              :icon     "plus"
-                             :on-press #(>evt [:create-template-from-nothing])}]]]))]))
+                             :on-press #(>evt [:create-template-from-nothing])} "Add new template"]]]))]))
