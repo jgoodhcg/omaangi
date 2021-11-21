@@ -706,3 +706,17 @@
   {:db            db
    :export-backup k})
 (reg-event-fx :export-backup [base-interceptors] export-backup)
+
+(defn set-report-interval
+  [db [_ {:keys [beginning end]}]]
+  (let [beginning (or beginning (->> db (select-one [:app-db.reports/beginning-date])))
+        end       (or end (->> db (select-one [:app-db.reports/end-date])))
+        beginning (-> beginning t/date)
+        end       (-> end t/date)]
+    (if (t/> end beginning)
+      (->> db
+           (setval [:app-db.reports/beginning-date] beginning)
+           (setval [:app-db.reports/end-date] end))
+      ;; TODO alert
+      db)))
+(reg-event-db :set-report-interval [base-interceptors] set-report-interval)

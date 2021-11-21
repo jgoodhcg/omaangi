@@ -391,9 +391,11 @@
       :app-db.view.date-time-picker/session-id          (ds/maybe uuid?)
       :app-db.view.date-time-picker/session-template-id (ds/maybe uuid?)
       :app-db.view.date-time-picker/field-key           (ds/maybe keyword?)
-      :app-db.view.date-time-picker/id                  (ds/maybe (s/spec #{:day :session :session-template}))
+      :app-db.view.date-time-picker/id                  (ds/maybe (s/spec #{:day :session :session-template :report}))
       :app-db.view.color-picker/visible                 boolean?
-      :app-db.view.color-picker/value                   (ds/maybe ::color)}}))
+      :app-db.view.color-picker/value                   (ds/maybe ::color)
+      :app-db.reports/beginning-date                    t/date?
+      :app-db.reports/end-date                          t/date?}}))
 
 (comment
   (s/explain app-db-spec (merge {:settings {:theme :dark}
@@ -455,7 +457,9 @@
        :app-db.view.date-time-picker/field-key           nil
        :app-db.view.date-time-picker/id                  nil
        :app-db.view.color-picker/visible                 false
-       :app-db.view.color-picker/value                   nil})))
+       :app-db.view.color-picker/value                   nil
+       :app-db.reports/beginning-date                    (-> (t/now) (t/- (t/new-duration 7 :days)) (t/date))
+       :app-db.reports/end-date                          (-> (t/now) (t/date))})))
 
 ;;
 ;; serialization

@@ -732,3 +732,17 @@
   [db _]
   (->> db (select-one [:app-db/backup-keys])))
 (reg-sub :backup-keys backup-keys)
+
+(defn report-interval
+  [db _]
+  (let [{beginning :app-db.reports/beginning-date
+         end       :app-db.reports/end-date}
+        (->> db (select-one
+                  [(sp/submap
+                     [:app-db.reports/beginning-date
+                      :app-db.reports/end-date])]))]
+    {:beginning-value (-> beginning (t/at "00:00") t/inst)
+     :end-value       (-> end (t/at "00:00") t/inst)
+     :beginning-label (-> beginning t/date str)
+     :end-label       (-> end t/date str)}))
+(reg-sub :report-interval report-interval)

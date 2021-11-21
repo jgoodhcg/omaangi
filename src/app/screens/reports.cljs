@@ -3,11 +3,15 @@
    ["react-native" :as rn]
    ["react-native-paper" :as paper]
    ["react-native-chart-kit" :as charts]
+   ["react-native-modal-datetime-picker" :default DateTimePicker]
 
    [applied-science.js-interop :as j]
    [reagent.core :as r]
 
-   [app.helpers :refer [<sub >evt get-theme]]
+   [app.components.time-related :as tm]
+   [app.screens.core :refer [screens]]
+   [app.components.generic-top-section :as top-section]
+   [app.helpers :refer [<sub >evt get-theme clear-datetime-picker]]
    [app.tailwind :refer [tw]]
    [app.db :refer [generate-color]]))
 
@@ -116,15 +120,46 @@
                                :chartConfig (j/lit chart-config)}]])
 
 (defn interval-buttons []
-  [:> rn/View (tw "flex flex-row justify-around py-4")
-   [:> paper/Button
-    {:mode     "flat"
-     :on-press #(tap> "hello")}
-    "2021-06-20"]
-   [:> paper/Button
-    {:mode     "flat"
-     :on-press #(tap> "hello")}
-    "2021-06-27"]])
+  (let [{:keys [beginning-value
+                beginning-label
+                end-label
+                end-value]} (<sub [:report-interval])
+        {:date-time-picker/keys [value mode visible field-key]
+         dtp-id                 :date-time-picker/id}
+        (<sub [:date-time-picker])]
+
+    [:> rn/View (tw "flex py-4 px-2 items-center")
+     (when (and (some? value)
+                (= dtp-id :report))
+       [:> DateTimePicker
+        {:is-visible           visible
+         :is-dark-mode-enabled true
+         :date                 value
+         :mode                 mode
+
+         :on-hide    #(do
+                        (tap> "hidden")
+                        (>evt clear-datetime-picker))
+         :on-cancel  #(do
+                        (tap> "cancelled")
+                        (>evt clear-datetime-picker))
+         :on-confirm #(do
+                        (tap> (str "Update " field-key
+                                   " as " %))
+                        (>evt [:set-report-interval
+                               {field-key %}])
+                        (>evt clear-datetime-picker))}])
+
+     [:> paper/Subheading "Report interval"]
+     [:> rn/View (tw "flex flex-row justify-around")
+      [tm/date-button {:value     beginning-value
+                       :label     beginning-label
+                       :dtp-id    :report
+                       :field-key :beginning}]
+      [tm/date-button {:value     end-value
+                       :label     end-label
+                       :dtp-id    :report
+                       :field-key :end}]]]))
 
 (defn screen [props]
   (r/as-element
@@ -140,7 +175,11 @@
             [:> rn/View
              [:> rn/StatusBar {:visibility "hidden"}]
 
+             [top-section/component props (:settings screens)]
+
              [interval-buttons]
+
+             [:> paper/Paragraph "Pie chart shows tracked time only and a subset of tags"]
 
              [pie-chart]
 
