@@ -566,17 +566,20 @@
 (reg-event-db :delete-template [base-interceptors] delete-template)
 
 (defn delete-session-template
-  [db [_ {id :session-template/id}]]
+  [{:keys [db]} [_ {id :session-template/id}]]
   (let [selected-template-id (->> db (select-one [:app-db.selected/template]))]
-    (->> db
-         (transform [:app-db/session-templates] #(dissoc % id))
-         (transform [:app-db/templates (sp/keypath selected-template-id)
-                     :template/session-templates]
-                    (fn [session-templates]
-                      (->> session-templates
-                           (remove #(= id (:session-template/id %)))
-                           vec))))))
-(reg-event-db :delete-session-template [base-interceptors] delete-session-template)
+    {:db (->> db
+              (transform [:app-db/templates (sp/must selected-template-id)
+                          :template/session-templates]
+                         (fn [session-template-ids]
+                           (->> session-template-ids
+                                (remove #(= id %))
+                                vec)))
+              (transform [:app-db/session-templates] #(dissoc % id)))
+     :fx [[:dispatch [:navigate (:template screens)]]
+          [:set-selected-session-template nil]]}))
+
+(reg-event-fx :delete-session-template [base-interceptors] delete-session-template)
 
 (defn create-session-template-from-event
   [{:keys [db new-uuid now]} [_ event]]

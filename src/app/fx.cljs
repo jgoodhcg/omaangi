@@ -172,3 +172,13 @@
               (catch js/Object e
                 (tap> (str "error exporting backup " e))
                 (-> rn/Alert (j/call :alert "error exporting backup " (str e))))))))
+
+;; Some helpful repl stuff
+(comment
+  ;; Hard reset app-db
+  (do
+    (>evt [:stop-ticking])
+    (>evt [:initialize-db])
+    (>evt [:save-db]))
+
+  )
