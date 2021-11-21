@@ -46,6 +46,10 @@
        (t/instant? stop)
        (t/< start stop)))
 
+(defn start-before-stop-times [{:session-template/keys [start stop]}]
+  (and (t/time? start)
+       (t/time? stop)
+       (t/< start stop)))
 ;;
 ;; independent generators
 ;;

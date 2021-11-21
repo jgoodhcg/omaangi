@@ -8,7 +8,7 @@
                           debug]]
    [com.rpl.specter :as sp :refer [select select-one setval transform selected-any?]]
    [clojure.spec.alpha :as s]
-   [app.db :as db :refer [default-app-db app-db-spec start-before-stop]]
+   [app.db :as db :refer [default-app-db app-db-spec start-before-stop start-before-stop-times]]
    [tick.alpha.api :as t]
    [potpuri.core :as p]
    [app.screens.core :refer [screens]]
@@ -539,19 +539,27 @@
           :as          session-template}]]
   (tap> (p/map-of :u-s-t session-template))
   (let [c                (make-color-if-some color-hex)
+        old-times        (->> db (select-one [:app-db/session-templates
+                                              (sp/must id)
+                                              (sp/submap [:session-template/start
+                                                          :session-template/stop])]))
         session-template (-> session-template
                              (dissoc :session-template/color-hex)
                              (dissoc :session-template/remove-color)
                              (p/update-if-contains :session-template/start #(-> % t/instant t/time))
-                             (p/update-if-contains :session-template/stop #(-> % t/instant t/time)))]
-    (tap> (p/map-of :u-s-t-2 session-template))
-    (->> db
-         (transform [:app-db/session-templates (sp/keypath id)]
-                    #(merge (if remove-color
-                              (dissoc % :session-template/color)
-                              %)
-                            session-template
-                            (when (some? c) {:session-template/color c}))))))
+                             (p/update-if-contains :session-template/stop #(-> % t/instant t/time))
+                             (->> (merge old-times)))
+        valid-stamps     (start-before-stop-times session-template)]
+    (tap> (p/map-of :u-s-t-2 session-template valid-stamps))
+    (if valid-stamps
+      (->> db
+           (transform [:app-db/session-templates (sp/keypath id)]
+                      #(merge (if remove-color
+                                (dissoc % :session-template/color)
+                                %)
+                              session-template
+                              (when (some? c) {:session-template/color c}))))
+      db)))
 (reg-event-db :update-session-template [base-interceptors] update-session-template)
 
 (defn delete-template

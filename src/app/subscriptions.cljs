@@ -124,11 +124,13 @@
 
 (defn time->top-position
   [time zoom]
-  (->> time
-       (t/new-interval (t/time "00:00"))
-       t/duration
-       t/minutes
-       (* zoom)))
+  (try
+    (->> time
+         (t/new-interval (t/time "00:00"))
+         t/duration
+         t/minutes
+         (* zoom))
+    (catch js/Object _ (-> 1 (* zoom)))))
 
 (defn instant-or-time->top-position
   [x zoom]
@@ -695,11 +697,13 @@
              ;; session-template/is-selected gets renamed to session-ish-render/is-selected deeper in the call chain
              (mapv #(merge % {:session-template/is-selected
                               (= (:session-template/id %) selected-session-template-id)}))
-             (sort-by (fn [s] (->> s
-                                   :session-template/start
-                                   (t/new-interval (t/time "00:00"))
-                                   t/duration
-                                   t/millis)))
+             (sort-by (fn [s] (try
+                                (->> s
+                                     :session-template/start
+                                     (t/new-interval (t/time "00:00"))
+                                     t/duration
+                                     t/millis)
+                                (catch js/Object _ 0))))
              vec ;; get-collision-groups doesn't seem to like empty lists `'()`
              (get-collision-groups)
              (transform [sp/ALL sp/INDEXED-VALS]
