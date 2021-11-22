@@ -154,6 +154,8 @@
 
              [:> paper/Divider]
 
+             [:> paper/paragraph "Cumulative time of tracked sessions with the same set of tags"]
+
              [pie-chart]
 
              [:> paper/Divider]
