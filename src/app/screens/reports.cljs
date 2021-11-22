@@ -15,34 +15,6 @@
    [app.tailwind :refer [tw]]
    [app.db :refer [generate-color]]))
 
-
-(def tmp-pie-chart-data
-  [{:name            "Tag 1"
-    :min             1000
-    :color           (-> (generate-color) (j/call :hex))
-    :legendFontColor "#7f7f7f"
-    :legendFontSize  15}
-   {:name            "Tag 2"
-    :min             10300
-    :color           (-> (generate-color) (j/call :hex))
-    :legendFontColor "#7f7f7f"
-    :legendFontSize  15}
-   {:name            "Tag 3"
-    :min             13000
-    :color           (-> (generate-color) (j/call :hex))
-    :legendFontColor "#7f7f7f"
-    :legendFontSize  15}
-   {:name            "Tag 4"
-    :min             5000
-    :color           (-> (generate-color) (j/call :hex))
-    :legendFontColor "#7f7f7f"
-    :legendFontSize  15}
-   {:name            "Tag 5"
-    :min             11100
-    :color           (-> (generate-color) (j/call :hex))
-    :legendFontColor "#7f7f7f"
-    :legendFontSize  15}])
-
 (def tmp-stacked-data
   {:labels    ["mon" "tue" "wed" "thu" "fri" "sat" "sun"]
    :legend    ["time logged" "plan executed" "alignment"]
@@ -89,7 +61,7 @@
  :useShadowColorFromDataset     false})
 
 (defn pattern-graph []
-  [:> rn/View (tw "p-2")
+  [:> rn/View (tw "p-2 my-6")
    [:> rn/View (tw "flex flex-col")
     (for [{:keys [day hours]} tmp-pattern-data]
       [:> rn/View {:style (tw "flex flex-row justify-between pb-1")
@@ -102,18 +74,19 @@
                       :key   (str (random-uuid))}])])]])
 
 (defn pie-chart []
-  [:> rn/View (tw "p-2")
-   [:> charts/PieChart
-    {:data            (j/lit tmp-pie-chart-data)
-     :width           400
-     :height          250
-     :chartConfig     (j/lit chart-config)
-     :accessor        "min"
-     :backgroundColor "transparent"
-     :paddingLeft     "15"}]])
+  (let [data (<sub [:pie-chart-data])]
+    [:> rn/View (tw "p-2")
+     [:> charts/PieChart
+      {:data            (j/lit data)
+       :width           400
+       :height          250
+       :chartConfig     (j/lit chart-config)
+       :accessor        "min"
+       :backgroundColor "transparent"
+       :paddingLeft     "15"}]]))
 
 (defn stacked-bar-chart []
-  [:> rn/View (tw "p-2")
+  [:> rn/View (tw "p-2 my-6")
    [:> charts/StackedBarChart {:data        (j/lit tmp-stacked-data)
                                :width       400
                                :height      220
@@ -179,10 +152,14 @@
 
              [interval-buttons]
 
-             [:> paper/Paragraph "Pie chart shows tracked time only and a subset of tags"]
+             [:> paper/Divider]
 
              [pie-chart]
 
+             [:> paper/Divider]
+
              [pattern-graph]
+
+             [:> paper/Divider]
 
              [stacked-bar-chart]]]]]))]))

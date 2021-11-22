@@ -194,12 +194,12 @@
                                     :session-template/color mixed-color}))))))))
 
 (defn replace-tag-refs-with-objects
-  [indexed-tags session]
-  (->> session
+  [indexed-tags session-ish]
+  (->> session-ish
        (transform [(sp/cond-path
                      (sp/must :session/tags) :session/tags
                      (sp/must :session-template/tags) :session-template/tags)]
-                  (fn [tag-ids] (->> tag-ids (map #(-> indexed-tags (get %))))))))
+                  (fn [tag-ids] (->> tag-ids (mapv #(-> indexed-tags (get %))))))))
 
 (defn set-render-props
   [zoom
@@ -745,8 +745,65 @@
                   [(sp/submap
                      [:app-db.reports/beginning-date
                       :app-db.reports/end-date])]))]
-    {:beginning-value (-> beginning (t/at "00:00") t/inst)
-     :end-value       (-> end (t/at "00:00") t/inst)
-     :beginning-label (-> beginning t/date str)
-     :end-label       (-> end t/date str)}))
+    {:beginning-value               (-> beginning (t/at "00:00") t/inst)
+     :end-value                     (-> end (t/at "00:00") t/inst)
+     :beginning-label               (-> beginning t/date str)
+     :end-label                     (-> end t/date str)
+     :app-db.reports/beginning-date beginning
+     :app-db.reports/end-date       end}))
 (reg-sub :report-interval report-interval)
+
+(defn pie-chart-data
+  [[calendar
+    sessions
+    tags
+    report-interval] _]
+
+  (let [{beg-intrvl :app-db.reports/beginning-date
+         end-intrvl :app-db.reports/end-date}
+        report-interval
+        days            (vec (t/range beg-intrvl
+                                      (t/+ end-intrvl
+                                           (t/new-period 1 :days))))
+        session-ids     (->> calendar
+                             (select [(sp/submap days)
+                                      sp/MAP-VALS
+                                      :calendar/sessions])
+                             flatten
+                             set
+                             vec)
+        sessions-tagged (->> sessions
+                             (select [(sp/submap session-ids)
+                                      sp/MAP-VALS])
+                             (filter #(= :session/track (:session/type %)))
+                             (mapv (partial replace-tag-refs-with-objects tags))
+                             (mapv (partial set-session-ish-color {:hex true})))
+        results         (->> sessions-tagged
+                             (mapv (fn [{session-tags :session/tags :as session-tagged}]
+                                     (merge session-tagged
+                                            {:combined-tag-labels
+                                             (->> session-tags
+                                                  (mapv :tag/label)
+                                                  (join " "))})))
+                             (group-by :combined-tag-labels)
+                             vals
+                             (mapv (fn [session-group]
+                                     {:name            (-> session-group first :combined-tag-labels)
+                                      :min             (->> session-group
+                                                            (mapv #(-> (t/between
+                                                                         (:session/start %)
+                                                                         (:session/stop %))
+                                                                       (t/minutes)))
+                                                            (reduce +))
+                                      :color           (-> session-group first :session/color)
+                                      :legendFontColor "#7f7f7f"
+                                      :legendFontSize  15})))]
+    results))
+(reg-sub :pie-chart-data
+
+         :<- [:calendar]
+         :<- [:sessions]
+         :<- [:tags]
+         :<- [:report-interval]
+
+         pie-chart-data)
