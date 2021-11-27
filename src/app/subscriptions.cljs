@@ -807,3 +807,21 @@
          :<- [:report-interval]
 
          pie-chart-data)
+
+(defn pie-chart-tag-groups
+  [db _]
+  (->> db
+       (select-one [:app-db.reports.pie-chart/tag-groups])))
+(reg-sub :pie-chart-tag-groups pie-chart-tag-groups)
+
+(defn pie-chart-tag-groups-hydrated
+  [[tag-groups tags] _]
+  (->> tag-groups
+       (transform [sp/MAP-VALS sp/ALL] #(get tags %))
+       (transform [sp/MAP-VALS sp/ALL (sp/must :tag/color)] hex-if-some)))
+(reg-sub :pie-chart-tag-groups-hydrated
+
+         :<- [:pie-chart-tag-groups]
+         :<- [:tags]
+
+         pie-chart-tag-groups-hydrated)

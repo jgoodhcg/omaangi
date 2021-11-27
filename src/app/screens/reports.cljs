@@ -74,8 +74,9 @@
                       :key   (str (random-uuid))}])])]])
 
 (defn pie-chart []
-  (let [data (<sub [:pie-chart-data])]
-    [:> rn/View (tw "p-2")
+  (let [data       (<sub [:pie-chart-data])
+        tag-groups (<sub [:pie-chart-tag-groups-hydrated])]
+    [:> rn/View (tw "px-2 py-6 flex flex-col")
      [:> charts/PieChart
       {:data            (j/lit data)
        :width           400
@@ -83,8 +84,26 @@
        :chartConfig     (j/lit chart-config)
        :accessor        "min"
        :backgroundColor "transparent"
-       :paddingLeft     "15"}]]))
+       :paddingLeft     "15"}]
 
+     (for [[i tags] tag-groups]
+       [:> rn/View {:key i :style (tw "flex flex-row py-3 items-center justify-between")}
+        [:> paper/Headline "{"]
+        (for [{:tag/keys [id color label]} tags]
+          [:> rn/View {:key id}
+           [:> paper/Text (str label " " color)]])
+        [:> paper/Button {:mode     "outlined"
+                          :icon     "plus"
+                          :on-press #(tap> "add mee")} "Add tag"]
+
+        [:> paper/Headline "}"]
+        ]
+       )
+     [:> paper/Button {:mode     "contained"
+                       :icon     "playlist-plus"
+                       :on-press #(>evt [:add-pie-chart-tag-group])} "Add tag group"]]))
+
+(for [id #{:a :c3 :b :C :d :s1 }] id)
 (defn stacked-bar-chart []
   [:> rn/View (tw "p-2 my-6")
    [:> charts/StackedBarChart {:data        (j/lit tmp-stacked-data)

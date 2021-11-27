@@ -130,11 +130,12 @@
                              (when (and (-> current-route-name (= (:template screens)))
                                         (-> prev-route-name (= (:session-template screens))))
                                (>evt [:set-selected-session-template nil]))
+
                              (swap! !route-name-ref merge {:current current-route-name})))}
 
        [:> (drawer-navigator) {:drawer-content         custom-drawer
                                :drawer-style           drawer-style
-                               :initial-route-name     (:day screens)
+                               :initial-route-name     (:reports screens)
                                :drawer-content-options {:active-tint-color   (-> theme (j/get :colors) (j/get :accent))
                                                         :inactive-tint-color (-> theme (j/get :colors) (j/get :text))}}
         (drawer-screen {:name      (:day screens)

@@ -731,3 +731,9 @@
       ;; TODO alert
       db)))
 (reg-event-db :set-report-interval [base-interceptors] set-report-interval)
+
+(defn add-pie-chart-tag-group
+  [{:keys [db new-uuid]} _]
+  {:db (->> db
+            (setval [:app-db.reports.pie-chart/tag-groups (sp/keypath new-uuid)] []))})
+(reg-event-fx :add-pie-chart-tag-group [base-interceptors id-gen] add-pie-chart-tag-group)
