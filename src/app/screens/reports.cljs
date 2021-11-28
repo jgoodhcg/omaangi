@@ -9,6 +9,7 @@
    [reagent.core :as r]
 
    [app.components.time-related :as tm]
+   [app.components.tag-related :as tags]
    [app.screens.core :refer [screens]]
    [app.components.generic-top-section :as top-section]
    [app.helpers :refer [<sub >evt get-theme clear-datetime-picker]]
@@ -86,17 +87,23 @@
        :backgroundColor "transparent"
        :paddingLeft     "15"}]
 
-     (for [[i tags] tag-groups]
-       [:> rn/View {:key i :style (tw "flex flex-row py-3 items-center justify-between")}
-        [:> paper/Headline "{"]
-        (for [{:tag/keys [id color label]} tags]
-          [:> rn/View {:key id}
-           [:> paper/Text (str label " " color)]])
-        [:> paper/Button {:mode     "outlined"
-                          :icon     "plus"
-                          :on-press #(tap> "add mee")} "Add tag"]
+     (for [[id {color :tag-group/color
+                label :tag-group-render/label }] tag-groups]
+       [:> rn/View {:key id :style (tw "flex pb-6 items-center justify-center")}
 
-        [:> paper/Headline "}"]
+        [:> paper/Button {:color    color
+                          :mode     "contained"
+                          :on-press #(tap> "hello")}
+         label]
+
+        ;; [tags/tags-component {:add-fn    #(>evt [:add-tag-to-pie-chart-tag-group
+        ;;                                          {:pie-chart.tag-group/id id
+        ;;                                           :tag/id                 %}])
+        ;;                       :remove-fn #(>evt [:remove-tag-from-pie-chart-tag-group
+        ;;                                          {:pie-chart.tag-group/id id
+        ;;                                           :tag/id                 %}])
+        ;;                       :tags      tags}]
+
         ]
        )
      [:> paper/Button {:mode     "contained"
@@ -172,8 +179,6 @@
              [interval-buttons]
 
              [:> paper/Divider]
-
-             [:> paper/Paragraph "Cumulative time of tracked sessions with the same set of tags"]
 
              [pie-chart]
 

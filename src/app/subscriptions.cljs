@@ -137,59 +137,62 @@
   (cond (t/time? x)    (time->top-position x zoom)
         (t/instant? x) (instant->top-position x zoom)))
 
+(defn mix-tag-colors
+  "Takes in a vec of color objects"
+  [tag-colors]
+  (->> tag-colors
+       vec
+       (reduce-kv
+         ;; reduce-kv and i are remnants of trying to make
+         ;; some sort of mixing algorithm dependent on tag position
+         (fn [{:keys [mixed-color]} i c2]
+           {:mixed-color
+            (cond
+              (and (is-color? mixed-color)
+                   (is-color? c2))
+              (-> mixed-color
+                  (j/call :mix c2
+                          (max 0.5
+                               (-> 1 (/ (count tag-colors))))))
+
+              (is-color? mixed-color)
+              mixed-color
+
+              (is-color? c2)
+              c2)})
+         {:mixed-color (or (first tag-colors)
+                           ;; TODO is this a good default?
+                           ;; should this default live somewhere else?
+                           (color "#ababab"))})))
+
 (defn set-session-ish-color
-  "Tag refs must be replaced with values and session/tag colors must be color objects"
+  "Tag refs must be replaced with values and session-ish/tag colors must be color objects"
   [{:keys [hex]} session-ish]
   (->> session-ish
        (transform []
                   (fn [{session-color          :session/color
                         session-template-color :session-template/color
                         :as                    s}]
-                    (let [c                (or session-color session-template-color)
-                          tag-colors-path  [(sp/cond-path
-                                              (sp/must :session/tags) :session/tags
-                                              (sp/must :session-template/tags) :session-template/tags)
-                                            sp/ALL
-                                            (sp/keypath :tag/color)]
-                          ;; need to put :not-a-color in tag color list so that reduce runs
-                          ;; the reducer fn which takes care of the case there are no tag colors
-                          tag-colors       (->> s (select tag-colors-path) (remove nil?) vec)
-                          tag-colors-count (count tag-colors)]
+                    (let [c               (or session-color session-template-color)
+                          tag-colors-path [(sp/cond-path
+                                             (sp/must :session/tags)          :session/tags
+                                             (sp/must :session-template/tags) :session-template/tags)
+                                           sp/ALL
+                                           (sp/keypath :tag/color)]
+                          tag-colors      (->> s (select tag-colors-path) (remove nil?) vec)]
                       (if-let [c c]
-                        ;; when there is a session color just hex it
-                        ;; hopefully it is ok to just add both types ...
+                        ;; when there is a color override just hex it
+                        ;; hopefully it is ok to just all key types ...
                         (merge s {:session/color          (if hex (hex-if-some c) c)
                                   :session-template/color (if hex (hex-if-some c) c)})
-                        ;; when there is NOT a session color mix tag colors
+                        ;; when there is NOT an override color mix tag colors
                         (merge s (let [mixed-color (->> tag-colors
-                                                        vec
-                                                        (reduce-kv
-                                                          ;; reduce-kv and i are remnants of trying to make
-                                                          ;; some sort of mixing algorithm dependent on tag position
-                                                          (fn [{:keys [mixed-color]} i c2]
-                                                            {:mixed-color
-                                                             (cond
-                                                               (and (is-color? mixed-color)
-                                                                    (is-color? c2))
-                                                               (-> mixed-color
-                                                                   (j/call :mix c2
-                                                                           (max 0.5
-                                                                                (-> 1 (/ tag-colors-count)))))
-
-                                                               (is-color? mixed-color)
-                                                               mixed-color
-
-                                                               (is-color? c2)
-                                                               c2)})
-                                                          {:mixed-color (or (first tag-colors)
-                                                                            ;; TODO is this a good default?
-                                                                            ;; should this default live somewhere else?
-                                                                            (color "#ababab"))})
+                                                        mix-tag-colors
                                                         :mixed-color
                                                         ((fn [c]
                                                            (if hex
                                                              (hex-if-some c)
-                                                             c))))]
+                                                             c)))) ]
                                    {:session/color          mixed-color
                                     :session-template/color mixed-color}))))))))
 
@@ -817,11 +820,42 @@
 (defn pie-chart-tag-groups-hydrated
   [[tag-groups tags] _]
   (->> tag-groups
-       (transform [sp/MAP-VALS sp/ALL] #(get tags %))
-       (transform [sp/MAP-VALS sp/ALL (sp/must :tag/color)] hex-if-some)))
+       (transform [sp/MAP-VALS (sp/must :tag-group/tags) sp/ALL] #(get tags %))
+       (transform [sp/MAP-VALS] (fn [{color-override :tag-group/color
+                                      tags           :tag-group/tags
+                                      :as            tag-group}]
+                                  (let [tag-colors            (->> tags
+                                                                   :tag/color)
+                                        {:keys [mixed-color]} (mix-tag-colors tag-colors)
+                                        c                     (or color-override mixed-color)]
+                                    (merge tag-group {:tag-group/color (hex-if-some c)}))))
+       (transform [sp/MAP-VALS] (fn [{tags :tag-group/tags
+                                      :as  tag-group}]
+                                  (let [combined-labels (-> tags (->> (mapv :tag/label)) (join " "))
+                                        label           (if (= " " combined-labels)
+                                                          "Empty tag group"
+                                                          combined-labels)]
+                                    (merge tag-group {:tag-group-render/label label}))))))
 (reg-sub :pie-chart-tag-groups-hydrated
 
          :<- [:pie-chart-tag-groups]
          :<- [:tags]
 
          pie-chart-tag-groups-hydrated)
+
+(defn pie-chart-selected-tag-group-id
+  [db _]
+  (->> db
+       (select-one [:app-db.reports.pie-chart/selected-tag-group])))
+(reg-sub :pie-chart-selected-tag-group-id pie-chart-selected-tag-group-id)
+
+(defn pie-chart-selected-tag-group
+  [[tag-groups selected-id]]
+  (->> tag-groups
+       (select-one [(sp/must selected-id)])))
+(reg-sub :pie-chart-selected-tag-group
+
+         :<- [:pie-chart-tag-groups-hydrated]
+         :<- [:pie-chart-selected-tag-group-id]
+
+         pie-chart-selected-tag-group)

@@ -735,5 +735,12 @@
 (defn add-pie-chart-tag-group
   [{:keys [db new-uuid]} _]
   {:db (->> db
-            (setval [:app-db.reports.pie-chart/tag-groups (sp/keypath new-uuid)] []))})
+            (setval [:app-db.reports.pie-chart/tag-groups (sp/keypath new-uuid)] {:tag-group/id new-uuid}))})
 (reg-event-fx :add-pie-chart-tag-group [base-interceptors id-gen] add-pie-chart-tag-group)
+
+(defn add-tag-to-pie-chart-tag-group
+  [db [_ {group-id :pie-chart.tag-group/id
+          tag-id   :tag/id}]]
+  (->> db
+       (transform [:app-db.reports.pie-chart/tag-groups (sp/must group-id)] #(conj % tag-id))))
+(reg-event-db :add-tag-to-pie-chart-tag-group [base-interceptors] add-tag-to-pie-chart-tag-group)

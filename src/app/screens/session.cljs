@@ -176,13 +176,14 @@
 
             [session-type-component (p/map-of type id)]
 
-            [tags/tags-component {:add-fn    #(>evt [:add-tag-to-session
-                                                     {:session/id id
-                                                      :tag/id     %}])
-                                  :remove-fn #(>evt [:remove-tag-from-session
-                                                     {:session/id id
-                                                      :tag/id     %}])
-                                  :tags      tags}]
+            [:> rn/View {:style (tw "mb-8")}
+             [tags/tags-component {:add-fn    #(>evt [:add-tag-to-session
+                                                      {:session/id id
+                                                       :tag/id     %}])
+                                   :remove-fn #(>evt [:remove-tag-from-session
+                                                      {:session/id id
+                                                       :tag/id     %}])
+                                   :tags      tags}]]
 
             [color-override/component {:update-fn      #(>evt [:update-session
                                                                {:session/color-hex %

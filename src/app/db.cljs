@@ -362,7 +362,15 @@
                      (s/and map? (s/every-kv uuid? ::template))
                      #(gen/fmap generate-templates (s/gen ::reasonable-number))))
 
-(s/def ::tag-group (s/coll-of uuid? :kind vector? :distinct true))
+(s/def ::tag-group-tags (s/coll-of uuid? :kind vector? :distinct true))
+
+(def tag-group-data-spec
+  (ds/spec {:name ::tag-group-ds
+            :spec {:tag-group/id             uuid?
+                   (ds/opt :tag-group/tags)  ::tag-group-tags
+                   (ds/opt :tag-group/color) ::color}}))
+
+(s/def ::tag-group tag-group-data-spec)
 
 (s/def ::tag-groups (s/and map? (s/every-kv uuid? ::tag-group)))
 
@@ -404,7 +412,8 @@
       :app-db.view.color-picker/value                   (ds/maybe ::color)
       :app-db.reports/beginning-date                    t/date?
       :app-db.reports/end-date                          t/date?
-      :app-db.reports.pie-chart/tag-groups              ::tag-groups}}))
+      :app-db.reports.pie-chart/tag-groups              ::tag-groups
+      :app-db.reports.pie-chart/selected-tag-group      (ds/maybe uuid?)}}))
 
 (comment
   (s/explain app-db-spec (merge {:settings {:theme :dark}
@@ -469,7 +478,8 @@
        :app-db.view.color-picker/value                   nil
        :app-db.reports/beginning-date                    (-> (t/now) (t/- (t/new-duration 7 :days)) (t/date))
        :app-db.reports/end-date                          (-> (t/now) (t/date))
-       :app-db.reports.pie-chart/tag-groups              {}})))
+       :app-db.reports.pie-chart/tag-groups              {}
+       :app-db.reports.pie-chart/selected-tag-group      nil})))
 
 ;;
 ;; serialization

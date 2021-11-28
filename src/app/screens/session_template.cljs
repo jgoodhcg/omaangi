@@ -114,13 +114,14 @@
 
             [time-stamps-component (p/map-of start stop id)]
 
-            [tags/tags-component {:add-fn    #(>evt [:add-tag-to-session-template
-                                                     {:session-template/id id
-                                                      :tag/id              %}])
-                                  :remove-fn #(>evt [:remove-tag-from-session-template
-                                                     {:session-template/id id
-                                                      :tag/id              %}])
-                                  :tags      tags}]
+            [:> rn/View {:style (tw "mb-8")}
+             [tags/tags-component {:add-fn    #(>evt [:add-tag-to-session-template
+                                                      {:session-template/id id
+                                                       :tag/id              %}])
+                                   :remove-fn #(>evt [:remove-tag-from-session-template
+                                                      {:session-template/id id
+                                                       :tag/id              %}])
+                                   :tags      tags}]]
 
             [color-override/component {:update-fn      #(>evt [:update-session-template
                                                                {:session-template/color-hex %

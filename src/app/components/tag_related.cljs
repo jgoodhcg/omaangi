@@ -76,7 +76,7 @@
   [{:keys [tags add-fn remove-fn]}]
   (let [there-are-tags (-> tags count (> 0))]
 
-    [:> rn/View {:style (tw "flex flex-row flex-wrap items-center mb-8")}
+    [:> rn/View {:style (tw "flex flex-row flex-wrap items-center")}
 
      (when there-are-tags
        (for [{:tag/keys [label color id]} tags]
