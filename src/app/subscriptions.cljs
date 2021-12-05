@@ -825,17 +825,22 @@
                                       tags           :tag-group/tags
                                       :as            tag-group}]
                                   (let [tag-colors            (->> tags
-                                                                   :tag/color)
+                                                                   (mapv :tag/color))
                                         {:keys [mixed-color]} (mix-tag-colors tag-colors)
                                         c                     (or color-override mixed-color)]
                                     (merge tag-group {:tag-group/color (hex-if-some c)}))))
        (transform [sp/MAP-VALS] (fn [{tags :tag-group/tags
                                       :as  tag-group}]
-                                  (let [combined-labels (-> tags (->> (mapv :tag/label)) (join " "))
+                                  (let [combined-labels (->> tags
+                                                             (mapv :tag/label)
+                                                             (join " "))
                                         label           (if (= " " combined-labels)
                                                           "Empty tag group"
                                                           combined-labels)]
-                                    (merge tag-group {:tag-group-render/label label}))))))
+                                    (merge tag-group {:tag-group-render/label label}))))
+       ;; The tag component requires that the tag colors be hex values
+       ;; TODO I should use a render key or something to be more explicit about this
+       (transform [sp/MAP-VALS (sp/must :tag-group/tags) sp/ALL (sp/must :tag/color)] hex-if-some)))
 (reg-sub :pie-chart-tag-groups-hydrated
 
          :<- [:pie-chart-tag-groups]

@@ -742,5 +742,25 @@
   [db [_ {group-id :pie-chart.tag-group/id
           tag-id   :tag/id}]]
   (->> db
-       (transform [:app-db.reports.pie-chart/tag-groups (sp/must group-id)] #(conj % tag-id))))
+       (transform [:app-db.reports.pie-chart/tag-groups
+                   (sp/must group-id)
+                   (sp/keypath :tag-group/tags)] #(conj (or % []) tag-id))))
 (reg-event-db :add-tag-to-pie-chart-tag-group [base-interceptors] add-tag-to-pie-chart-tag-group)
+
+(defn set-selected-pie-chart-tag-group
+  [db [_ {group-id :pie-chart.tag-group/id}]]
+
+  (->> db (setval [:app-db.reports.pie-chart/selected-tag-group] group-id)))
+(reg-event-db :set-selected-pie-chart-tag-group set-selected-pie-chart-tag-group)
+
+(defn remove-tag-from-pie-chart-tag-group
+  [db [_ {group-id :pie-chart.tag-group/id
+          tag-id   :tag/id}]]
+  (->> db
+       (transform [:app-db.reports.pie-chart/tag-groups
+                   (sp/must group-id)
+                   (sp/must :tag-group/tags)] (fn [tags]
+                                                (->> tags
+                                                     (remove #(= % tag-id))
+                                                     vec)))))
+(reg-event-db :remove-tag-from-pie-chart-tag-group [base-interceptors] remove-tag-from-pie-chart-tag-group)

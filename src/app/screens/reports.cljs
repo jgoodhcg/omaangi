@@ -75,8 +75,10 @@
                       :key   (str (random-uuid))}])])]])
 
 (defn pie-chart []
-  (let [data       (<sub [:pie-chart-data])
-        tag-groups (<sub [:pie-chart-tag-groups-hydrated])]
+  (let [data                             (<sub [:pie-chart-data])
+        tag-groups                       (<sub [:pie-chart-tag-groups-hydrated])
+        {selected-id :tag-group/id
+         :as         selected-tag-group} (<sub [:pie-chart-selected-tag-group])]
     [:> rn/View (tw "px-2 py-6 flex flex-col")
      [:> charts/PieChart
       {:data            (j/lit data)
@@ -84,28 +86,34 @@
        :height          250
        :chartConfig     (j/lit chart-config)
        :accessor        "min"
+       ;; :hasLegend       false
+       ;; :center          (j/lit [90 0])
        :backgroundColor "transparent"
        :paddingLeft     "15"}]
 
      (for [[id {color :tag-group/color
+                tags  :tag-group/tags
                 label :tag-group-render/label }] tag-groups]
-       [:> rn/View {:key id :style (tw "flex pb-6 items-center justify-center")}
+       (if (= id selected-id)
+         [:> rn/View {:key id :style (tw "flex pb-6")}
+          [tags/tags-component {:add-fn    #(>evt [:add-tag-to-pie-chart-tag-group
+                                                   {:pie-chart.tag-group/id id
+                                                    :tag/id                 %}])
+                                :remove-fn #(>evt [:remove-tag-from-pie-chart-tag-group
+                                                   {:pie-chart.tag-group/id id
+                                                    :tag/id                 %}])
+                                :tags      tags}]
+          [:> paper/Button {:icon     "cancel"
+                            :on-press #(>evt [:set-selected-pie-chart-tag-group
+                                              {:pie-chart.tag-group/id nil}])}
+           "stop editing tag group"]]
+         [:> rn/View {:key id :style (tw "flex pb-6")}
 
-        [:> paper/Button {:color    color
-                          :mode     "contained"
-                          :on-press #(tap> "hello")}
-         label]
-
-        ;; [tags/tags-component {:add-fn    #(>evt [:add-tag-to-pie-chart-tag-group
-        ;;                                          {:pie-chart.tag-group/id id
-        ;;                                           :tag/id                 %}])
-        ;;                       :remove-fn #(>evt [:remove-tag-from-pie-chart-tag-group
-        ;;                                          {:pie-chart.tag-group/id id
-        ;;                                           :tag/id                 %}])
-        ;;                       :tags      tags}]
-
-        ]
-       )
+          [:> paper/Button {:color    color
+                            :mode     "contained"
+                            :on-press #(>evt [:set-selected-pie-chart-tag-group
+                                              {:pie-chart.tag-group/id id}])}
+           label]]))
      [:> paper/Button {:mode     "contained"
                        :icon     "playlist-plus"
                        :on-press #(>evt [:add-pie-chart-tag-group])} "Add tag group"]]))
