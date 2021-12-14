@@ -95,7 +95,7 @@
                 tags  :tag-group/tags
                 label :tag-group-render/label }] tag-groups]
        (if (= id selected-id)
-         [:> rn/View {:key id :style (tw "flex pb-6")}
+         [:> rn/View {:key id :style (tw "flex pb-6 flex-col items-start")}
           [tags/tags-component {:add-fn    #(>evt [:add-tag-to-pie-chart-tag-group
                                                    {:pie-chart.tag-group/id id
                                                     :tag/id                 %}])
@@ -103,6 +103,10 @@
                                                    {:pie-chart.tag-group/id id
                                                     :tag/id                 %}])
                                 :tags      tags}]
+          [:> paper/Button {:icon     "delete"
+                            :on-press #(>evt [:remove-pie-chart-tag-group
+                                              {:pie-chart.tag-group/id id}])}
+           "remove tag group"]
           [:> paper/Button {:icon     "cancel"
                             :on-press #(>evt [:set-selected-pie-chart-tag-group
                                               {:pie-chart.tag-group/id nil}])}

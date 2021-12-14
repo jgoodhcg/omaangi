@@ -764,3 +764,9 @@
                                                      (remove #(= % tag-id))
                                                      vec)))))
 (reg-event-db :remove-tag-from-pie-chart-tag-group [base-interceptors] remove-tag-from-pie-chart-tag-group)
+
+(defn remove-pie-chart-tag-group
+  [db [_ {group-id :pie-chart.tag-group/id}]]
+  (->> db
+       (transform [:app-db.reports.pie-chart/tag-groups ] #(dissoc % group-id))))
+(reg-event-db :remove-pie-chart-tag-group [base-interceptors] remove-pie-chart-tag-group)

@@ -119,3 +119,9 @@
     (if right-side?
       :session/track
       :session/plan)))
+
+(defn combine-tag-labels
+  [tags]
+  (->> tags
+       (mapv :tag/label)
+       (join " ")))

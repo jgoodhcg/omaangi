@@ -15,6 +15,7 @@
    [tick.alpha.api :as t]
    [app.colors :refer [material-500-hexes white black]]
    [app.helpers :refer [touches
+                        combine-tag-labels
                         chance
                         prepend-zero
                         drop-keyword-sections
@@ -201,7 +202,8 @@
   (->> session-ish
        (transform [(sp/cond-path
                      (sp/must :session/tags) :session/tags
-                     (sp/must :session-template/tags) :session-template/tags)]
+                     (sp/must :session-template/tags) :session-template/tags
+                     (sp/must :tag-group/tags) :tag-group/tags)]
                   (fn [tag-ids] (->> tag-ids (mapv #(-> indexed-tags (get %))))))))
 
 (defn set-render-props
@@ -760,11 +762,16 @@
   [[calendar
     sessions
     tags
-    report-interval] _]
+    report-interval
+    tag-groups] _]
 
   (let [{beg-intrvl :app-db.reports/beginning-date
          end-intrvl :app-db.reports/end-date}
         report-interval
+        tag-groups      (->> tag-groups
+                             (select [sp/MAP-VALS])
+                             (transform [sp/ALL] #(replace-tag-refs-with-objects tags %)))
+        _               (tap> (p/map-of tag-groups))
         days            (vec (t/range beg-intrvl
                                       (t/+ end-intrvl
                                            (t/new-period 1 :days))))
@@ -783,12 +790,32 @@
                              (mapv (partial set-session-ish-color {:hex true})))
         results         (->> sessions-tagged
                              (mapv (fn [{session-tags :session/tags :as session-tagged}]
-                                     (merge session-tagged
-                                            {:combined-tag-labels
-                                             (->> session-tags
-                                                  (mapv :tag/label)
-                                                  (join " "))})))
-                             (group-by :combined-tag-labels)
+                                     (let [this-session-tags (->> session-tags
+                                                                  (mapv :tag/id)
+                                                                  set)
+                                           tag-group         (->> tag-groups
+                                                                  (some
+                                                                    #(let [tg-set
+                                                                           (->> %
+                                                                                (select [:tag-group/tags
+                                                                                         sp/ALL
+                                                                                         :tag/id])
+                                                                                set)]
+                                                                       (when (and (seq tg-set) ;; not empty
+                                                                                  (subset? tg-set this-session-tags)) %))))
+                                           tag-group-id      (:tag-group/id tag-group)
+                                           match             (when (some? tag-group-id)
+                                                               {:tag-group/id        tag-group-id
+                                                                :tag-group/color     (->> tag-group
+                                                                                          :tag-group/tags
+                                                                                          (mapv :tag/color)
+                                                                                          mix-tag-colors)
+                                                                :combined-tag-labels (-> tag-group
+                                                                                         :tag-group/tags
+                                                                                         combine-tag-labels)})]
+                                       (merge session-tagged match))))
+                             (filter (fn [{tag-group-id :tag-group/id}] (some? tag-group-id)))
+                             (group-by :tag-group/id)
                              vals
                              (mapv (fn [session-group]
                                      {:name            (-> session-group first :combined-tag-labels)
@@ -798,9 +825,11 @@
                                                                          (:session/stop %))
                                                                        (t/minutes)))
                                                             (reduce +))
-                                      :color           (-> session-group first :session/color)
+                                      :color           (-> session-group first :tag-group/color)
                                       :legendFontColor "#7f7f7f"
-                                      :legendFontSize  15})))]
+                                      :legendFontSize  15}))
+                             )]
+    (tap> (p/map-of results))
     results))
 (reg-sub :pie-chart-data
 
@@ -808,6 +837,7 @@
          :<- [:sessions]
          :<- [:tags]
          :<- [:report-interval]
+         :<- [:pie-chart-tag-groups]
 
          pie-chart-data)
 
@@ -831,9 +861,7 @@
                                     (merge tag-group {:tag-group/color (hex-if-some c)}))))
        (transform [sp/MAP-VALS] (fn [{tags :tag-group/tags
                                       :as  tag-group}]
-                                  (let [combined-labels (->> tags
-                                                             (mapv :tag/label)
-                                                             (join " "))
+                                  (let [combined-labels (-> tags combine-tag-labels)
                                         label           (if (= " " combined-labels)
                                                           "Empty tag group"
                                                           combined-labels)]
