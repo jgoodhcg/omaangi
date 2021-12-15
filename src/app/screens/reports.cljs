@@ -91,6 +91,11 @@
        :backgroundColor "transparent"
        :paddingLeft     "15"}]
 
+     ;; TODO put this in a tooltip with a graphic "How does this work?"
+     [:> paper/Paragraph
+      {:style (tw "mb-6")}
+      "Tracked sessions flow top down through each tag group below. By default a session matches when the tag group is a subset. Selecting equality forces a strict match."]
+
      (for [[id {color :tag-group/color
                 tags  :tag-group/tags
                 label :tag-group-render/label }] tag-groups]
@@ -118,8 +123,7 @@
                             :on-press #(>evt [:set-selected-pie-chart-tag-group
                                               {:pie-chart.tag-group/id id}])}
            label]]))
-     [:> paper/Button {:mode     "contained"
-                       :icon     "playlist-plus"
+     [:> paper/Button {:icon     "playlist-plus"
                        :on-press #(>evt [:add-pie-chart-tag-group])} "Add tag group"]]))
 
 (for [id #{:a :c3 :b :C :d :s1 }] id)
