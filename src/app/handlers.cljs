@@ -628,8 +628,9 @@
 
 (defn create-plan-session-from-session-template
   [{:keys [db new-uuid now]} [_ {session-template-id :session-template/id
-                                 template-id         :template/id}]]
-  (let [today    (t/date now)
+                                 template-id         :template/id
+                                 day                 :day}]]
+  (let [day      (or day (t/date now))
         {:session-template/keys
          [tags
           color
@@ -646,8 +647,8 @@
                       :session/created                         now
                       :session/last-edited                     now
                       :session/label                           label
-                      :session/start                           (-> start (t/on (t/date now)) t/instant)
-                      :session/stop                            (-> stop (t/on (t/date now)) t/instant)
+                      :session/start                           (-> start (t/on day) t/instant)
+                      :session/stop                            (-> stop (t/on day) t/instant)
                       :session/type                            :session/plan
                       :session/generated-from-template         template-id
                       :session/generated-from-session-template session-template-id
@@ -659,13 +660,14 @@
 
     {:db (->> db (setval [:app-db/sessions (sp/keypath new-uuid)] session))
      :fx [[:dispatch [:re-index-session {:old-indexes []
-                                         :new-indexes [today]
+                                         :new-indexes [day]
                                          :id          new-uuid}]]]}))
 (reg-event-fx :create-plan-session-from-session-template [base-interceptors id-gen insert-now] create-plan-session-from-session-template)
 
 (defn apply-template-to-selected-day
   [{:keys [db]} [_ {template-id :template/id}]]
-  (let [session-template-ids (->> db
+  (let [selected-day         (->> db (select-one [:app-db.selected/day]))
+        session-template-ids (->> db
                                   (select-one [:app-db/templates
                                                (sp/must template-id)
                                                :template/session-templates]))
@@ -674,7 +676,8 @@
                                           [:dispatch
                                            [:create-plan-session-from-session-template
                                             {:session-template/id st-id
-                                             :template/id         template-id}]])))
+                                             :template/id         template-id
+                                             :day                 selected-day}]])))
         all-dispatches       (conj session-creates [:dispatch [:navigate (:day screens)]])]
 
     (tap> (p/map-of :apply-template-to-selected-day all-dispatches))

@@ -139,7 +139,7 @@
         (t/instant? x) (instant->top-position x zoom)))
 
 (defn mix-tag-colors
-  "Takes in a vec of color objects"
+  "Takes in a vec of color objects and outputs a map with :mixed-color"
   [tag-colors]
   (->> tag-colors
        vec
@@ -809,7 +809,9 @@
                                                                 :tag-group/color     (->> tag-group
                                                                                           :tag-group/tags
                                                                                           (mapv :tag/color)
-                                                                                          mix-tag-colors)
+                                                                                          mix-tag-colors
+                                                                                          :mixed-color
+                                                                                          hex-if-some)
                                                                 :combined-tag-labels (-> tag-group
                                                                                          :tag-group/tags
                                                                                          combine-tag-labels)})]
