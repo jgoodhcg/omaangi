@@ -21,7 +21,8 @@
                         drop-keyword-sections
                         hex-if-some
                         is-color?
-                        time-label]]
+                        time-label
+                        sessions->min-col]]
    [potpuri.core :as p]))
 
 (defn version
@@ -787,8 +788,10 @@
                                       sp/MAP-VALS])
                              (filter #(= :session/track (:session/type %)))
                              (mapv (partial replace-tag-refs-with-objects tags))
-                             (mapv (partial set-session-ish-color {:hex true})))
-        results         (->> sessions-tagged
+                             (mapv (partial set-session-ish-color {:hex true}))
+                             ;; TODO flatten sessions
+                             )
+        tg-matched      (->> sessions-tagged
                              (mapv (fn [{session-tags :session/tags :as session-tagged}]
                                      (let [this-session-tags (->> session-tags
                                                                   (mapv :tag/id)
@@ -815,24 +818,44 @@
                                                                 :combined-tag-labels (-> tag-group
                                                                                          :tag-group/tags
                                                                                          combine-tag-labels)})]
-                                       (merge session-tagged match))))
-                             (filter (fn [{tag-group-id :tag-group/id}] (some? tag-group-id)))
+                                       (merge session-tagged match)))))
+        has-tg?         (fn [{tag-group-id :tag-group/id}] (some? tag-group-id))
+        total-time      (-> (t/between
+                              (-> beg-intrvl (t/at (t/time "00:00")) (t/instant))
+                              (-> end-intrvl (t/at (t/time "23:59")) (t/instant)))
+                            (t/minutes))
+        other-time      (->> tg-matched
+                             (remove has-tg?)
+                             (sessions->min-col)
+                             (reduce +))
+        matched-total   (->> tg-matched
+                             (filter has-tg?)
+                             (sessions->min-col)
+                             (reduce +))
+        chart-config    {:legendFontColor "#7f7f7f"
+                         :legendFontSize  15}
+        results         (->> tg-matched
+                             (filter has-tg?)
                              (group-by :tag-group/id)
                              vals
                              (mapv (fn [session-group]
-                                     {:name            (-> session-group first :combined-tag-labels)
-                                      :min             (->> session-group
-                                                            (mapv #(-> (t/between
-                                                                         (:session/start %)
-                                                                         (:session/stop %))
-                                                                       (t/minutes)))
-                                                            (reduce +))
-                                      :color           (-> session-group first :tag-group/color)
-                                      :legendFontColor "#7f7f7f"
-                                      :legendFontSize  15}))
-                             )]
-    (tap> (p/map-of results))
-    results))
+                                     (merge chart-config
+                                            {:name  (-> session-group first :combined-tag-labels)
+                                             :min   (->> session-group
+                                                         (sessions->min-col)
+                                                         (reduce +))
+                                             :color (-> session-group first :tag-group/color)}))))
+        final-results   (-> results
+                            (conj (merge chart-config
+                                         {:name  "Untracked"
+                                          :min   (-> total-time (- other-time) (- matched-total))
+                                          :color "#242424"}))
+                            (conj (merge chart-config
+                                         {:name  "Other"
+                                          :min   other-time
+                                          :color "#a0a0a0"})))]
+    (tap> (p/map-of final-results))
+    final-results))
 (reg-sub :pie-chart-data
 
          :<- [:calendar]

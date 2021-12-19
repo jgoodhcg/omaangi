@@ -125,3 +125,11 @@
   (->> tags
        (mapv :tag/label)
        (join " ")))
+
+(defn sessions->min-col
+  [sessions]
+  (->> sessions
+       (mapv #(-> (t/between
+                    (:session/start %)
+                    (:session/stop %))
+                  (t/minutes)))))
