@@ -8,6 +8,7 @@
    [applied-science.js-interop :as j]
    [camel-snake-kebab.core :as csk]
    [camel-snake-kebab.extras :as cske]
+   [com.rpl.specter :as sp :refer [transform]]
    [tick.alpha.api :as t]
    [re-frame.core :refer [subscribe dispatch dispatch-sync]]
    [potpuri.core :as p]))
@@ -35,6 +36,7 @@
               :tick/end       stop})))
 
 (defn touches
+  ;; TODO add question mark
   "Works on both sessions and session-templates.
   Merges in `:tick/beginning` and `:tick/end` to make it a valid interval."
   [a b]
@@ -133,3 +135,88 @@
                     (:session/start %)
                     (:session/stop %))
                   (t/minutes)))))
+
+(defn collides?
+  "Works on both sessions and session-templates.
+  Merges in `:tick/beginning` and `:tick/end` to make it a valid interval."
+  [a b]
+  (if (and (some? a)
+           (some? b))
+    (not (some? (some #{:precedes :preceded-by :meets :met-by} ;; checks that these are not the relation
+                      [(t/relation (make-session-ish-interval a)
+                                   (make-session-ish-interval b))])))
+    false))
+
+(defn combinations
+  "Yanked from https://stackoverflow.com/a/6450455"
+  [n coll]
+  (if (= 1 n)
+    (map list coll)
+    (lazy-seq
+      (when-let [[head & tail] (seq coll)]
+        (concat (for [x (combinations (dec n) tail)]
+                  (cons head x))
+                (combinations n tail))))))
+
+(defn tmp-session
+  [start stop tags]
+  {:session/start start
+   :session/stop  stop
+   :session/tags  tags
+   :session/id    (random-uuid)
+   :session/tmp   true})
+
+(defn smoosh-sessions
+  [sessions]
+  (->> sessions
+       (combinations 2)
+       (mapv
+         (fn [[{a-start :session/start
+                a-stop  :session/stop
+                a-tags  :session/tags
+                :as     a}
+               {b-start :session/start
+                b-stop  :session/stop
+                b-tags  :session/tags
+                :as     b}]]
+           (let [combined-tags (vec (concat a-tags b-tags))]
+             (case (t/relation
+                     (make-session-ish-interval a)
+                     (make-session-ish-interval b))
+               :overlaps     [(tmp-session a-start b-start a-tags)
+                              (tmp-session b-start a-stop combined-tags)
+                              (tmp-session a-stop b-stop b-tags)]
+               :overlaped-by [(tmp-session b-start a-start b-tags)
+                              (tmp-session a-start b-stop combined-tags)
+                              (tmp-session b-stop a-stop a-tags)]
+               :starts       [(tmp-session a-start a-stop combined-tags)
+                              (tmp-session a-stop b-stop b-tags)]
+               :started-by   [(tmp-session b-start b-stop combined-tags)
+                              (tmp-session b-stop a-stop a-tags)]
+               :during       [(tmp-session b-start a-start b-tags)
+                              (tmp-session a-start a-stop combined-tags)
+                              (tmp-session a-stop b-stop b-tags)]
+               :contains     [(tmp-session a-start b-start a-tags)
+                              (tmp-session b-start b-stop combined-tags)
+                              (tmp-session b-stop a-stop a-tags)]
+               :finishes     [(tmp-session b-start a-start b-tags)
+                              (tmp-session a-start b-stop combined-tags)]
+               :finished-by  [(tmp-session a-start b-start a-tags)
+                              (tmp-session b-start a-stop combined-tags)]
+               ;; else
+               [a b]))))
+       (flatten)
+       (distinct)
+       (vec)))
+
+(comment
+  (time
+    (->> [
+          {:session/label "A" :session/tags [:a] :session/id #uuid "27cab9e7-df48-4218-b227-2ea382939b1d", :session/start #time/instant "2021-12-20T17:31:00Z", :session/stop #time/instant "2021-12-20T19:23:00Z", :session/created #time/instant "2021-12-20T17:31:00Z", :session/last-edited #time/instant "2021-12-20T19:23:00Z", :session/type :session/plan}
+          {:session/label "B" :session/tags [:b :c] :session/id #uuid "f8671edc-54cd-474b-b581-73231c963caf", :session/start #time/instant "2021-12-18T11:09:00Z", :session/stop #time/instant "2021-12-18T23:47:00Z", :session/created #time/instant "2021-12-18T11:09:00Z", :session/last-edited #time/instant "2021-12-18T12:47:00Z", :session/type :session/track}
+          {:session/label "C" :session/tags [:d] :session/id #uuid "425e67f1-b47e-4589-b958-23a51235eb57", :session/start #time/instant "2021-12-18T18:46:00Z", :session/stop #time/instant "2021-12-18T21:43:00Z", :session/created #time/instant "2021-12-18T18:46:00Z", :session/last-edited #time/instant "2021-12-18T21:43:00Z", :session/type :session/track}
+          ]
+         (smoosh-sessions)
+         ;; (transform [sp/ALL] :session/tags)
+         ))
+  )

@@ -22,6 +22,7 @@
                         hex-if-some
                         is-color?
                         time-label
+                        smoosh-sessions
                         sessions->min-col]]
    [potpuri.core :as p]))
 
@@ -787,10 +788,9 @@
                              (select [(sp/submap session-ids)
                                       sp/MAP-VALS])
                              (filter #(= :session/track (:session/type %)))
+                             (smoosh-sessions)
                              (mapv (partial replace-tag-refs-with-objects tags))
-                             (mapv (partial set-session-ish-color {:hex true}))
-                             ;; TODO flatten sessions
-                             )
+                             (mapv (partial set-session-ish-color {:hex true})))
         tg-matched      (->> sessions-tagged
                              (mapv (fn [{session-tags :session/tags :as session-tagged}]
                                      (let [this-session-tags (->> session-tags
