@@ -773,7 +773,6 @@
         tag-groups      (->> tag-groups
                              (select [sp/MAP-VALS])
                              (transform [sp/ALL] #(replace-tag-refs-with-objects tags %)))
-        _               (tap> (p/map-of tag-groups))
         days            (vec (t/range beg-intrvl
                                       (t/+ end-intrvl
                                            (t/new-period 1 :days))))
@@ -803,9 +802,13 @@
                                                                                 (select [:tag-group/tags
                                                                                          sp/ALL
                                                                                          :tag/id])
-                                                                                set)]
+                                                                                set)
+                                                                           strict-match (:tag-group/strict-match %)]
                                                                        (when (and (seq tg-set) ;; not empty
-                                                                                  (subset? tg-set this-session-tags)) %))))
+                                                                                  (if strict-match
+                                                                                    (= tg-set this-session-tags)
+                                                                                    (subset? tg-set this-session-tags) )
+                                                                                  ) %))))
                                            tag-group-id      (:tag-group/id tag-group)
                                            match             (when (some? tag-group-id)
                                                                {:tag-group/id        tag-group-id

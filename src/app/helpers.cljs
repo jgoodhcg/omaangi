@@ -179,7 +179,10 @@
                 b-stop  :session/stop
                 b-tags  :session/tags
                 :as     b}]]
-           (let [combined-tags (vec (concat a-tags b-tags))]
+           (let [combined-tags (-> []
+                                   (concat a-tags b-tags)
+                                   (distinct)
+                                   (vec))]
              (case (t/relation
                      (make-session-ish-interval a)
                      (make-session-ish-interval b))

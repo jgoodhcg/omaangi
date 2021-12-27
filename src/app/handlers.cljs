@@ -779,3 +779,12 @@
   {:db                       db
    :create-backups-directory true})
 (reg-event-fx :create-backups-directory [base-interceptors] create-backups-directory)
+
+(defn set-strictness-for-pie-chart-tag-group
+  [db [_ {group-id   :pie-chart.tag-group/id
+          strictness :tag-group/strict-match}]]
+  (->> db
+       (setval [:app-db.reports.pie-chart/tag-groups
+                (sp/must group-id)
+                (sp/keypath :tag-group/strict-match)] strictness)))
+(reg-event-db :set-strictness-for-pie-chart-tag-group [base-interceptors] set-strictness-for-pie-chart-tag-group)

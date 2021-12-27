@@ -366,9 +366,10 @@
 
 (def tag-group-data-spec
   (ds/spec {:name ::tag-group-ds
-            :spec {:tag-group/id             uuid?
-                   (ds/opt :tag-group/tags)  ::tag-group-tags
-                   (ds/opt :tag-group/color) ::color}}))
+            :spec {:tag-group/id                    uuid?
+                   (ds/opt :tag-group/strict-match) boolean?
+                   (ds/opt :tag-group/tags)         ::tag-group-tags
+                   (ds/opt :tag-group/color)        ::color}}))
 
 (s/def ::tag-group tag-group-data-spec)
 

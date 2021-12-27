@@ -96,9 +96,10 @@
       {:style (tw "mb-6")}
       "Tracked sessions flow top down through each tag group below. By default a session matches when the tag group is a subset. Selecting equality forces a strict match."]
 
-     (for [[id {color :tag-group/color
-                tags  :tag-group/tags
-                label :tag-group-render/label }] tag-groups]
+     (for [[id {color      :tag-group/color
+                tags       :tag-group/tags
+                label      :tag-group-render/label
+                strictness :tag-group/strict-match}] tag-groups]
        (if (= id selected-id)
          [:> rn/View {:key id :style (tw "flex pb-6 flex-col items-start")}
           [tags/tags-component {:add-fn    #(>evt [:add-tag-to-pie-chart-tag-group
@@ -108,20 +109,26 @@
                                                    {:pie-chart.tag-group/id id
                                                     :tag/id                 %}])
                                 :tags      tags}]
-          [:> paper/Button {:icon     "delete"
-                            :on-press #(>evt [:remove-pie-chart-tag-group
-                                              {:pie-chart.tag-group/id id}])}
-           "remove tag group"]
+          [:> paper/Button {:icon     (if strictness "approximately-equal" "equal")
+                            :on-press #(>evt [:set-strictness-for-pie-chart-tag-group
+                                              {:pie-chart.tag-group/id id
+                                               :tag-group/strict-match (not strictness)}])}
+           (if strictness "loose matching" "strict matching")]
           [:> paper/Button {:icon     "cancel"
                             :on-press #(>evt [:set-selected-pie-chart-tag-group
                                               {:pie-chart.tag-group/id nil}])}
-           "stop editing tag group"]]
+           "stop editing tag group"]
+          [:> paper/Button {:icon     "delete"
+                            :on-press #(>evt [:remove-pie-chart-tag-group
+                                              {:pie-chart.tag-group/id id}])}
+           "remove tag group"]]
          [:> rn/View {:key id :style (tw "flex pb-6")}
 
-          [:> paper/Button {:color    color
-                            :mode     "contained"
-                            :on-press #(>evt [:set-selected-pie-chart-tag-group
-                                              {:pie-chart.tag-group/id id}])}
+          [:> paper/Button (merge {:color    color
+                                   :mode     "contained"
+                                   :on-press #(>evt [:set-selected-pie-chart-tag-group
+                                                     {:pie-chart.tag-group/id id}])}
+                                  (when strictness {:icon "equal"}))
            label]]))
      [:> paper/Button {:icon     "playlist-plus"
                        :on-press #(>evt [:add-pie-chart-tag-group])} "Add tag group"]]))
