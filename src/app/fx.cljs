@@ -159,7 +159,7 @@
             (try
               (-> expo-file-system
                   (j/call :writeAsStringAsync
-                          (str backups-dir (t/date-time timestamp) "--" version)
+                          (str backups-dir (t/date-time timestamp) "--" version ".edn")
                           (serialize app-db)))
               (>evt [:load-backup-keys])
               (catch js/Object e
