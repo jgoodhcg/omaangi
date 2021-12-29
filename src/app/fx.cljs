@@ -2,6 +2,8 @@
   (:require
    ["@react-native-async-storage/async-storage" :as async-storage]
    ["expo-constants" :as expo-constants]
+   ["expo-file-system" :as expo-file-system]
+   ["expo-sharing" :as expo-sharing]
    ["react-native" :as rn]
 
    [applied-science.js-interop :as j]
@@ -43,37 +45,80 @@
             (tap> (str "clearing interval " ticker-ref-id))
             (-> ticker-ref-id (js/clearInterval)))))
 
-(def app-db-key "@app_db")
+(def app-db-key "@app_db") ;; TODO remove
+
+(def dd (-> expo-file-system (j/get :documentDirectory)))
+
+(def app-db-file-path (str dd "app_db.edn"))
+
+(def backups-dir (str dd "backups/"))
+
+(defn <load-app-db-from-file
+  []
+  (go
+    (try
+      (-> expo-file-system (j/call :getInfoAsync app-db-file-path)
+          <p!
+          ((fn [info-result]
+             (if (-> info-result (j/get :exists) (= false))
+               ;; file does NOT exist
+               (do
+                 (-> rn/Alert (j/call :alert "No app-db file exists"))
+                 (>evt [:load-db default-app-db]))
+               ;; file exists load db
+               (go
+                 (try
+                   (-> expo-file-system (j/call :readAsStringAsync app-db-file-path)
+                       <p!
+                       ((fn [app-db-str]
+                          (>evt [:load-db (-> app-db-str de-serialize
+                                              ;; this merge handles accretion to the db spec
+                                              (->> (merge default-app-db)))]))))
+                   (catch js/Object e
+                     (-> rn/Alert (j/call :alert "Failure on readAsStringAsync" (str e))))))))))
+      (catch js/Object e
+        (-> rn/Alert (j/call :alert "Failure on getInfoAsync" (str e)))))))
 
 (reg-fx :check-for-saved-db
-        ;; TODO justin 2021-11-17 convert to core.async
         (fn [_]
-          (try
-            (-> async-storage
-                (j/get :default)
-                (j/call :getItem app-db-key)
-                (j/call :then (fn [local-store-value]
-                                (if (some? local-store-value)
-                                  (>evt [:load-db (-> local-store-value de-serialize
-                                                      ;; this merge handles accretion to the db spec
-                                                      (->> (merge default-app-db)))])
-                                  (do
-                                    (-> rn/Alert (j/call :alert "no local store data found"))
-                                    (>evt [:load-db default-app-db])))))
-                (j/call :catch #(do
-                                  (tap> (str "get item catch " %))
-                                  (-> rn/Alert (j/call :alert "js catch on get item " (str %))))))
-            (catch js/Object e
-              (tap> (str "error checking for db " e))
-              (-> rn/Alert (j/call :alert "cljs catch on get Item " (str e)))))))
+          (go
+            (try
+              ;; TODO temporary migration code replace with load-app-db-from-file
+              ;; check async-storage first
+              (-> async-storage
+                  (j/get :default)
+                  (j/call :getItem app-db-key)
+                  <p!
+                  ((fn [local-store-value]
+                     (if (some? local-store-value)
+                       (do
+                         ;; if an async storage item is present then load it
+                         (>evt [:load-db (-> local-store-value de-serialize
+                                             ;; this merge handles accretion to the db spec
+                                             (->> (merge default-app-db)))])
+                         ;; and then get rid of it
+                         (go
+                           (try
+                             (-> async-storage
+                                 (j/get :default)
+                                 (j/call :removeItem app-db-key)
+                                 <p!)
+                             (catch js/Object e
+                               (tap> (str "error deleting old async storage backup " e))
+                               (-> rn/Alert (j/call :alert "error deleting old async storage backup " (str e)))))))
+
+                       ;; if there is no async storage item then just load from file (new process)
+                       (go (<! (<load-app-db-from-file)))))))
+              (catch js/Object e
+                (tap> (str "error checking for db " e))
+                (-> rn/Alert (j/call :alert "cljs catch on get Item " (str e))))))))
 
 (reg-fx :save-db
         (fn [app-db]
           (try
-            (-> async-storage
-                (j/get :default)
-                (j/call :setItem app-db-key (serialize app-db)))
-            (catch js/Object e (tap> (str "error saving db " e))))))
+            (-> expo-file-system
+                (j/call :writeAsStringAsync app-db-file-path (serialize app-db)))
+            (catch js/Object e (tap> (str "error saving db to file " e))))))
 
 (def version (-> expo-constants
                  (j/get :default)
@@ -96,18 +141,15 @@
         (fn [_]
           (go
             (try
-              (-> async-storage
-                  (j/get :default)
-                  (j/call :getAllKeys)
+              (-> expo-file-system
+                  (j/call :readDirectoryAsync backups-dir)
                   <p!
                   js->clj
-                  (->> (remove (fn [k] (= app-db-key k))))
                   vec
                   (#(>evt [:set-backup-keys %])))
               (catch js/Object e
-                (tap> (str "error getting all async storage keys " e))
-                (-> rn/Alert (j/call :alert "error getting all async storage keys " (str e))))))
-          ))
+                (tap> (str "error getting all backup file names " e))
+                (-> rn/Alert (j/call :alert "error getting all backup file names " (str e))))))))
 
 (reg-fx :create-backup
         (fn [{version   :app-db/version
@@ -115,9 +157,10 @@
               :as       app-db}]
           (go
             (try
-              (-> async-storage
-                  (j/get :default)
-                  (j/call :setItem (str "@-" (t/date-time timestamp)  "--" version) (serialize app-db)))
+              (-> expo-file-system
+                  (j/call :writeAsStringAsync
+                          (str backups-dir (t/date-time timestamp) "--" version)
+                          (serialize app-db)))
               (>evt [:load-backup-keys])
               (catch js/Object e
                 (tap> (str "error creating backup " e))
@@ -127,9 +170,8 @@
         (fn [k]
           (go
             (try
-              (-> async-storage
-                  (j/get :default)
-                  (j/call :removeItem k)
+              (-> expo-file-system
+                  (j/call :deleteAsync (str backups-dir k))
                   <p!
                   (#(>evt [:load-backup-keys])))
               (catch js/Object e
@@ -140,9 +182,8 @@
         (fn [k]
           (go
             (try
-              (-> async-storage
-                  (j/get :default)
-                  (j/call :getItem k)
+              (-> expo-file-system
+                  (j/call :readAsStringAsync (str backups-dir k))
                   <p!
                   ((fn [local-store-value]
                      (if (some? local-store-value)
@@ -160,18 +201,30 @@
         (fn [k]
           (go
             (try
-              (-> async-storage
-                  (j/get :default)
-                  (j/call :getItem k)
-                  <p!
-                  ((fn [local-store-value]
-                     (if (some? local-store-value)
-                       (-> rn/Share (j/call :share #js {:message local-store-value :title k}))
-                       (-> rn/Alert (j/call :alert "Unable to export backup")))
-                     )))
+              (-> expo-sharing
+                  (j/call :shareAsync (str backups-dir k))
+                  <p!)
               (catch js/Object e
                 (tap> (str "error exporting backup " e))
                 (-> rn/Alert (j/call :alert "error exporting backup " (str e))))))))
+
+;; All backup functions require the backups directory to exist or they will throw
+(reg-fx :create-backups-directory
+        (fn [_]
+          (try
+            (go
+              (-> expo-file-system
+                  (j/call :getInfoAsync backups-dir)
+                  <p!
+                  ((fn [info-result]
+                     (when (-> info-result (j/get :exists) (= false))
+                       (go
+                         (-> expo-file-system
+                             (j/call :makeDirectoryAsync backups-dir)
+                             <p!)))))))
+            (catch js/Object e
+              (tap> (str "error creating backup directory " e))
+              (-> rn/Alert (j/call :alert "error creating backup directory " (str e)))))))
 
 ;; Some helpful repl stuff
 (comment

@@ -773,3 +773,9 @@
   (->> db
        (transform [:app-db.reports.pie-chart/tag-groups ] #(dissoc % group-id))))
 (reg-event-db :remove-pie-chart-tag-group [base-interceptors] remove-pie-chart-tag-group)
+
+(defn create-backups-directory
+  [{:keys [db]} _]
+  {:db                       db
+   :create-backups-directory true})
+(reg-event-fx :create-backups-directory [base-interceptors] create-backups-directory)
