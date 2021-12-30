@@ -254,40 +254,55 @@
   [sessions]
   (->> sessions
        get-collision-groups
-       (map (fn [cg]
-              (loop [time-stamps    (->> cg
-                                         (map #(list (:session/start %) (:session/stop %)))
-                                         flatten
-                                         distinct
-                                         sort
-                                         rest
-                                         vec)
-                     acc            []
-                     cur-time-stamp (->> cg (sort-by :session/start) first :session/start)]
-                (if (empty? time-stamps)
-                  acc
-                  (recur (->> time-stamps rest vec)
-                         (conj acc {:session/start cur-time-stamp :session/stop (first time-stamps)})
-                         (->> time-stamps first))))))))
+       (mapv (fn [cg]
+               (loop [time-stamps    (->> cg
+                                          (map #(list (:session/start %) (:session/stop %)))
+                                          flatten
+                                          distinct
+                                          sort
+                                          rest
+                                          vec)
+                      acc            []
+                      cur-time-stamp (->> cg (sort-by :session/start) first :session/start)]
+                 (if (empty? time-stamps)
+                   acc
+                   (recur (->> time-stamps rest vec)
+                          (conj acc {:session/start cur-time-stamp :session/stop (first time-stamps)})
+                          (->> time-stamps first))))))
+       flatten
+       (mapv (fn [smooshed-session]
+               (merge smooshed-session
+                      {:session/tags (->> sessions
+                                          (filter #(touches % smooshed-session))
+                                          (mapv :session/tags)
+                                          (apply concat)
+                                          distinct
+                                          vec)})))))
 
 (comment
   (time
     (->> [{:session/start (t/+ (t/now) (t/new-duration 1 :minutes))
-           :session/stop  (t/+ (t/now) (t/new-duration 2 :minutes))}
+           :session/stop  (t/+ (t/now) (t/new-duration 2 :minutes))
+           :session/tags  [:a]}
           {:session/start (t/+ (t/now) (t/new-duration 1 :minutes))
            :session/stop  (t/+ (t/now) (t/new-duration 3 :minutes))}
           {:session/start (t/+ (t/now) (t/new-duration 1 :minutes))
-           :session/stop  (t/+ (t/now) (t/new-duration 5 :minutes))}
+           :session/stop  (t/+ (t/now) (t/new-duration 5 :minutes))
+           :session/tags  [:c]}
 
           {:session/start (t/+ (t/now) (t/new-duration 6 :minutes))
-           :session/stop  (t/+ (t/now) (t/new-duration 7 :minutes))}
+           :session/stop  (t/+ (t/now) (t/new-duration 7 :minutes))
+           :session/tags  [:c :d]}
 
           {:session/start (t/+ (t/now) (t/new-duration 8 :minutes))
-           :session/stop  (t/+ (t/now) (t/new-duration 10 :minutes))}
+           :session/stop  (t/+ (t/now) (t/new-duration 10 :minutes))
+           :session/tags  [:d :e :f :a]}
           {:session/start (t/+ (t/now) (t/new-duration 9 :minutes))
-           :session/stop  (t/+ (t/now) (t/new-duration 12 :minutes))}
+           :session/stop  (t/+ (t/now) (t/new-duration 12 :minutes))
+           :session/tags  [:a]}
           {:session/start (t/+ (t/now) (t/new-duration 10 :minutes))
-           :session/stop  (t/+ (t/now) (t/new-duration 11 :minutes))}
+           :session/stop  (t/+ (t/now) (t/new-duration 11 :minutes))
+           :session/tags  []}
           ]
          (smoosh-sessions-new)
          ;; (transform [sp/ALL] :session/tags)
