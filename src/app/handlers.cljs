@@ -12,7 +12,7 @@
    [tick.alpha.api :as t]
    [potpuri.core :as p]
    [app.screens.core :refer [screens]]
-   [app.helpers :refer [make-color-if-some native-event->time native-event->type]]
+   [app.misc :refer [make-color-if-some native-event->time native-event->type]]
    [applied-science.js-interop :as j]))
 
 (defn check-and-throw

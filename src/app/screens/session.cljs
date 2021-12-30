@@ -14,7 +14,7 @@
    [app.components.time-related :as tm]
    [app.components.label :as label]
    [app.components.delete-button :as delete-button]
-   [app.helpers :refer [<sub >evt get-theme clear-datetime-picker >evt-sync]]
+   [app.misc :refer [<sub >evt get-theme clear-datetime-picker >evt-sync]]
    [app.tailwind :refer [tw]]))
 
 (defn start-button

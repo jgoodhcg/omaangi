@@ -7,7 +7,7 @@
    [reagent.core :as r]
 
    [app.components.generic-top-section :as top-section]
-   [app.helpers :refer [<sub >evt get-theme]]
+   [app.misc :refer [<sub >evt get-theme]]
    [app.screens.core :refer [screens]]
    [app.tailwind :refer [tw]]))
 

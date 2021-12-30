@@ -6,10 +6,10 @@
 
    [applied-science.js-interop :as j]
 
-   [app.helpers :refer [<sub
-                        >evt
-                        get-theme
-                        active-gesture?]]
+   [app.misc :refer [<sub
+                     >evt
+                     get-theme
+                     active-gesture?]]
    [app.screens.core :refer [screens]]
    [app.tailwind :refer [tw]]
    [potpuri.core :as p]))

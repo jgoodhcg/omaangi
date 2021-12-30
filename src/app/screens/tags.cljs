@@ -12,7 +12,7 @@
    [app.components.generic-top-section :as top-section]
    [app.components.color-picker :as color-picker]
    [app.components.tag-related :as components]
-   [app.helpers :refer [<sub >evt get-theme chance]]
+   [app.misc :refer [<sub >evt get-theme chance]]
    [app.screens.core :refer [screens]]
    [app.tailwind :refer [tw]]
    [potpuri.core :as p]))

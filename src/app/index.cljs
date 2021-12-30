@@ -21,7 +21,7 @@
    [app.fx :refer [!navigation-ref]]
    [app.handlers]
    [app.subscriptions]
-   [app.helpers :refer [<sub >evt get-theme]]
+   [app.misc :refer [<sub >evt get-theme]]
    [app.screens.core :refer [screens]]
    [app.screens.day :as day]
    [app.screens.settings :as settings]

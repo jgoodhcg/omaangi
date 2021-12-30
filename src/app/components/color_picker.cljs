@@ -6,7 +6,7 @@
    ["react-native-paper" :as paper]
 
    [app.colors :refer [material-500-hexes]]
-   [app.helpers :refer [<sub >evt]]
+   [app.misc :refer [<sub >evt]]
    [app.tailwind :refer [tw]]))
 
 (defn component [{:keys [input-color update-fn remove-fn]}]

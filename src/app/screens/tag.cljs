@@ -7,7 +7,7 @@
    [reagent.core :as r]
 
    [app.components.color-picker :as color-picker]
-   [app.helpers :refer [<sub >evt get-theme]]
+   [app.misc :refer [<sub >evt get-theme]]
    [app.tailwind :refer [tw]]))
 
 (defn screen [props]

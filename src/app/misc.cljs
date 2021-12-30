@@ -1,4 +1,4 @@
-(ns app.helpers
+(ns app.misc
   (:require
    ["react-native" :as rn]
    ["react-native-paper" :as paper]
@@ -8,7 +8,7 @@
    [applied-science.js-interop :as j]
    [camel-snake-kebab.core :as csk]
    [camel-snake-kebab.extras :as cske]
-   [com.rpl.specter :as sp :refer [setval]]
+   [com.rpl.specter :as sp :refer [setval select transform]]
    [tick.alpha.api :as t]
    [re-frame.core :refer [subscribe dispatch dispatch-sync]]
    [potpuri.core :as p]))
@@ -228,6 +228,73 @@
                                           distinct
                                           vec)})))))
 
+(defn mix-tag-colors
+  "Takes in a vec of color objects and outputs a map with :mixed-color"
+  [tag-colors]
+  (->> tag-colors
+       vec
+       (reduce-kv
+         ;; reduce-kv and i are remnants of trying to make
+         ;; some sort of mixing algorithm dependent on tag position
+         (fn [{:keys [mixed-color]} i c2]
+           {:mixed-color
+            (cond
+              (and (is-color? mixed-color)
+                   (is-color? c2))
+              (-> mixed-color
+                  (j/call :mix c2
+                          (max 0.5
+                               (-> 1 (/ (count tag-colors))))))
+
+              (is-color? mixed-color)
+              mixed-color
+
+              (is-color? c2)
+              c2)})
+         {:mixed-color (or (first tag-colors)
+                           ;; TODO is this a good default?
+                           ;; should this default live somewhere else?
+                           (color "#ababab"))})))
+
+(defn replace-tag-refs-with-objects
+  [indexed-tags session-ish]
+  (->> session-ish
+       (transform [(sp/cond-path
+                     (sp/must :session/tags) :session/tags
+                     (sp/must :session-template/tags) :session-template/tags
+                     (sp/must :tag-group/tags) :tag-group/tags)]
+                  (fn [tag-ids] (->> tag-ids (mapv #(-> indexed-tags (get %))))))))
+
+(defn set-session-ish-color
+  "Tag refs must be replaced with values and session-ish/tag colors must be color objects"
+  [{:keys [hex]} session-ish]
+  (->> session-ish
+       (transform []
+                  (fn [{session-color          :session/color
+                        session-template-color :session-template/color
+                        :as                    s}]
+                    (let [c               (or session-color session-template-color)
+                          tag-colors-path [(sp/cond-path
+                                             (sp/must :session/tags)          :session/tags
+                                             (sp/must :session-template/tags) :session-template/tags)
+                                           sp/ALL
+                                           (sp/keypath :tag/color)]
+                          tag-colors      (->> s (select tag-colors-path) (remove nil?) vec)]
+                      (if-let [c c]
+                        ;; when there is a color override just hex it
+                        ;; hopefully it is ok to just all key types ...
+                        (merge s {:session/color          (if hex (hex-if-some c) c)
+                                  :session-template/color (if hex (hex-if-some c) c)})
+                        ;; when there is NOT an override color mix tag colors
+                        (merge s (let [mixed-color (->> tag-colors
+                                                        mix-tag-colors
+                                                        :mixed-color
+                                                        ((fn [c]
+                                                           (if hex
+                                                             (hex-if-some c)
+                                                             c)))) ]
+                                   {:session/color          mixed-color
+                                    :session-template/color mixed-color}))))))))
 (comment
   (time
     (->> [{:session/start (t/+ (t/now) (t/new-duration 1 :minutes))

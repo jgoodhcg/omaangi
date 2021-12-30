@@ -11,10 +11,10 @@
    [reagent.core :as r]
    [tick.alpha.api :as t]
 
-   [app.helpers :refer [<sub
-                        >evt
-                        get-theme
-                        active-gesture?]]
+   [app.misc :refer [<sub
+                     >evt
+                     get-theme
+                     active-gesture?]]
    [app.screens.core :refer [screens]]
    [app.components.label :as label]
    [app.components.session-ishes :as session-ishes]

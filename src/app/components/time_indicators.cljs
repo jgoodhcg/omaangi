@@ -5,7 +5,7 @@
 
    [applied-science.js-interop :as j]
 
-   [app.helpers :refer [<sub get-theme]]
+   [app.misc :refer [<sub get-theme]]
    [app.tailwind :refer [tw]]))
 
 (defn component []

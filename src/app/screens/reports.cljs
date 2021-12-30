@@ -12,7 +12,7 @@
    [app.components.tag-related :as tags]
    [app.screens.core :refer [screens]]
    [app.components.generic-top-section :as top-section]
-   [app.helpers :refer [<sub >evt get-theme clear-datetime-picker]]
+   [app.misc :refer [<sub >evt get-theme clear-datetime-picker]]
    [app.tailwind :refer [tw]]
    [app.db :refer [generate-color]]))
 

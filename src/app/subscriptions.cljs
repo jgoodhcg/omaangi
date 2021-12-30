@@ -13,15 +13,16 @@
                                    select-one!]]
    [tick.alpha.api :as t]
    [app.colors :refer [white black]]
-   [app.helpers :refer [combine-tag-labels
-                        get-collision-groups
-                        prepend-zero
-                        drop-keyword-sections
-                        hex-if-some
-                        is-color?
-                        time-label
-                        smoosh-sessions
-                        sessions->min-col]]
+   [app.misc :refer [combine-tag-labels
+                     mix-tag-colors
+                     get-collision-groups
+                     replace-tag-refs-with-objects
+                     set-session-ish-color
+                     prepend-zero
+                     drop-keyword-sections
+                     hex-if-some
+                     is-color?
+                     time-label]]
    [potpuri.core :as p]))
 
 (defn version
@@ -104,74 +105,6 @@
   [x zoom]
   (cond (t/time? x)    (time->top-position x zoom)
         (t/instant? x) (instant->top-position x zoom)))
-
-(defn mix-tag-colors
-  "Takes in a vec of color objects and outputs a map with :mixed-color"
-  [tag-colors]
-  (->> tag-colors
-       vec
-       (reduce-kv
-         ;; reduce-kv and i are remnants of trying to make
-         ;; some sort of mixing algorithm dependent on tag position
-         (fn [{:keys [mixed-color]} i c2]
-           {:mixed-color
-            (cond
-              (and (is-color? mixed-color)
-                   (is-color? c2))
-              (-> mixed-color
-                  (j/call :mix c2
-                          (max 0.5
-                               (-> 1 (/ (count tag-colors))))))
-
-              (is-color? mixed-color)
-              mixed-color
-
-              (is-color? c2)
-              c2)})
-         {:mixed-color (or (first tag-colors)
-                           ;; TODO is this a good default?
-                           ;; should this default live somewhere else?
-                           (color "#ababab"))})))
-
-(defn set-session-ish-color
-  "Tag refs must be replaced with values and session-ish/tag colors must be color objects"
-  [{:keys [hex]} session-ish]
-  (->> session-ish
-       (transform []
-                  (fn [{session-color          :session/color
-                        session-template-color :session-template/color
-                        :as                    s}]
-                    (let [c               (or session-color session-template-color)
-                          tag-colors-path [(sp/cond-path
-                                             (sp/must :session/tags)          :session/tags
-                                             (sp/must :session-template/tags) :session-template/tags)
-                                           sp/ALL
-                                           (sp/keypath :tag/color)]
-                          tag-colors      (->> s (select tag-colors-path) (remove nil?) vec)]
-                      (if-let [c c]
-                        ;; when there is a color override just hex it
-                        ;; hopefully it is ok to just all key types ...
-                        (merge s {:session/color          (if hex (hex-if-some c) c)
-                                  :session-template/color (if hex (hex-if-some c) c)})
-                        ;; when there is NOT an override color mix tag colors
-                        (merge s (let [mixed-color (->> tag-colors
-                                                        mix-tag-colors
-                                                        :mixed-color
-                                                        ((fn [c]
-                                                           (if hex
-                                                             (hex-if-some c)
-                                                             c)))) ]
-                                   {:session/color          mixed-color
-                                    :session-template/color mixed-color}))))))))
-
-(defn replace-tag-refs-with-objects
-  [indexed-tags session-ish]
-  (->> session-ish
-       (transform [(sp/cond-path
-                     (sp/must :session/tags) :session/tags
-                     (sp/must :session-template/tags) :session-template/tags
-                     (sp/must :tag-group/tags) :tag-group/tags)]
-                  (fn [tag-ids] (->> tag-ids (mapv #(-> indexed-tags (get %))))))))
 
 (defn set-render-props
   [zoom
@@ -726,114 +659,9 @@
 (reg-sub :report-interval report-interval)
 
 (defn pie-chart-data
-  [[calendar
-    sessions
-    tags
-    report-interval
-    tag-groups] _]
-
-  (let [{beg-intrvl :app-db.reports/beginning-date
-         end-intrvl :app-db.reports/end-date}
-        report-interval
-        tag-groups      (->> tag-groups
-                             (select [sp/MAP-VALS])
-                             (transform [sp/ALL] #(replace-tag-refs-with-objects tags %)))
-        days            (vec (t/range beg-intrvl
-                                      (t/+ end-intrvl
-                                           (t/new-period 1 :days))))
-        session-ids     (->> calendar
-                             (select [(sp/submap days)
-                                      sp/MAP-VALS
-                                      :calendar/sessions])
-                             flatten
-                             set
-                             vec)
-        sessions-tagged (->> sessions
-                             (select [(sp/submap session-ids)
-                                      sp/MAP-VALS])
-                             (filter #(= :session/track (:session/type %)))
-                             (smoosh-sessions)
-                             (mapv (partial replace-tag-refs-with-objects tags))
-                             (mapv (partial set-session-ish-color {:hex true})))
-        tg-matched      (->> sessions-tagged
-                             (mapv (fn [{session-tags :session/tags :as session-tagged}]
-                                     (let [this-session-tags (->> session-tags
-                                                                  (mapv :tag/id)
-                                                                  set)
-                                           tag-group         (->> tag-groups
-                                                                  (some
-                                                                    #(let [tg-set
-                                                                           (->> %
-                                                                                (select [:tag-group/tags
-                                                                                         sp/ALL
-                                                                                         :tag/id])
-                                                                                set)
-                                                                           strict-match (:tag-group/strict-match %)]
-                                                                       (when (and (seq tg-set) ;; not empty
-                                                                                  (if strict-match
-                                                                                    (= tg-set this-session-tags)
-                                                                                    (subset? tg-set this-session-tags) )
-                                                                                  ) %))))
-                                           tag-group-id      (:tag-group/id tag-group)
-                                           match             (when (some? tag-group-id)
-                                                               {:tag-group/id        tag-group-id
-                                                                :tag-group/color     (->> tag-group
-                                                                                          :tag-group/tags
-                                                                                          (mapv :tag/color)
-                                                                                          mix-tag-colors
-                                                                                          :mixed-color
-                                                                                          hex-if-some)
-                                                                :combined-tag-labels (-> tag-group
-                                                                                         :tag-group/tags
-                                                                                         combine-tag-labels)})]
-                                       (merge session-tagged match)))))
-        has-tg?         (fn [{tag-group-id :tag-group/id}] (some? tag-group-id))
-        total-time      (-> (t/between
-                              (-> beg-intrvl (t/at (t/time "00:00")) (t/instant))
-                              (-> end-intrvl (t/at (t/time "23:59")) (t/instant)))
-                            (t/minutes))
-        other-time      (->> tg-matched
-                             (remove has-tg?)
-                             (sessions->min-col)
-                             (reduce +))
-        matched-total   (->> tg-matched
-                             (filter has-tg?)
-                             (sessions->min-col)
-                             (reduce +))
-        chart-config    {:legendFontColor "#7f7f7f"
-                         :legendFontSize  15}
-        results         (->> tg-matched
-                             (filter has-tg?)
-                             (group-by :tag-group/id)
-                             vals
-                             (mapv (fn [session-group]
-                                     (merge chart-config
-                                            {:name  (-> session-group first :combined-tag-labels)
-                                             :min   (->> session-group
-                                                         (sessions->min-col)
-                                                         (reduce +))
-                                             :color (-> session-group first :tag-group/color)}))))
-        final-results   (-> results
-                            (conj (merge chart-config
-                                         {:name  "Untracked"
-                                          :min   (-> total-time (- other-time) (- matched-total))
-                                          :color "#242424"}))
-                            (conj (merge chart-config
-                                         {:name  "Other"
-                                          :min   other-time
-                                          :color "#a0a0a0"})))]
-    (tap> (p/map-of total-time other-time matched-total))
-    (tap> (p/map-of tg-matched))
-    final-results))
-(reg-sub :pie-chart-data
-
-         :<- [:calendar]
-         :<- [:sessions]
-         :<- [:tags]
-         :<- [:report-interval]
-         :<- [:pie-chart-tag-groups]
-
-         pie-chart-data)
+  [db _]
+  (->> db (select-one [:app-db.reports.pie-chart/data])))
+(reg-sub :pie-chart-data pie-chart-data)
 
 (defn pie-chart-tag-groups
   [db _]

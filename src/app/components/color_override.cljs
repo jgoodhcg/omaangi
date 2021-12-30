@@ -4,7 +4,7 @@
    ["react-native-paper" :as paper]
 
    [app.components.color-picker :as color-picker]
-   [app.helpers :refer [>evt]]
+   [app.misc :refer [>evt]]
    [app.tailwind :refer [tw]]))
 
 (defn component [{session-ish-color :color

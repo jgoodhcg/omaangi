@@ -2,7 +2,7 @@
   (:require
    ["react-native-paper" :as paper]
 
-   [app.helpers :refer [>evt >evt-sync]]
+   [app.misc :refer [>evt >evt-sync]]
    [app.tailwind :refer [tw]]))
 
 (defn date-button

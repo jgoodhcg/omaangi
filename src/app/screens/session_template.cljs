@@ -13,7 +13,7 @@
    [app.components.color-override :as color-override]
    [app.components.time-related :as tm]
    [app.components.delete-button :as delete-button]
-   [app.helpers :refer [<sub >evt get-theme clear-datetime-picker]]
+   [app.misc :refer [<sub >evt get-theme clear-datetime-picker]]
    [app.tailwind :refer [tw]]))
 
 (defn time-stamps-component []

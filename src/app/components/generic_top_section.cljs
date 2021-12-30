@@ -6,7 +6,7 @@
    [applied-science.js-interop :as j]
 
    [app.components.menu :as menu]
-   [app.helpers :refer [<sub get-theme]]
+   [app.misc :refer [<sub get-theme]]
    [app.tailwind :refer [tw]]))
 
 (defn component [props screen-heading]

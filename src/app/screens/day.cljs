@@ -13,11 +13,11 @@
    [app.components.menu :as menu]
    [app.components.time-indicators :as time-indicators]
    [app.components.session-ishes :as session-ishes]
-   [app.helpers :refer [<sub
-                        >evt
-                        get-theme
-                        clear-datetime-picker
-                        active-gesture?]]
+   [app.misc :refer [<sub
+                     >evt
+                     get-theme
+                     clear-datetime-picker
+                     active-gesture?]]
    [app.screens.core :refer [screens]]
    [app.tailwind :refer [tw]]
    [tick.alpha.api :as t]))

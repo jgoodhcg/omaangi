@@ -4,6 +4,7 @@
    ["faker" :as faker]
    ["node-emoji" :as emoji]
    ["expo-localization" :as localization]
+
    [applied-science.js-interop :as j]
    [com.rpl.specter :as sp :refer [select select-one setval transform selected-any?]]
    [clojure.spec.alpha :as s]
@@ -16,8 +17,9 @@
    [clojure.string :refer [replace]]
    ;; needed to `gen/sample` or `gen/generate`
    [clojure.test.check.generators]
+
    [app.colors :refer [material-500-hexes]]
-   [app.helpers :refer [touches chance is-color? hex-if-some make-color-if-some]    ]))
+   [app.misc :refer [touches chance is-color? hex-if-some make-color-if-some]    ]))
 
 ;;
 ;; misc
@@ -414,7 +416,11 @@
       :app-db.reports/beginning-date                    t/date?
       :app-db.reports/end-date                          t/date?
       :app-db.reports.pie-chart/tag-groups              ::tag-groups
-      :app-db.reports.pie-chart/selected-tag-group      (ds/maybe uuid?)}}))
+      :app-db.reports.pie-chart/selected-tag-group      (ds/maybe uuid?)
+      :app-db.reports.pie-chart/data                    [{:name  string?
+                                                          :min   number?
+                                                          :color string?}]
+      :app-db.reports.pie-chart/data-state              (s/spec #{:loading :valid :stale})}}))
 
 (comment
   (s/explain app-db-spec (merge {:settings {:theme :dark}
@@ -480,7 +486,9 @@
        :app-db.reports/beginning-date                    (-> (t/now) (t/- (t/new-duration 7 :days)) (t/date))
        :app-db.reports/end-date                          (-> (t/now) (t/date))
        :app-db.reports.pie-chart/tag-groups              {}
-       :app-db.reports.pie-chart/selected-tag-group      nil})))
+       :app-db.reports.pie-chart/selected-tag-group      nil
+       :app-db.reports.pie-chart/data                    []
+       :app-db.reports.pie-chart/data-state              :stale})))
 
 ;;
 ;; serialization
@@ -496,6 +504,7 @@
        (transform [:app-db/sessions sp/MAP-VALS (sp/must :session/color)] hex-if-some)
        (transform [:app-db/session-templates sp/MAP-VALS (sp/must :session-template/color)] hex-if-some)
        (setval [:app-db/backup-keys] []) ;; don't backup backup keys
+       (setval [:app-db.reports.pie-chart/data-state] :stale) ;; set data state to stale to prompt refresh on loads
 
        str))
 
