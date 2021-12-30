@@ -197,7 +197,7 @@
             [:> rn/View
              [:> rn/StatusBar {:visibility "hidden"}]
 
-             [top-section/component props (:settings screens)]
+             [top-section/component props (:reports screens)]
 
              [interval-buttons]
 
