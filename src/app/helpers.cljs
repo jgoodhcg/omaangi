@@ -202,57 +202,6 @@
 (defn smoosh-sessions
   [sessions]
   (->> sessions
-       (combinations 2)
-       (mapv
-         (fn [[{a-start :session/start
-                a-stop  :session/stop
-                a-tags  :session/tags
-                :as     a}
-               {b-start :session/start
-                b-stop  :session/stop
-                b-tags  :session/tags
-                :as     b}]]
-           (let [combined-tags (-> []
-                                   (concat a-tags b-tags)
-                                   (distinct)
-                                   (vec))
-                 a-start*      (-> a-start (t/+ (t/new-duration 1 :seconds)))
-                 b-start*      (-> b-start (t/+ (t/new-duration 1 :seconds)))
-                 a-stop*       (-> a-stop (t/+ (t/new-duration 1 :seconds)))
-                 b-stop*       (-> b-stop (t/+ (t/new-duration 1 :seconds)))]
-             (case (t/relation
-                     (make-session-ish-interval a)
-                     (make-session-ish-interval b))
-
-               :overlaps     [(tmp-session a-start b-start a-tags)
-                              (tmp-session b-start* a-stop combined-tags)
-                              (tmp-session a-stop* b-stop b-tags)]
-               :overlaped-by [(tmp-session b-start a-start b-tags)
-                              (tmp-session a-start* b-stop combined-tags)
-                              (tmp-session b-stop* a-stop a-tags)]
-               :starts       [(tmp-session a-start a-stop combined-tags)
-                              (tmp-session a-stop* b-stop b-tags)]
-               :started-by   [(tmp-session b-start b-stop combined-tags)
-                              (tmp-session b-stop* a-stop a-tags)]
-               :during       [(tmp-session b-start a-start b-tags)
-                              (tmp-session a-start* a-stop combined-tags)
-                              (tmp-session a-stop* b-stop b-tags)]
-               :contains     [(tmp-session a-start b-start a-tags)
-                              (tmp-session b-start* b-stop combined-tags)
-                              (tmp-session b-stop* a-stop a-tags)]
-               :finishes     [(tmp-session b-start a-start b-tags)
-                              (tmp-session a-start* b-stop combined-tags)]
-               :finished-by  [(tmp-session a-start b-start a-tags)
-                              (tmp-session b-start* a-stop combined-tags)]
-               ;; else
-               [a b]))))
-       (flatten)
-       (distinct)
-       (vec)))
-
-(defn smoosh-sessions-new
-  [sessions]
-  (->> sessions
        get-collision-groups
        (mapv (fn [cg]
                (loop [time-stamps    (->> cg
@@ -304,7 +253,7 @@
            :session/stop  (t/+ (t/now) (t/new-duration 11 :minutes))
            :session/tags  []}
           ]
-         (smoosh-sessions-new)
+         (smoosh-sessions)
          ;; (transform [sp/ALL] :session/tags)
          )
     )
