@@ -8,7 +8,7 @@
    [applied-science.js-interop :as j]
    [camel-snake-kebab.core :as csk]
    [camel-snake-kebab.extras :as cske]
-   [com.rpl.specter :as sp :refer [transform]]
+   [com.rpl.specter :as sp :refer [setval]]
    [tick.alpha.api :as t]
    [re-frame.core :refer [subscribe dispatch dispatch-sync]]
    [potpuri.core :as p]))
@@ -166,6 +166,39 @@
    :session/id    (random-uuid)
    :session/tmp   true})
 
+(defn session-ish-overlaps-collision-group?
+  [session-ish c-group]
+  (some? (->> c-group
+              (some #(touches session-ish %)))))
+
+(defn insert-into-collision-group
+  [collision-groups session-ish]
+  (let [collision-groups-with-trailing-empty
+        (if (empty? (last collision-groups))
+          collision-groups
+          (conj collision-groups []))]
+
+    (setval
+
+      (sp/cond-path
+        ;;put the session in the first group that collides
+        [(sp/subselect sp/ALL (partial session-ish-overlaps-collision-group? session-ish)) sp/FIRST]
+        [(sp/subselect sp/ALL (partial session-ish-overlaps-collision-group? session-ish)) sp/FIRST sp/AFTER-ELEM]
+
+        ;; otherwise put it in the first empty
+        [(sp/subselect sp/ALL empty?) sp/FIRST]
+        [(sp/subselect sp/ALL empty?) sp/FIRST sp/AFTER-ELEM])
+
+      session-ish
+      collision-groups-with-trailing-empty)))
+
+(defn get-collision-groups
+  [session-ishes]
+  (->> session-ishes
+       (reduce insert-into-collision-group [[]])
+       (remove empty?)
+       vec))
+
 (defn smoosh-sessions
   [sessions]
   (->> sessions
@@ -182,44 +215,82 @@
            (let [combined-tags (-> []
                                    (concat a-tags b-tags)
                                    (distinct)
-                                   (vec))]
+                                   (vec))
+                 a-start*      (-> a-start (t/+ (t/new-duration 1 :seconds)))
+                 b-start*      (-> b-start (t/+ (t/new-duration 1 :seconds)))
+                 a-stop*       (-> a-stop (t/+ (t/new-duration 1 :seconds)))
+                 b-stop*       (-> b-stop (t/+ (t/new-duration 1 :seconds)))]
              (case (t/relation
                      (make-session-ish-interval a)
                      (make-session-ish-interval b))
+
                :overlaps     [(tmp-session a-start b-start a-tags)
-                              (tmp-session b-start a-stop combined-tags)
-                              (tmp-session a-stop b-stop b-tags)]
+                              (tmp-session b-start* a-stop combined-tags)
+                              (tmp-session a-stop* b-stop b-tags)]
                :overlaped-by [(tmp-session b-start a-start b-tags)
-                              (tmp-session a-start b-stop combined-tags)
-                              (tmp-session b-stop a-stop a-tags)]
+                              (tmp-session a-start* b-stop combined-tags)
+                              (tmp-session b-stop* a-stop a-tags)]
                :starts       [(tmp-session a-start a-stop combined-tags)
-                              (tmp-session a-stop b-stop b-tags)]
+                              (tmp-session a-stop* b-stop b-tags)]
                :started-by   [(tmp-session b-start b-stop combined-tags)
-                              (tmp-session b-stop a-stop a-tags)]
+                              (tmp-session b-stop* a-stop a-tags)]
                :during       [(tmp-session b-start a-start b-tags)
-                              (tmp-session a-start a-stop combined-tags)
-                              (tmp-session a-stop b-stop b-tags)]
+                              (tmp-session a-start* a-stop combined-tags)
+                              (tmp-session a-stop* b-stop b-tags)]
                :contains     [(tmp-session a-start b-start a-tags)
-                              (tmp-session b-start b-stop combined-tags)
-                              (tmp-session b-stop a-stop a-tags)]
+                              (tmp-session b-start* b-stop combined-tags)
+                              (tmp-session b-stop* a-stop a-tags)]
                :finishes     [(tmp-session b-start a-start b-tags)
-                              (tmp-session a-start b-stop combined-tags)]
+                              (tmp-session a-start* b-stop combined-tags)]
                :finished-by  [(tmp-session a-start b-start a-tags)
-                              (tmp-session b-start a-stop combined-tags)]
+                              (tmp-session b-start* a-stop combined-tags)]
                ;; else
                [a b]))))
        (flatten)
        (distinct)
        (vec)))
 
+(defn smoosh-sessions-new
+  [sessions]
+  (->> sessions
+       get-collision-groups
+       (map (fn [cg]
+              (loop [time-stamps    (->> cg
+                                         (map #(list (:session/start %) (:session/stop %)))
+                                         flatten
+                                         distinct
+                                         sort
+                                         rest
+                                         vec)
+                     acc            []
+                     cur-time-stamp (->> cg (sort-by :session/start) first :session/start)]
+                (if (empty? time-stamps)
+                  acc
+                  (recur (->> time-stamps rest vec)
+                         (conj acc {:session/start cur-time-stamp :session/stop (first time-stamps)})
+                         (->> time-stamps first))))))))
+
 (comment
   (time
-    (->> [
-          {:session/label "A" :session/tags [:a] :session/id #uuid "27cab9e7-df48-4218-b227-2ea382939b1d", :session/start #time/instant "2021-12-20T17:31:00Z", :session/stop #time/instant "2021-12-20T19:23:00Z", :session/created #time/instant "2021-12-20T17:31:00Z", :session/last-edited #time/instant "2021-12-20T19:23:00Z", :session/type :session/plan}
-          {:session/label "B" :session/tags [:b :c] :session/id #uuid "f8671edc-54cd-474b-b581-73231c963caf", :session/start #time/instant "2021-12-18T11:09:00Z", :session/stop #time/instant "2021-12-18T23:47:00Z", :session/created #time/instant "2021-12-18T11:09:00Z", :session/last-edited #time/instant "2021-12-18T12:47:00Z", :session/type :session/track}
-          {:session/label "C" :session/tags [:d] :session/id #uuid "425e67f1-b47e-4589-b958-23a51235eb57", :session/start #time/instant "2021-12-18T18:46:00Z", :session/stop #time/instant "2021-12-18T21:43:00Z", :session/created #time/instant "2021-12-18T18:46:00Z", :session/last-edited #time/instant "2021-12-18T21:43:00Z", :session/type :session/track}
+    (->> [{:session/start (t/+ (t/now) (t/new-duration 1 :minutes))
+           :session/stop  (t/+ (t/now) (t/new-duration 2 :minutes))}
+          {:session/start (t/+ (t/now) (t/new-duration 1 :minutes))
+           :session/stop  (t/+ (t/now) (t/new-duration 3 :minutes))}
+          {:session/start (t/+ (t/now) (t/new-duration 1 :minutes))
+           :session/stop  (t/+ (t/now) (t/new-duration 5 :minutes))}
+
+          {:session/start (t/+ (t/now) (t/new-duration 6 :minutes))
+           :session/stop  (t/+ (t/now) (t/new-duration 7 :minutes))}
+
+          {:session/start (t/+ (t/now) (t/new-duration 8 :minutes))
+           :session/stop  (t/+ (t/now) (t/new-duration 10 :minutes))}
+          {:session/start (t/+ (t/now) (t/new-duration 9 :minutes))
+           :session/stop  (t/+ (t/now) (t/new-duration 12 :minutes))}
+          {:session/start (t/+ (t/now) (t/new-duration 10 :minutes))
+           :session/stop  (t/+ (t/now) (t/new-duration 11 :minutes))}
           ]
-         (smoosh-sessions)
+         (smoosh-sessions-new)
          ;; (transform [sp/ALL] :session/tags)
-         ))
+         )
+    )
   )

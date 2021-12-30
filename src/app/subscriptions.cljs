@@ -4,19 +4,17 @@
    ["faker" :as faker] ;; TODO remove when tracking is implemented
    ["node-emoji" :as emoji]
    [applied-science.js-interop :as j]
-   [re-frame.core :refer [reg-sub subscribe]]
+   [re-frame.core :refer [reg-sub]]
    [clojure.string :refer [join]]
    [clojure.set :refer [subset?]]
    [com.rpl.specter :as sp :refer [select
-                                   setval
                                    transform
                                    select-one
                                    select-one!]]
    [tick.alpha.api :as t]
-   [app.colors :refer [material-500-hexes white black]]
-   [app.helpers :refer [touches
-                        combine-tag-labels
-                        chance
+   [app.colors :refer [white black]]
+   [app.helpers :refer [combine-tag-labels
+                        get-collision-groups
                         prepend-zero
                         drop-keyword-sections
                         hex-if-some
@@ -80,39 +78,6 @@
        :session/stop-truncated  (if (-> stop (t/> (t/instant end)))
                                   end
                                   stop)})))
-
-(defn session-ish-overlaps-collision-group?
-  [session-ish c-group]
-  (some? (->> c-group
-              (some #(touches session-ish %)))))
-
-(defn insert-into-collision-group
-  [collision-groups session-ish]
-  (let [collision-groups-with-trailing-empty
-        (if (empty? (last collision-groups))
-          collision-groups
-          (conj collision-groups []))]
-
-    (setval
-
-      (sp/cond-path
-        ;;put the session in the first group that collides
-        [(sp/subselect sp/ALL (partial session-ish-overlaps-collision-group? session-ish)) sp/FIRST]
-        [(sp/subselect sp/ALL (partial session-ish-overlaps-collision-group? session-ish)) sp/FIRST sp/AFTER-ELEM]
-
-        ;; otherwise put it in the first empty
-        [(sp/subselect sp/ALL empty?) sp/FIRST]
-        [(sp/subselect sp/ALL empty?) sp/FIRST sp/AFTER-ELEM])
-
-      session-ish
-      collision-groups-with-trailing-empty)))
-
-(defn get-collision-groups
-  [session-ishes]
-  (->> session-ishes
-       (reduce insert-into-collision-group [[]])
-       (remove empty?)
-       vec))
 
 (defn instant->top-position
   [i zoom]
@@ -857,7 +822,8 @@
                                          {:name  "Other"
                                           :min   other-time
                                           :color "#a0a0a0"})))]
-    (tap> (p/map-of final-results))
+    (tap> (p/map-of total-time other-time matched-total))
+    (tap> (p/map-of tg-matched))
     final-results))
 (reg-sub :pie-chart-data
 
