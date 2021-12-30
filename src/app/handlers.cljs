@@ -1,6 +1,8 @@
 (ns app.handlers
   (:require
    ["color" :as color]
+
+   [applied-science.js-interop :as j]
    [re-frame.core :refer [reg-event-db
                           ->interceptor
                           reg-event-fx
@@ -8,12 +10,13 @@
                           debug]]
    [com.rpl.specter :as sp :refer [select select-one setval transform selected-any?]]
    [clojure.spec.alpha :as s]
-   [app.db :as db :refer [default-app-db app-db-spec start-before-stop start-before-stop-times]]
    [tick.alpha.api :as t]
    [potpuri.core :as p]
+
+   [app.db :as db :refer [default-app-db app-db-spec start-before-stop start-before-stop-times]]
    [app.screens.core :refer [screens]]
    [app.misc :refer [make-color-if-some native-event->time native-event->type]]
-   [applied-science.js-interop :as j]))
+   [app.subscriptions :refer [calendar sessions tags report-interval pie-chart-tag-groups]]))
 
 (defn check-and-throw
   "Throw an exception if db doesn't have a valid spec."
@@ -72,7 +75,8 @@
 (defn navigate
   [{:keys [db]} [_ screen-name]]
   {:db       db
-   :navigate screen-name})
+   :navigate screen-name
+   :fx       [[:dispatch [:set-pie-chart-data-state :stale]]]})
 (reg-event-fx :navigate [base-interceptors] navigate)
 
 (defn set-tag-remove-modal
@@ -722,18 +726,19 @@
 (reg-event-fx :export-backup [base-interceptors] export-backup)
 
 (defn set-report-interval
-  [db [_ {:keys [beginning end]}]]
-  (let [beginning (or beginning (->> db (select-one [:app-db.reports/beginning-date])))
-        end       (or end (->> db (select-one [:app-db.reports/end-date])))
-        beginning (-> beginning t/date)
-        end       (-> end t/date)]
-    (if (t/> end beginning)
-      (->> db
-           (setval [:app-db.reports/beginning-date] beginning)
-           (setval [:app-db.reports/end-date] end))
-      ;; TODO alert
-      db)))
-(reg-event-db :set-report-interval [base-interceptors] set-report-interval)
+  [{:keys [db]} [_ {:keys [beginning end]}]]
+  {:db (let [beginning (or beginning (->> db (select-one [:app-db.reports/beginning-date])))
+             end       (or end (->> db (select-one [:app-db.reports/end-date])))
+             beginning (-> beginning t/date)
+             end       (-> end t/date)]
+         (if (t/> end beginning)
+           (->> db
+                (setval [:app-db.reports/beginning-date] beginning)
+                (setval [:app-db.reports/end-date] end))
+           ;; TODO alert
+           db))
+   :fx [[:dispatch [:set-pie-chart-data-state :stale]]]})
+(reg-event-fx :set-report-interval [base-interceptors] set-report-interval)
 
 (defn add-pie-chart-tag-group
   [{:keys [db new-uuid]} _]
@@ -742,13 +747,14 @@
 (reg-event-fx :add-pie-chart-tag-group [base-interceptors id-gen] add-pie-chart-tag-group)
 
 (defn add-tag-to-pie-chart-tag-group
-  [db [_ {group-id :pie-chart.tag-group/id
-          tag-id   :tag/id}]]
-  (->> db
-       (transform [:app-db.reports.pie-chart/tag-groups
-                   (sp/must group-id)
-                   (sp/keypath :tag-group/tags)] #(conj (or % []) tag-id))))
-(reg-event-db :add-tag-to-pie-chart-tag-group [base-interceptors] add-tag-to-pie-chart-tag-group)
+  [{:keys [db]} [_ {group-id :pie-chart.tag-group/id
+                    tag-id   :tag/id}]]
+  {:db (->> db
+            (transform [:app-db.reports.pie-chart/tag-groups
+                        (sp/must group-id)
+                        (sp/keypath :tag-group/tags)] #(conj (or % []) tag-id)))
+   :fx [[:dispatch [:set-pie-chart-data-state :stale]]]})
+(reg-event-fx :add-tag-to-pie-chart-tag-group [base-interceptors] add-tag-to-pie-chart-tag-group)
 
 (defn set-selected-pie-chart-tag-group
   [db [_ {group-id :pie-chart.tag-group/id}]]
@@ -757,22 +763,24 @@
 (reg-event-db :set-selected-pie-chart-tag-group set-selected-pie-chart-tag-group)
 
 (defn remove-tag-from-pie-chart-tag-group
-  [db [_ {group-id :pie-chart.tag-group/id
-          tag-id   :tag/id}]]
-  (->> db
-       (transform [:app-db.reports.pie-chart/tag-groups
-                   (sp/must group-id)
-                   (sp/must :tag-group/tags)] (fn [tags]
-                                                (->> tags
-                                                     (remove #(= % tag-id))
-                                                     vec)))))
-(reg-event-db :remove-tag-from-pie-chart-tag-group [base-interceptors] remove-tag-from-pie-chart-tag-group)
+  [{:keys [db]} [_ {group-id :pie-chart.tag-group/id
+                    tag-id   :tag/id}]]
+  {:db (->> db
+            (transform [:app-db.reports.pie-chart/tag-groups
+                        (sp/must group-id)
+                        (sp/must :tag-group/tags)] (fn [tags]
+                                                     (->> tags
+                                                          (remove #(= % tag-id))
+                                                          vec))))
+   :fx [[:dispatch [:set-pie-chart-data-state :stale]]]})
+(reg-event-fx :remove-tag-from-pie-chart-tag-group [base-interceptors] remove-tag-from-pie-chart-tag-group)
 
 (defn remove-pie-chart-tag-group
-  [db [_ {group-id :pie-chart.tag-group/id}]]
-  (->> db
-       (transform [:app-db.reports.pie-chart/tag-groups ] #(dissoc % group-id))))
-(reg-event-db :remove-pie-chart-tag-group [base-interceptors] remove-pie-chart-tag-group)
+  [{:keys [db]} [_ {group-id :pie-chart.tag-group/id}]]
+  {:db (->> db
+            (transform [:app-db.reports.pie-chart/tag-groups ] #(dissoc % group-id)))
+   :fx [[:dispatch [:set-pie-chart-data-state :stale]]]})
+(reg-event-fx :remove-pie-chart-tag-group [base-interceptors] remove-pie-chart-tag-group)
 
 (defn create-backups-directory
   [{:keys [db]} _]
@@ -781,10 +789,32 @@
 (reg-event-fx :create-backups-directory [base-interceptors] create-backups-directory)
 
 (defn set-strictness-for-pie-chart-tag-group
-  [db [_ {group-id   :pie-chart.tag-group/id
-          strictness :tag-group/strict-match}]]
-  (->> db
-       (setval [:app-db.reports.pie-chart/tag-groups
-                (sp/must group-id)
-                (sp/keypath :tag-group/strict-match)] strictness)))
-(reg-event-db :set-strictness-for-pie-chart-tag-group [base-interceptors] set-strictness-for-pie-chart-tag-group)
+  [{:keys [db]} [_ {group-id   :pie-chart.tag-group/id
+                    strictness :tag-group/strict-match}]]
+  {:db (->> db
+            (setval [:app-db.reports.pie-chart/tag-groups
+                     (sp/must group-id)
+                     (sp/keypath :tag-group/strict-match)] strictness))
+   :fx [[:dispatch [:set-pie-chart-data-state :stale]]]})
+(reg-event-fx :set-strictness-for-pie-chart-tag-group [base-interceptors] set-strictness-for-pie-chart-tag-group)
+
+(defn set-pie-chart-data
+  [{:keys [db]} [_ new-data]]
+  {:db (->> db (setval [:app-db.reports.pie-chart/data] new-data))
+   :fx [[:dispatch [:set-pie-chart-data-state :valid]]]})
+(reg-event-fx :set-pie-chart-data [base-interceptors] set-pie-chart-data)
+
+(defn set-pie-chart-data-state
+  [db [_ new-state]]
+  (->> db (setval [:app-db.reports.pie-chart/data-state] new-state)))
+(reg-event-db :set-pie-chart-data-state [base-interceptors] set-pie-chart-data-state)
+
+(defn generate-pie-chart-data
+  [{:keys [db]} _]
+  {:db                      db
+   :generate-pie-chart-data {:calendar        (calendar db nil)
+                             :sessions        (sessions db nil)
+                             :tags            (tags db nil)
+                             :report-interval (report-interval db nil)
+                             :tag-groups      (pie-chart-tag-groups db nil)}})
+(reg-event-fx :generate-pie-chart-data [base-interceptors] generate-pie-chart-data)

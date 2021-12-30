@@ -76,6 +76,7 @@
 
 (defn pie-chart []
   (let [data                             (<sub [:pie-chart-data])
+        data-state                       (<sub [:pie-chart-data-state])
         tag-groups                       (<sub [:pie-chart-tag-groups-hydrated])
         {selected-id :tag-group/id
          :as         selected-tag-group} (<sub [:pie-chart-selected-tag-group])]
@@ -91,10 +92,15 @@
        :backgroundColor "transparent"
        :paddingLeft     "15"}]
 
-     ;; TODO put this in a tooltip with a graphic "How does this work?"
-     [:> paper/Paragraph
-      {:style (tw "mb-6")}
-      "Tracked sessions flow top down through each tag group below. By default a session matches when the tag group is a subset. Selecting equality forces a strict match."]
+     (case data-state
+       :stale
+       [:> rn/View {:style (tw "mb-6")}
+        [:> paper/Button {:icon     "refresh"
+                          :mode     "contained"
+                          :on-press #(>evt [:generate-pie-chart-data])}
+         "re-calculate"]]
+       :loading [:> paper/Text "Loading..."]
+       :valid   [:> rn/View])
 
      (for [[id {color      :tag-group/color
                 tags       :tag-group/tags

@@ -665,8 +665,7 @@
 
 (defn pie-chart-tag-groups
   [db _]
-  (->> db
-       (select-one [:app-db.reports.pie-chart/tag-groups])))
+  (->> db (select-one [:app-db.reports.pie-chart/tag-groups])))
 (reg-sub :pie-chart-tag-groups pie-chart-tag-groups)
 
 (defn pie-chart-tag-groups-hydrated
@@ -714,3 +713,8 @@
          :<- [:pie-chart-selected-tag-group-id]
 
          pie-chart-selected-tag-group)
+
+(defn pie-chart-data-state
+  [db _]
+  (->> db (select-one [:app-db.reports.pie-chart/data-state])))
+(reg-sub :pie-chart-data-state pie-chart-data-state)
