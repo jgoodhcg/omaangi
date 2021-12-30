@@ -53,65 +53,31 @@
 
 (def backups-dir (str dd "backups/"))
 
-(defn <load-app-db-from-file
-  []
-  (go
-    (try
-      (-> expo-file-system (j/call :getInfoAsync app-db-file-path)
-          <p!
-          ((fn [info-result]
-             (if (-> info-result (j/get :exists) (= false))
-               ;; file does NOT exist
-               (do
-                 (-> rn/Alert (j/call :alert "No app-db file exists"))
-                 (>evt [:load-db default-app-db]))
-               ;; file exists load db
-               (go
-                 (try
-                   (-> expo-file-system (j/call :readAsStringAsync app-db-file-path)
-                       <p!
-                       ((fn [app-db-str]
-                          (>evt [:load-db (-> app-db-str de-serialize
-                                              ;; this merge handles accretion to the db spec
-                                              (->> (merge default-app-db)))]))))
-                   (catch js/Object e
-                     (-> rn/Alert (j/call :alert "Failure on readAsStringAsync" (str e))))))))))
-      (catch js/Object e
-        (-> rn/Alert (j/call :alert "Failure on getInfoAsync" (str e)))))))
-
 (reg-fx :check-for-saved-db
         (fn [_]
           (go
             (try
-              ;; TODO temporary migration code replace with load-app-db-from-file
-              ;; check async-storage first
-              (-> async-storage
-                  (j/get :default)
-                  (j/call :getItem app-db-key)
+              (-> expo-file-system (j/call :getInfoAsync app-db-file-path)
                   <p!
-                  ((fn [local-store-value]
-                     (if (some? local-store-value)
+                  ((fn [info-result]
+                     (if (-> info-result (j/get :exists) (= false))
+                       ;; file does NOT exist
                        (do
-                         ;; if an async storage item is present then load it
-                         (>evt [:load-db (-> local-store-value de-serialize
-                                             ;; this merge handles accretion to the db spec
-                                             (->> (merge default-app-db)))])
-                         ;; and then get rid of it
-                         (go
-                           (try
-                             (-> async-storage
-                                 (j/get :default)
-                                 (j/call :removeItem app-db-key)
-                                 <p!)
-                             (catch js/Object e
-                               (tap> (str "error deleting old async storage backup " e))
-                               (-> rn/Alert (j/call :alert "error deleting old async storage backup " (str e)))))))
-
-                       ;; if there is no async storage item then just load from file (new process)
-                       (go (<! (<load-app-db-from-file)))))))
+                         (-> rn/Alert (j/call :alert "No app-db file exists"))
+                         (>evt [:load-db default-app-db]))
+                       ;; file exists load db
+                       (go
+                         (try
+                           (-> expo-file-system (j/call :readAsStringAsync app-db-file-path)
+                               <p!
+                               ((fn [app-db-str]
+                                  (>evt [:load-db (-> app-db-str de-serialize
+                                                      ;; this merge handles accretion to the db spec
+                                                      (->> (merge default-app-db )))]))))
+                           (catch js/Object e
+                             (-> rn/Alert (j/call :alert "Failure on readAsStringAsync" (str e))))))))))
               (catch js/Object e
-                (tap> (str "error checking for db " e))
-                (-> rn/Alert (j/call :alert "cljs catch on get Item " (str e))))))))
+                (-> rn/Alert (j/call :alert "Failure on getInfoAsync" (str e))))))       ))
 
 (reg-fx :save-db
         (fn [app-db]
