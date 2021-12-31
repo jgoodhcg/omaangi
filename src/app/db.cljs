@@ -377,6 +377,8 @@
 
 (s/def ::tag-groups (s/and map? (s/every-kv uuid? ::tag-group)))
 
+(s/def ::data-state #{:loading :valid :stale})
+
 (def app-db-spec
   (ds/spec
     {:name ::app-db
@@ -420,7 +422,10 @@
       :app-db.reports.pie-chart/data                    [{:name  string?
                                                           :min   number?
                                                           :color string?}]
-      :app-db.reports.pie-chart/data-state              (s/spec #{:loading :valid :stale})}}))
+      :app-db.reports.pie-chart/data-state              ::data-state
+      :app-db.reports.pattern/data                      [{:day   (s/spec #{"MON" "TUE" "WED" "THU" "FRI" "SAT" "SUN"})
+                                                          :hours [string?]}]
+      :app-db.reports.pattern/data-state                ::data-state}}))
 
 (comment
   (s/explain app-db-spec (merge {:settings {:theme :dark}
@@ -488,7 +493,9 @@
        :app-db.reports.pie-chart/tag-groups              {}
        :app-db.reports.pie-chart/selected-tag-group      nil
        :app-db.reports.pie-chart/data                    []
-       :app-db.reports.pie-chart/data-state              :stale})))
+       :app-db.reports.pie-chart/data-state              :stale
+       :app-db.reports.pattern/data                      []
+       :app-db.reports.pattern/data-state                :stale})))
 
 ;;
 ;; serialization
@@ -505,6 +512,7 @@
        (transform [:app-db/session-templates sp/MAP-VALS (sp/must :session-template/color)] hex-if-some)
        (setval [:app-db/backup-keys] []) ;; don't backup backup keys
        (setval [:app-db.reports.pie-chart/data-state] :stale) ;; set data state to stale to prompt refresh on loads
+       (setval [:app-db.reports.pattern/data-state] :stale) ;; set data state to stale to prompt refresh on loads
 
        str))
 

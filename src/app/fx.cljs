@@ -18,9 +18,12 @@
    [app.misc :refer [>evt
                      >evt-sync
                      sessions->min-col
+                     session-minutes
                      smoosh-sessions
                      combine-tag-labels
                      hex-if-some
+                     make-color-if-some
+                     mix-tag-colors
                      replace-tag-refs-with-objects
                      set-session-ish-color
                      mix-tag-colors]]
@@ -202,32 +205,40 @@
               (tap> (str "error creating backup directory " e))
               (-> rn/Alert (j/call :alert "error creating backup directory " (str e)))))))
 
+(defn smooshed-and-tagged-sessions-for-interval
+  [{:keys [report-interval calendar sessions tags]}]
+  (let [{beg-intrvl :app-db.reports/beginning-date
+         end-intrvl :app-db.reports/end-date}
+        report-interval
+        days        (vec (t/range beg-intrvl
+                                  (t/+ end-intrvl
+                                       (t/new-period 1 :days))))
+        session-ids (->> calendar
+                         (select [(sp/submap days)
+                                  sp/MAP-VALS
+                                  :calendar/sessions])
+                         flatten
+                         set
+                         vec)]
+    (->> sessions
+         (select [(sp/submap session-ids)
+                  sp/MAP-VALS])
+         (filter #(= :session/track (:session/type %)))
+         (smoosh-sessions)
+         (mapv (partial replace-tag-refs-with-objects tags))
+         (mapv (partial set-session-ish-color {:hex true})))))
+
 (defn generate-pie-chart-data
   [{:keys [calendar sessions tags report-interval tag-groups]}]
   (go
     (let [{beg-intrvl :app-db.reports/beginning-date
            end-intrvl :app-db.reports/end-date}
           report-interval
+          sessions-tagged (smooshed-and-tagged-sessions-for-interval
+                            (p/map-of calendar report-interval sessions tags))
           tag-groups      (->> tag-groups
                                (select [sp/MAP-VALS])
                                (transform [sp/ALL] #(replace-tag-refs-with-objects tags %)))
-          days            (vec (t/range beg-intrvl
-                                        (t/+ end-intrvl
-                                             (t/new-period 1 :days))))
-          session-ids     (->> calendar
-                               (select [(sp/submap days)
-                                        sp/MAP-VALS
-                                        :calendar/sessions])
-                               flatten
-                               set
-                               vec)
-          sessions-tagged (->> sessions
-                               (select [(sp/submap session-ids)
-                                        sp/MAP-VALS])
-                               (filter #(= :session/track (:session/type %)))
-                               (smoosh-sessions)
-                               (mapv (partial replace-tag-refs-with-objects tags))
-                               (mapv (partial set-session-ish-color {:hex true})))
           tg-matched      (->> sessions-tagged
                                (mapv (fn [{session-tags :session/tags :as session-tagged}]
                                        (let [this-session-tags (->> session-tags
@@ -303,6 +314,62 @@
           (-> #(generate-pie-chart-data args)
               (js/setTimeout 500))))
 
+(defn generate-pattern-data
+  [{:keys [calendar sessions tags report-interval]}]
+  (let [sessions        (smooshed-and-tagged-sessions-for-interval
+                          (p/map-of calendar sessions tags report-interval sessions))
+        days-of-week    [t/MONDAY t/TUESDAY t/WEDNESDAY t/THURSDAY t/FRIDAY t/SATURDAY t/SUNDAY]
+        hours-of-day    (-> 24 range vec)
+        session-matches (fn [day-of-week hour {:session/keys [start stop]}]
+                          (let [days (->> (t/range start stop (t/new-duration 1 :minutes))
+                                          (map #(t/day-of-week %))
+                                          distinct)]
+                            (and
+                              ;; The session overlaps this day of the week
+                              (->> days (some #{day-of-week}) some?)
+                              (or
+                                ;; session is within the day and overlapps the hour
+                                (and (-> day-of-week (= (t/day-of-week start)))
+                                     (-> day-of-week (= (t/day-of-week stop)))
+                                     (-> hour (>= (t/hour start)))
+                                     (-> hour (<= (t/hour stop))))
+                                ;; left leaning
+                                (and (-> day-of-week (= (t/day-of-week stop)))
+                                     (-> hour (<= (t/hour stop)))
+                                     (-> days count (>= 2)))
+                                ;; right leaning
+                                (and (-> day-of-week (= (t/day-of-week start)))
+                                     (-> hour (>= (t/hour start)))
+                                     (-> days count (>= 2)))
+                                ;; the session overlaps the entire day of the week
+                                (-> days count (>= 3))))))]
+    (->> days-of-week
+         (mapv (fn [day-of-week]
+                 {:day   (-> day-of-week str (subs 0 3))
+                  :hours (->> hours-of-day
+                              (mapv (fn [hour]
+                                      (->> sessions
+                                           (filter (partial session-matches day-of-week hour))
+                                           (map :session/tags)
+                                           flatten
+                                           (filter #(-> % :tag/color hex-if-some))
+                                           (map #(-> % :tag/color hex-if-some (or "#ffffff")))
+                                           frequencies
+                                           (map identity)
+                                           (sort-by second)
+                                           (partition-by second)
+                                           first
+                                           (map first)
+                                           (map make-color-if-some)
+                                           mix-tag-colors
+                                           :mixed-color
+                                           hex-if-some))))})))))
+
+(reg-fx :generate-pattern-data
+        (fn [args]
+          ;; timeout is a hack to allow for re-render and displaying the loading component
+          (-> #(generate-pattern-data args)
+              (js/setTimeout 500))))
 ;; Some helpful repl stuff
 (comment
   ;; Hard reset app-db
@@ -311,4 +378,66 @@
     (>evt [:initialize-db])
     (>evt [:save-db]))
 
+  )
+
+(comment
+  (require '[re-frame.db])
+  (require '[app.subscriptions :refer [calendar sessions tags report-interval]])
+  (let [db              @re-frame.db/app-db
+        calendar        (calendar db nil)
+        sessions        (sessions db nil)
+        tags            (tags db nil)
+        report-interval (report-interval db nil)
+        sessions        (smooshed-and-tagged-sessions-for-interval
+                          (p/map-of calendar sessions tags report-interval sessions))
+        days-of-week    [t/MONDAY t/TUESDAY t/WEDNESDAY t/THURSDAY t/FRIDAY t/SATURDAY t/SUNDAY]
+        hours-of-day    (-> 24 range vec)
+        session-matches (fn [day-of-week hour {:session/keys [start stop]}]
+                          (let [days (->> (t/range start stop (t/new-duration 1 :minutes))
+                                          (map #(t/day-of-week %))
+                                          distinct)]
+                            (and
+                              ;; The session overlaps this day of the week
+                              (->> days (some #{day-of-week}) some?)
+                              (or
+                                ;; session is within the day and overlapps the hour
+                                (and (-> day-of-week (= (t/day-of-week start)))
+                                     (-> day-of-week (= (t/day-of-week stop)))
+                                     (-> hour (>= (t/hour start)))
+                                     (-> hour (<= (t/hour stop))))
+                                ;; left leaning
+                                (and (-> day-of-week (= (t/day-of-week stop)))
+                                     (-> hour (<= (t/hour stop)))
+                                     (-> days count (>= 2)))
+                                ;; right leaning
+                                (and (-> day-of-week (= (t/day-of-week start)))
+                                     (-> hour (>= (t/hour start)))
+                                     (-> days count (>= 2)))
+                                ;; the session overlaps the entire day of the week
+                                (-> days count (>= 3))))))
+        day-of-week     t/THURSDAY
+        hour            10
+        results         (->> days-of-week
+                             (mapv (fn [day-of-week]
+                                     {:day   (-> day-of-week str (subs 0 3))
+                                      :hours (->> hours-of-day
+                                                  (mapv (fn [hour]
+                                                          (->> sessions
+                                                               (filter (partial session-matches day-of-week hour))
+                                                               (map :session/tags)
+                                                               flatten
+                                                               (filter #(-> % :tag/color hex-if-some))
+                                                               (map #(-> % :tag/color hex-if-some (or "#ffffff")))
+                                                               frequencies
+                                                               (map identity)
+                                                               (sort-by second)
+                                                               (partition-by second)
+                                                               first
+                                                               (map first)
+                                                               (map make-color-if-some)
+                                                               mix-tag-colors
+                                                               :mixed-color
+                                                               hex-if-some))))})))]
+    results
+    )
   )

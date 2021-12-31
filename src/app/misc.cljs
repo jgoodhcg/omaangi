@@ -128,13 +128,15 @@
        (mapv :tag/label)
        (join " ")))
 
+(defn session-minutes
+  [{:session/keys [start stop]}]
+  (-> (t/between start stop)
+      (t/minutes)))
+
 (defn sessions->min-col
   [sessions]
   (->> sessions
-       (mapv #(-> (t/between
-                    (:session/start %)
-                    (:session/stop %))
-                  (t/minutes)))))
+       (mapv session-minutes)))
 
 (defn collides?
   "Works on both sessions and session-templates.
@@ -295,6 +297,7 @@
                                                              c)))) ]
                                    {:session/color          mixed-color
                                     :session-template/color mixed-color}))))))))
+
 (comment
   (time
     (->> [{:session/start (t/+ (t/now) (t/new-duration 1 :minutes))
