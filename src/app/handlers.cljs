@@ -76,7 +76,8 @@
   [{:keys [db]} [_ screen-name]]
   {:db       db
    :navigate screen-name
-   :fx       [[:dispatch [:set-pie-chart-data-state :stale]]]})
+   :fx       [[:dispatch [:set-pie-chart-data-state :stale]]
+              [:dispatch [:set-pattern-data-state :stale]]]})
 (reg-event-fx :navigate [base-interceptors] navigate)
 
 (defn set-tag-remove-modal
@@ -737,7 +738,8 @@
                 (setval [:app-db.reports/end-date] end))
            ;; TODO alert
            db))
-   :fx [[:dispatch [:set-pie-chart-data-state :stale]]]})
+   :fx [[:dispatch [:set-pie-chart-data-state :stale]]
+        [:dispatch [:set-pattern-data-state :stale]]]})
 (reg-event-fx :set-report-interval [base-interceptors] set-report-interval)
 
 (defn add-pie-chart-tag-group
@@ -819,3 +821,24 @@
                                    :report-interval (report-interval db nil)
                                    :tag-groups      (pie-chart-tag-groups db nil)}]]})
 (reg-event-fx :generate-pie-chart-data [base-interceptors] generate-pie-chart-data)
+
+(defn set-pattern-data
+  [{:keys [db]} [_ new-data]]
+  {:db (->> db (setval [:app-db.reports.pattern/data] new-data))
+   :fx [[:dispatch [:set-pattern-data-state :valid]]]})
+(reg-event-fx :set-pattern-data [base-interceptors] set-pattern-data)
+
+(defn set-pattern-data-state
+  [db [_ new-state]]
+  (->> db (setval [:app-db.reports.pattern/data-state] new-state)))
+(reg-event-db :set-pattern-data-state [base-interceptors] set-pattern-data-state)
+
+(defn generate-pattern-data
+  [{:keys [db]} _]
+  {:db db
+   :fx [[:dispatch [:set-pattern-data-state :loading]]
+        [:generate-pattern-data {:calendar        (calendar db nil)
+                                 :sessions        (sessions db nil)
+                                 :tags            (tags db nil)
+                                 :report-interval (report-interval db nil)}]]})
+(reg-event-fx :generate-pattern-data [base-interceptors] generate-pattern-data)

@@ -18,6 +18,7 @@
                      get-collision-groups
                      replace-tag-refs-with-objects
                      set-session-ish-color
+                     blank-color
                      prepend-zero
                      drop-keyword-sections
                      hex-if-some
@@ -718,3 +719,21 @@
   [db _]
   (->> db (select-one [:app-db.reports.pie-chart/data-state])))
 (reg-sub :pie-chart-data-state pie-chart-data-state)
+
+(defn pattern-data
+  [db _]
+  (->> db (select-one [:app-db.reports.pattern/data])
+       ((fn [data]
+          (if (empty? data) ;; some default
+            (->> 7
+                 range
+                 (map (fn [i]
+                        {:hours (->> 24 range (map #(str blank-color)))
+                         :day   (nth ["MON" "TUE" "WED" "THU" "FRI" "SAT" "SUN"] i)})))
+            data)))))
+(reg-sub :pattern-data pattern-data)
+
+(defn pattern-data-state
+  [db _]
+  (->> db (select-one [:app-db.reports.pattern/data-state])))
+(reg-sub :pattern-data-state pattern-data-state)

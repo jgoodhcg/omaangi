@@ -30,49 +30,48 @@
                ]
    :barColors ["#8d8d8d" "#bdbdbd" "#ab47bc"]})
 
-(def tmp-pattern-colors (->> 6 range (map #(-> (generate-color) (j/call :hex)))))
-(def tmp-pattern-day (->> 23
-                          range
-                          (map #(nth tmp-pattern-colors (mod % 6)))
-                          sort
-                          (split-at (rand-int 23))
-                          ((fn [[before after]]
-                             (vec (concat before [(j/call (generate-color) :hex)] after))))))
-(def tmp-pattern-days ["mon" "tue" "wed" "thu" "fri" "sat" "sun"])
-(def tmp-pattern-data
-  (->> 7
-       range
-       (map (fn [i]
-              {:hours (->> tmp-pattern-day cycle (drop (rand-int 7)) (take 24))
-               :day   (nth tmp-pattern-days i)}))))
-
 (defn color-opacity-based
   ([] (color-opacity-based 1))
   ([opacity]
    (str "rgba(255, 255, 255, " opacity ")")))
 
 (def chart-config
-{:backgroundGradientFrom        "#1E2923"
- :backgroundGradientFromOpacity 0,
- :backgroundGradientTo          "#08130D"
- :backgroundGradientToOpacity   0.5
- :color                         color-opacity-based
- :strokeWidth                   2
- :barPercentage                 0.5
- :useShadowColorFromDataset     false})
+  {:backgroundGradientFrom        "#1E2923"
+   :backgroundGradientFromOpacity 0,
+   :backgroundGradientTo          "#08130D"
+   :backgroundGradientToOpacity   0.5
+   :color                         color-opacity-based
+   :strokeWidth                   2
+   :barPercentage                 0.5
+   :useShadowColorFromDataset     false})
+
+(defn re-calc-button [{:keys [data-state on-press]}]
+  (case data-state
+    :stale   [:> rn/View {:style (tw "mb-6")}
+              [:> paper/Button {:icon     "refresh"
+                                :mode     "contained"
+                                :on-press on-press}
+               "re-calculate"]]
+    :loading [:> paper/Text "Loading..."]
+    :valid   [:> rn/View]))
 
 (defn pattern-graph []
-  [:> rn/View (tw "p-2 my-6")
-   [:> rn/View (tw "flex flex-col")
-    (for [{:keys [day hours]} tmp-pattern-data]
-      [:> rn/View {:style (tw "flex flex-row justify-between pb-1")
-                   :key   (str (random-uuid))}
-       [:> rn/View (tw "w-9")
-        [:> paper/Text  day]]
-       (for [c hours]
-         [:> rn/View {:style (merge (tw "w-3 h-6")
-                                    {:background-color c})
-                      :key   (str (random-uuid))}])])]])
+  (let [data       (<sub [:pattern-data])
+        data-state (<sub [:pattern-data-state])]
+    [:> rn/View
+     [re-calc-button {:data-state data-state
+                      :on-press   #(>evt [:generate-pattern-data])}]
+     [:> rn/View (tw "p-2 my-6")
+      [:> rn/View (tw "flex flex-col")
+       (for [{:keys [day hours]} data]
+         [:> rn/View {:style (tw "flex flex-row justify-between pb-1")
+                      :key   (str (random-uuid))}
+          [:> rn/View (tw "w-10")
+           [:> paper/Text  day]]
+          (for [c hours]
+            [:> rn/View {:style (merge (tw "w-3 h-6")
+                                       {:background-color c})
+                         :key   (str (random-uuid))}])])]]]))
 
 (defn pie-chart []
   (let [data                             (<sub [:pie-chart-data])
@@ -81,15 +80,8 @@
         {selected-id :tag-group/id
          :as         selected-tag-group} (<sub [:pie-chart-selected-tag-group])]
     [:> rn/View (tw "px-2 py-6 flex flex-col")
-     (case data-state
-       :stale   [:> rn/View {:style (tw "mb-6")}
-                 [:> paper/Button {:icon     "refresh"
-                                   :mode     "contained"
-                                   :on-press #(>evt [:generate-pie-chart-data])}
-                  "re-calculate"]]
-       :loading [:> paper/Text "Loading..."]
-       :valid   [:> rn/View])
-
+     [re-calc-button {:data-state data-state
+                      :on-press   #(>evt [:generate-pie-chart-data])}]
      [:> charts/PieChart
       {:data            (j/lit data)
        :width           400

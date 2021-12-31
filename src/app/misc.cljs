@@ -230,6 +230,8 @@
                                           distinct
                                           vec)})))))
 
+(def blank-color "#444444")
+
 (defn mix-tag-colors
   "Takes in a vec of color objects and outputs a map with :mixed-color"
   [tag-colors]
@@ -256,7 +258,7 @@
          {:mixed-color (or (first tag-colors)
                            ;; TODO is this a good default?
                            ;; should this default live somewhere else?
-                           (color "#ababab"))})))
+                           (color blank-color))})))
 
 (defn replace-tag-refs-with-objects
   [indexed-tags session-ish]
