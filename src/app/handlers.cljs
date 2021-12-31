@@ -811,10 +811,11 @@
 
 (defn generate-pie-chart-data
   [{:keys [db]} _]
-  {:db                      db
-   :generate-pie-chart-data {:calendar        (calendar db nil)
-                             :sessions        (sessions db nil)
-                             :tags            (tags db nil)
-                             :report-interval (report-interval db nil)
-                             :tag-groups      (pie-chart-tag-groups db nil)}})
+  {:db db
+   :fx [[:dispatch [:set-pie-chart-data-state :loading]]
+        [:generate-pie-chart-data {:calendar        (calendar db nil)
+                                   :sessions        (sessions db nil)
+                                   :tags            (tags db nil)
+                                   :report-interval (report-interval db nil)
+                                   :tag-groups      (pie-chart-tag-groups db nil)}]]})
 (reg-event-fx :generate-pie-chart-data [base-interceptors] generate-pie-chart-data)

@@ -81,6 +81,15 @@
         {selected-id :tag-group/id
          :as         selected-tag-group} (<sub [:pie-chart-selected-tag-group])]
     [:> rn/View (tw "px-2 py-6 flex flex-col")
+     (case data-state
+       :stale   [:> rn/View {:style (tw "mb-6")}
+                 [:> paper/Button {:icon     "refresh"
+                                   :mode     "contained"
+                                   :on-press #(>evt [:generate-pie-chart-data])}
+                  "re-calculate"]]
+       :loading [:> paper/Text "Loading..."]
+       :valid   [:> rn/View])
+
      [:> charts/PieChart
       {:data            (j/lit data)
        :width           400
@@ -91,16 +100,6 @@
        ;; :center          (j/lit [90 0])
        :backgroundColor "transparent"
        :paddingLeft     "15"}]
-
-     (case data-state
-       :stale
-       [:> rn/View {:style (tw "mb-6")}
-        [:> paper/Button {:icon     "refresh"
-                          :mode     "contained"
-                          :on-press #(>evt [:generate-pie-chart-data])}
-         "re-calculate"]]
-       :loading [:> paper/Text "Loading..."]
-       :valid   [:> rn/View])
 
      (for [[id {color      :tag-group/color
                 tags       :tag-group/tags

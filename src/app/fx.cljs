@@ -205,7 +205,6 @@
 (defn generate-pie-chart-data
   [{:keys [calendar sessions tags report-interval tag-groups]}]
   (go
-    (>evt-sync [:set-pie-chart-data-state :loading])
     (let [{beg-intrvl :app-db.reports/beginning-date
            end-intrvl :app-db.reports/end-date}
           report-interval
@@ -298,7 +297,11 @@
                                             :color "#a0a0a0"})))]
       (>evt [:set-pie-chart-data final-results]))))
 
-(reg-fx :generate-pie-chart-data generate-pie-chart-data)
+(reg-fx :generate-pie-chart-data
+        (fn [args]
+          ;; timeout is a hack to allow for re-render and displaying the loading component
+          (-> #(generate-pie-chart-data args)
+              (js/setTimeout 500))))
 
 ;; Some helpful repl stuff
 (comment
