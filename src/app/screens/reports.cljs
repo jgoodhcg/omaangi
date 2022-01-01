@@ -57,19 +57,29 @@
 
 (defn pattern-graph []
   (let [data       (<sub [:pattern-data])
-        data-state (<sub [:pattern-data-state])]
+        data-state (<sub [:pattern-data-state])
+        cell-style (tw "w-3 h-6")]
     [:> rn/View
      [re-calc-button {:data-state data-state
                       :on-press   #(>evt [:generate-pattern-data])}]
      [:> rn/View (tw "p-2 my-6")
       [:> rn/View (tw "flex flex-col")
+       [:> rn/View {:style (tw "flex flex-row justify-between pb-1")}
+        ;; time indicators
+        [:> rn/View (tw "w-10")]
+        (for [t (-> 24 range vec)]
+          [:> rn/View {:style cell-style
+                       :key   (str (random-uuid))}
+           (when (or (= 0 (mod t 6)) (= 23 t))
+             [:> paper/Text {:style (tw "text-xs w-4")} t])])]
+       ;; data display
        (for [{:keys [day hours]} data]
          [:> rn/View {:style (tw "flex flex-row justify-between pb-1")
                       :key   (str (random-uuid))}
           [:> rn/View (tw "w-10")
            [:> paper/Text  day]]
           (for [c hours]
-            [:> rn/View {:style (merge (tw "w-3 h-6")
+            [:> rn/View {:style (merge cell-style
                                        {:background-color c})
                          :key   (str (random-uuid))}])])]]]))
 
@@ -130,7 +140,6 @@
      [:> paper/Button {:icon     "playlist-plus"
                        :on-press #(>evt [:add-pie-chart-tag-group])} "Add tag group"]]))
 
-(for [id #{:a :c3 :b :C :d :s1 }] id)
 (defn stacked-bar-chart []
   [:> rn/View (tw "p-2 my-6")
    [:> charts/StackedBarChart {:data        (j/lit tmp-stacked-data)
