@@ -302,7 +302,9 @@
 
 (defn average
   [col]
-  (-> (reduce + col) (/ (count col))))
+  (if (empty? col)
+    0
+    (-> (reduce + col) (/ (count col)))  ))
 
 (comment
   (time

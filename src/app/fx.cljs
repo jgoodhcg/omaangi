@@ -318,57 +318,73 @@
           (-> #(generate-pie-chart-data args)
               (js/setTimeout 500))))
 
+(def days-of-week [t/MONDAY t/TUESDAY t/WEDNESDAY t/THURSDAY t/FRIDAY t/SATURDAY t/SUNDAY])
+
+(def hours-of-day (-> 24 range vec))
+
+(defn session-days-of-week
+  [{:session/keys [start stop]}]
+  (->> (t/range (t/date start) (t/date stop))
+       (concat [(t/date start)]) ;; t/range is empty if start and stop are on the same day
+       (mapv #(t/day-of-week %))
+       distinct))
+
+(defn session-matches-day-of-week
+  ([day-of-week session]
+   (session-matches-day-of-week day-of-week nil (session-days-of-week session)))
+  ([day-of-week _ session-days-of-week]
+   (->> session-days-of-week (some #{day-of-week}) some?)))
+
+(defn session-matches-day-of-week-and-hour
+  [day-of-week hour {:session/keys [start stop]
+                     :as           session}]
+  (let [days (session-days-of-week session)]
+    (and
+      ;; The session overlaps this day of the week
+      (session-matches-day-of-week day-of-week session days)
+      (or
+        ;; session is within the day and overlapps the hour
+        (and (-> day-of-week (= (t/day-of-week start)))
+             (-> day-of-week (= (t/day-of-week stop)))
+             (-> hour (>= (t/hour start)))
+             (-> hour (<= (t/hour stop))))
+        ;; left leaning
+        (and (-> day-of-week (= (t/day-of-week stop)))
+             (-> hour (<= (t/hour stop)))
+             (-> days count (>= 2)))
+        ;; right leaning
+        (and (-> day-of-week (= (t/day-of-week start)))
+             (-> hour (>= (t/hour start)))
+             (-> days count (>= 2)))
+        ;; the session overlaps the entire day of the week
+        (-> days count (>= 3))))))
+
 (defn generate-pattern-data
   [{:keys [calendar sessions tags report-interval]}]
-  (let [sessions        (smooshed-and-tagged-sessions-for-interval
-                          (p/map-of calendar sessions tags report-interval sessions))
-        days-of-week    [t/MONDAY t/TUESDAY t/WEDNESDAY t/THURSDAY t/FRIDAY t/SATURDAY t/SUNDAY]
-        hours-of-day    (-> 24 range vec)
-        session-matches (fn [day-of-week hour {:session/keys [start stop]}]
-                          (let [days (->> (t/range (t/date start) (t/date stop))
-                                          (concat [(t/date start)]) ;; t/range is empty if start and stop are on the same day
-                                          (mapv #(t/day-of-week %))
-                                          distinct)]
-                            (and
-                              ;; The session overlaps this day of the week
-                              (->> days (some #{day-of-week}) some?)
-                              (or
-                                ;; session is within the day and overlapps the hour
-                                (and (-> day-of-week (= (t/day-of-week start)))
-                                     (-> day-of-week (= (t/day-of-week stop)))
-                                     (-> hour (>= (t/hour start)))
-                                     (-> hour (<= (t/hour stop))))
-                                ;; left leaning
-                                (and (-> day-of-week (= (t/day-of-week stop)))
-                                     (-> hour (<= (t/hour stop)))
-                                     (-> days count (>= 2)))
-                                ;; right leaning
-                                (and (-> day-of-week (= (t/day-of-week start)))
-                                     (-> hour (>= (t/hour start)))
-                                     (-> days count (>= 2)))
-                                ;; the session overlaps the entire day of the week
-                                (-> days count (>= 3))))))
-        results         (->> days-of-week
-                             (mapv (fn [day-of-week]
-                                     {:day   (-> day-of-week str (subs 0 3))
-                                      :hours (->> hours-of-day
-                                                  (mapv (fn [hour]
-                                                          (->> sessions
-                                                               (filter (partial session-matches day-of-week hour))
-                                                               (map :session/tags)
-                                                               flatten
-                                                               (filter #(-> % :tag/color hex-if-some))
-                                                               (map #(-> % :tag/color hex-if-some (or "#ffffff")))
-                                                               frequencies
-                                                               (map identity)
-                                                               (sort-by second)
-                                                               (partition-by second)
-                                                               first
-                                                               (map first)
-                                                               (map make-color-if-some)
-                                                               mix-tag-colors
-                                                               :mixed-color
-                                                               hex-if-some))))})))]
+  (let [sessions (smooshed-and-tagged-sessions-for-interval
+                   (p/map-of calendar sessions tags report-interval sessions))
+        results  (->> days-of-week
+                      (mapv (fn [day-of-week]
+                              {:day   (-> day-of-week str (subs 0 3))
+                               :hours (->> hours-of-day
+                                           (mapv (fn [hour]
+                                                   (->> sessions
+                                                        (filter (partial session-matches-day-of-week-and-hour
+                                                                         day-of-week hour))
+                                                        (map :session/tags)
+                                                        flatten
+                                                        (filter #(-> % :tag/color hex-if-some))
+                                                        (map #(-> % :tag/color hex-if-some (or "#ffffff")))
+                                                        frequencies
+                                                        (map identity)
+                                                        (sort-by second)
+                                                        (partition-by second)
+                                                        first
+                                                        (map first)
+                                                        (map make-color-if-some)
+                                                        mix-tag-colors
+                                                        :mixed-color
+                                                        hex-if-some))))})))]
     (>evt [:set-pattern-data results])))
 
 (reg-fx :generate-pattern-data
@@ -390,90 +406,102 @@
 (comment
   (require '[re-frame.db])
   (require '[app.subscriptions :refer [calendar sessions tags report-interval]])
-  (let [db                   @re-frame.db/app-db
-        calendar             (calendar db nil)
-        sessions             (sessions db nil)
-        tags                 (tags db nil)
-        report-interval      (report-interval db nil)
-        sessions-tracked     (smooshed-and-tagged-sessions-for-interval
-                               (p/map-of calendar sessions tags report-interval sessions))
-        type                 :session/plan
-        sessions-planned     (smooshed-and-tagged-sessions-for-interval
-                               (p/map-of calendar sessions tags report-interval sessions type))
-        total-planned        (->> sessions-planned
-                                  sessions->min-col
-                                  (reduce +))
-        total-tracked        (->> sessions-tracked
-                                  sessions->min-col
-                                  (reduce +))
-        total-interval       (total-interval-minutes report-interval)
-        time-logged-score    (-> total-planned (+ total-tracked)
-                                 (/ (-> total-interval (* 2)))
-                                 (* 100)
-                                 (->> (j/call js/Math :round)))
-        tag-path             [sp/ALL (sp/keypath :session/tags) sp/ALL (sp/keypath :tag/id)]
-        total-for-tag-id-fn  (fn [sessions]
-                               (fn [tag-id]
-                                 {:tag/id  tag-id
-                                  :minutes (->> sessions
-                                                (filter (fn [session]
-                                                          (some? (some #{tag-id} (select (rest tag-path) session)))))
-                                                sessions->min-col
-                                                (reduce +))}))
-        planned-tags         (->> sessions-planned
-                                  (select tag-path)
-                                  distinct)
-        tracked-tags         (->> sessions-tracked
-                                  (select tag-path)
-                                  distinct)
-        total-p-tags         (->> planned-tags
-                                  (mapv (total-for-tag-id-fn sessions-planned)))
-        total-t-tags-indexed (->> tracked-tags
-                                  (mapv (total-for-tag-id-fn sessions-tracked))
-                                  (group-by :tag/id)
-                                  (transform [sp/MAP-VALS] first))
-        ratio-score          (fn [planned-min tracked-min]
-                               ;; Going 2x over results in a 0 score
-                               ;; Having 1/2x tracked results in a 50 score
-                               ;; Having 0x tracked results in a 0 score
-                               ;; Having 1.5x tracked results results in a 50 score
-                               (let [ratio (-> (or tracked-min 0) (/ planned-min))]
-                                 (if (-> ratio (> 1))
-                                   (-> 1 (- (-> ratio (- 1))) (* 100))
-                                   (-> ratio (* 100)))))
-        plan-tracked-score   (->> total-p-tags
-                                  (mapv (fn [{tag-id  :tag/id
-                                              minutes :minutes}]
-                                          (let [tracked-minutes (-> total-t-tags-indexed
-                                                                    (get tag-id)
-                                                                    (get :minutes))]
-                                            (ratio-score minutes tracked-minutes))))
-                                  average
-                                  (j/call js/Math :round))
-        alignment-score      (->> sessions-planned
-                                  (mapv (fn [{p-start :session/start
-                                              p-stop  :session/stop
-                                              :as     ps}]
-                                          (let [ps-tag-id-set (->> ps (select (rest tag-path)) set)
-                                                time-aligned  (->> sessions-tracked
-                                                                   (filter #(= (->> % (select (rest tag-path)) set)
-                                                                               ps-tag-id-set))
-                                                                   (mapv (fn [{t-start :session/start
-                                                                               t-stop  :session/stop}]
-                                                                           (let [concur (t/concur {:tick/beginning p-start
-                                                                                                   :tick/end       p-stop}
-                                                                                                  {:tick/beginning t-start
-                                                                                                   :tick/end       t-stop})]
-                                                                             (if (some? concur)
-                                                                               (->> concur
-                                                                                    (#(t/between (:tick/beginning %) (:tick/end %)))
-                                                                                    t/minutes)
-                                                                               0))))
-                                                                   (reduce +))]
-                                            (ratio-score (session-minutes ps) time-aligned))))
-                                  average
-                                  (j/call js/Math :round))
-        ]
-    (p/map-of plan-tracked-score time-logged-score alignment-score)
+  (let [db              @re-frame.db/app-db
+        calendar        (calendar db nil)
+        sessions        (sessions db nil)
+        tags            (tags db nil)
+        report-interval (report-interval db nil)
+
+        sessions-tracked (smooshed-and-tagged-sessions-for-interval
+                           (p/map-of calendar sessions tags report-interval sessions))
+        type             :session/plan
+        sessions-planned (smooshed-and-tagged-sessions-for-interval
+                           (p/map-of calendar sessions tags report-interval sessions type))
+
+        data (->> days-of-week
+                  (mapv (fn [day-of-week]
+                          (let [sessions-planned     (->> sessions-planned
+                                                          (filter (partial session-matches-day-of-week day-of-week)))
+                                sessions-tracked     (->> sessions-tracked
+                                                          (filter (partial session-matches-day-of-week day-of-week)))
+                                total-planned        (->> sessions-planned
+                                                          sessions->min-col
+                                                          (reduce +))
+                                total-tracked        (->> sessions-tracked
+                                                          sessions->min-col
+                                                          (reduce +))
+                                total-interval       (total-interval-minutes report-interval)
+                                time-logged-score    (-> total-planned (+ total-tracked)
+                                                         (/ (-> total-interval (* 2)))
+                                                         (* 100)
+                                                         (->> (j/call js/Math :round)))
+                                tag-path             [sp/ALL (sp/keypath :session/tags) sp/ALL (sp/keypath :tag/id)]
+                                total-for-tag-id-fn  (fn [sessions]
+                                                       (fn [tag-id]
+                                                         {:tag/id  tag-id
+                                                          :minutes (->> sessions
+                                                                        (filter (fn [session]
+                                                                                  (some? (some #{tag-id} (select (rest tag-path) session)))))
+                                                                        sessions->min-col
+                                                                        (reduce +))}))
+                                planned-tags         (->> sessions-planned
+                                                          (select tag-path)
+                                                          distinct)
+                                tracked-tags         (->> sessions-tracked
+                                                          (select tag-path)
+                                                          distinct)
+                                total-p-tags         (->> planned-tags
+                                                          (mapv (total-for-tag-id-fn sessions-planned)))
+                                total-t-tags-indexed (->> tracked-tags
+                                                          (mapv (total-for-tag-id-fn sessions-tracked))
+                                                          (group-by :tag/id)
+                                                          (transform [sp/MAP-VALS] first))
+                                ratio-score          (fn [planned-min tracked-min]
+                                                       ;; Going 2x over results in a 0 score
+                                                       ;; Having 1/2x tracked results in a 50 score
+                                                       ;; Having 0x tracked results in a 0 score
+                                                       ;; Having 1.5x tracked results results in a 50 score
+                                                       (let [ratio (-> (or tracked-min 0) (/ planned-min))]
+                                                         (if (-> ratio (> 1))
+                                                           (-> 1 (- (-> ratio (- 1))) (* 100))
+                                                           (-> ratio (* 100)))))
+                                plan-tracked-score   (->> total-p-tags
+                                                          (mapv (fn [{tag-id  :tag/id
+                                                                      minutes :minutes}]
+                                                                  (let [tracked-minutes (-> total-t-tags-indexed
+                                                                                            (get tag-id)
+                                                                                            (get :minutes))]
+                                                                    (ratio-score minutes tracked-minutes))))
+                                                          average
+                                                          (j/call js/Math :round))
+                                alignment-score      (->> sessions-planned
+                                                          (mapv (fn [{p-start :session/start
+                                                                      p-stop  :session/stop
+                                                                      :as     ps}]
+                                                                  (let [ps-tag-id-set (->> ps (select (rest tag-path)) set)
+                                                                        time-aligned  (->> sessions-tracked
+                                                                                           (filter #(= (->> % (select (rest tag-path)) set)
+                                                                                                       ps-tag-id-set))
+                                                                                           (mapv (fn [{t-start :session/start
+                                                                                                       t-stop  :session/stop}]
+                                                                                                   (let [concur (t/concur {:tick/beginning p-start
+                                                                                                                           :tick/end       p-stop}
+                                                                                                                          {:tick/beginning t-start
+                                                                                                                           :tick/end       t-stop})]
+                                                                                                     (if (some? concur)
+                                                                                                       (->> concur
+                                                                                                            (#(t/between (:tick/beginning %) (:tick/end %)))
+                                                                                                            t/minutes)
+                                                                                                       0))))
+                                                                                           (reduce +))]
+                                                                    (ratio-score (session-minutes ps) time-aligned))))
+                                                          average
+                                                          (j/call js/Math :round))]
+
+                            [time-logged-score plan-tracked-score alignment-score]))))]
+    {:labels    (->> days-of-week (mapv #(-> % str (subs 0 3))))
+     :legend    ["time logged" "plan tracked" "alignment"]
+     :data      data
+     :barColors ["#8d8d8d" "#bdbdbd" "#ab47bc"]}
     )
   )
