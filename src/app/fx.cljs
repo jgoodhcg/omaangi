@@ -207,7 +207,8 @@
               (-> rn/Alert (j/call :alert "error creating backup directory " (str e)))))))
 
 (defn smooshed-and-tagged-sessions-for-interval
-  [{:keys [report-interval calendar sessions tags]}]
+  [{:keys [report-interval calendar sessions tags type]
+    :or   {type :session/track}}]
   (let [{beg-intrvl :app-db.reports/beginning-date
          end-intrvl :app-db.reports/end-date}
         report-interval
@@ -224,18 +225,23 @@
     (->> sessions
          (select [(sp/submap session-ids)
                   sp/MAP-VALS])
-         (filter #(= :session/track (:session/type %)))
+         (filter #(= type (:session/type %)))
          (smoosh-sessions)
          (mapv (partial replace-tag-refs-with-objects tags))
          (mapv (partial set-session-ish-color {:hex true})))))
 
+(defn total-interval-minutes
+  [{beg-intrvl :app-db.reports/beginning-date
+    end-intrvl :app-db.reports/end-date}]
+  (-> (t/between
+        (-> beg-intrvl (t/at (t/time "00:00")) (t/instant))
+        (-> end-intrvl (t/at (t/time "23:59")) (t/instant)))
+      (t/minutes)))
+
 (defn generate-pie-chart-data
   [{:keys [calendar sessions tags report-interval tag-groups]}]
   (go
-    (let [{beg-intrvl :app-db.reports/beginning-date
-           end-intrvl :app-db.reports/end-date}
-          report-interval
-          sessions-tagged (smooshed-and-tagged-sessions-for-interval
+    (let [sessions-tagged (smooshed-and-tagged-sessions-for-interval
                             (p/map-of calendar report-interval sessions tags))
           tag-groups      (->> tag-groups
                                (select [sp/MAP-VALS])
@@ -273,10 +279,7 @@
                                                                                            combine-tag-labels)})]
                                          (merge session-tagged match)))))
           has-tg?         (fn [{tag-group-id :tag-group/id}] (some? tag-group-id))
-          total-time      (-> (t/between
-                                (-> beg-intrvl (t/at (t/time "00:00")) (t/instant))
-                                (-> end-intrvl (t/at (t/time "23:59")) (t/instant)))
-                              (t/minutes))
+          total-time      (total-interval-minutes report-interval)
           other-time      (->> tg-matched
                                (remove has-tg?)
                                (sessions->min-col)
@@ -382,4 +385,33 @@
     (>evt [:initialize-db])
     (>evt [:save-db]))
 
+  )
+
+(comment
+  (require '[re-frame.db])
+  (require '[app.subscriptions :refer [calendar sessions tags report-interval]])
+  (let [db                @re-frame.db/app-db
+        calendar          (calendar db nil)
+        sessions          (sessions db nil)
+        tags              (tags db nil)
+        report-interval   (report-interval db nil)
+        sessions-tracked  (smooshed-and-tagged-sessions-for-interval
+                            (p/map-of calendar sessions tags report-interval sessions))
+        type              :session/plan
+        sessions-planned  (smooshed-and-tagged-sessions-for-interval
+                            (p/map-of calendar sessions tags report-interval sessions type))
+        total-planned     (->> sessions-planned
+                               sessions->min-col
+                               (reduce +))
+        total-tracked     (->> sessions-tracked
+                               sessions->min-col
+                               (reduce +))
+        total-interval    (total-interval-minutes report-interval)
+        time-logged-score (-> total-planned (+ total-tracked)
+                              (/ (-> total-interval (* 2)))
+                              (* 100)
+                              (->> (j/call js/Math :round)))
+        ]
+    (p/map-of total-planned total-tracked total-interval time-logged-score)
+    )
   )
