@@ -17,6 +17,8 @@
 
    [app.misc :refer [>evt
                      average
+                     days-of-week
+                     hours-of-day
                      sessions->min-col
                      session-minutes
                      smoosh-sessions
@@ -318,10 +320,6 @@
           (-> #(generate-pie-chart-data args)
               (js/setTimeout 500))))
 
-(def days-of-week [t/MONDAY t/TUESDAY t/WEDNESDAY t/THURSDAY t/FRIDAY t/SATURDAY t/SUNDAY])
-
-(def hours-of-day (-> 24 range vec))
-
 (defn session-days-of-week
   [{:session/keys [start stop]}]
   (->> (t/range (t/date start) (t/date stop))
@@ -393,26 +391,9 @@
           (-> #(generate-pattern-data args)
               (js/setTimeout 500))))
 
-;; Some helpful repl stuff
-(comment
-  ;; Hard reset app-db
-  (do
-    (>evt [:stop-ticking])
-    (>evt [:initialize-db])
-    (>evt [:save-db]))
-
-  )
-
-(comment
-  (require '[re-frame.db])
-  (require '[app.subscriptions :refer [calendar sessions tags report-interval]])
-  (let [db              @re-frame.db/app-db
-        calendar        (calendar db nil)
-        sessions        (sessions db nil)
-        tags            (tags db nil)
-        report-interval (report-interval db nil)
-
-        sessions-tracked (smooshed-and-tagged-sessions-for-interval
+(defn generate-bar-chart-data
+  [{:keys [calendar sessions tags report-interval]}]
+  (let [sessions-tracked (smooshed-and-tagged-sessions-for-interval
                            (p/map-of calendar sessions tags report-interval sessions))
         type             :session/plan
         sessions-planned (smooshed-and-tagged-sessions-for-interval
@@ -499,9 +480,36 @@
                                                           (j/call js/Math :round))]
 
                             [time-logged-score plan-tracked-score alignment-score]))))]
-    {:labels    (->> days-of-week (mapv #(-> % str (subs 0 3))))
-     :legend    ["time logged" "plan tracked" "alignment"]
-     :data      data
-     :barColors ["#8d8d8d" "#bdbdbd" "#ab47bc"]}
+    (>evt [:set-bar-chart-data {:labels    (->> days-of-week (mapv #(-> % str (subs 0 3))))
+                                :legend    ["time logged" "plan tracked" "alignment"]
+                                :data      data
+                                :barColors ["#8d8d8d" "#bdbdbd" "#ab47bc"]}])))
+
+(reg-fx :generate-bar-chart-data
+        (fn [args]
+          ;; timeout is a hack to allow for re-render and displaying the loading component
+          (-> #(generate-bar-chart-data args)
+              (js/setTimeout 500))))
+
+;; Some helpful repl stuff
+(comment
+  ;; Hard reset app-db
+  (do
+    (>evt [:stop-ticking])
+    (>evt [:initialize-db])
+    (>evt [:save-db]))
+
+  )
+
+;; Useful for testing data gen
+(comment
+  (require '[re-frame.db])
+  (require '[app.subscriptions :refer [calendar sessions tags report-interval]])
+  (let [db              @re-frame.db/app-db
+        calendar        (calendar db nil)
+        sessions        (sessions db nil)
+        tags            (tags db nil)
+        report-interval (report-interval db nil)
+        ]
     )
   )

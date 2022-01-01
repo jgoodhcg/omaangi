@@ -14,6 +14,8 @@
    [tick.alpha.api :as t]
    [app.colors :refer [white black]]
    [app.misc :refer [combine-tag-labels
+                     days-of-week
+                     hours-of-day
                      mix-tag-colors
                      get-collision-groups
                      replace-tag-refs-with-objects
@@ -737,3 +739,26 @@
   [db _]
   (->> db (select-one [:app-db.reports.pattern/data-state])))
 (reg-sub :pattern-data-state pattern-data-state)
+
+(defn bar-chart-data
+  [db _]
+  (->> db (select-one [:app-db.reports.bar-chart/data])
+       ((fn [data]
+          (if (empty? data) ;; some default
+            {:labels    (->> days-of-week (mapv #(-> % str (subs 0 3))))
+             :legend    ["time logged" "plan tracked" "alignment"]
+             :data      [[1 1 1]
+                         [1 1 1]
+                         [1 1 1]
+                         [1 1 1]
+                         [1 1 1]
+                         [1 1 1]
+                         [1 1 1]]
+             :barColors ["#8d8d8d" "#bdbdbd" "#ab47bc"]}
+            data)))))
+(reg-sub :bar-chart-data bar-chart-data)
+
+(defn bar-chart-data-state
+  [db _]
+  (->> db (select-one [:app-db.reports.bar-chart/data-state])))
+(reg-sub :bar-chart-data-state bar-chart-data-state)

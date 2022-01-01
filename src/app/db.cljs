@@ -379,6 +379,8 @@
 
 (s/def ::data-state #{:loading :valid :stale})
 
+(s/def ::days-of-week-abbreviated #{"MON" "TUE" "WED" "THU" "FRI" "SAT" "SUN"})
+
 (def app-db-spec
   (ds/spec
     {:name ::app-db
@@ -423,9 +425,14 @@
                                                           :min   number?
                                                           :color string?}]
       :app-db.reports.pie-chart/data-state              ::data-state
-      :app-db.reports.pattern/data                      [{:day   (s/spec #{"MON" "TUE" "WED" "THU" "FRI" "SAT" "SUN"})
+      :app-db.reports.pattern/data                      [{:day   ::days-of-week-abbreviated
                                                           :hours [string?]}]
-      :app-db.reports.pattern/data-state                ::data-state}}))
+      :app-db.reports.pattern/data-state                ::data-state
+      :app-db.reports.bar-chart/data                    {(ds/opt :labels)    [::days-of-week-abbreviated]
+                                                         (ds/opt :legend)    [string?]
+                                                         (ds/opt :data)      [ [ number? ] ]
+                                                         (ds/opt :barColors) [string?]}
+      :app-db.reports.bar-chart/data-state              ::data-state}}))
 
 (comment
   (s/explain app-db-spec (merge {:settings {:theme :dark}
@@ -495,7 +502,9 @@
        :app-db.reports.pie-chart/data                    []
        :app-db.reports.pie-chart/data-state              :stale
        :app-db.reports.pattern/data                      []
-       :app-db.reports.pattern/data-state                :stale})))
+       :app-db.reports.pattern/data-state                :stale
+       :app-db.reports.bar-chart/data                    {}
+       :app-db.reports.bar-chart/data-state              :stale})))
 
 ;;
 ;; serialization
@@ -513,6 +522,7 @@
        (setval [:app-db/backup-keys] []) ;; don't backup backup keys
        (setval [:app-db.reports.pie-chart/data-state] :stale) ;; set data state to stale to prompt refresh on loads
        (setval [:app-db.reports.pattern/data-state] :stale) ;; set data state to stale to prompt refresh on loads
+       (setval [:app-db.reports.bar-chart/data-state] :stale) ;; set data state to stale to prompt refresh on loads
 
        str))
 

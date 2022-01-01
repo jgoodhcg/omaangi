@@ -306,6 +306,10 @@
     0
     (-> (reduce + col) (/ (count col)))  ))
 
+(def days-of-week [t/MONDAY t/TUESDAY t/WEDNESDAY t/THURSDAY t/FRIDAY t/SATURDAY t/SUNDAY])
+
+(def hours-of-day (-> 24 range vec))
+
 (comment
   (time
     (->> [{:session/start (t/+ (t/now) (t/new-duration 1 :minutes))

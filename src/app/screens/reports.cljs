@@ -16,20 +16,6 @@
    [app.tailwind :refer [tw]]
    [app.db :refer [generate-color]]))
 
-(def tmp-stacked-data
-  {:labels    ["mon" "tue" "wed" "thu" "fri" "sat" "sun"]
-   :legend    ["time logged" "plan executed" "alignment"]
-   :data      [
-               [30 40 90]
-               [20 40 90]
-               [10 40 90]
-               [30 90 20]
-               [50 20 10]
-               [50 50 90]
-               [30 40 90]
-               ]
-   :barColors ["#8d8d8d" "#bdbdbd" "#ab47bc"]})
-
 (defn color-opacity-based
   ([] (color-opacity-based 1))
   ([opacity]
@@ -45,15 +31,16 @@
    :barPercentage                 0.5
    :useShadowColorFromDataset     false})
 
-(defn re-calc-button [{:keys [data-state on-press]}]
-  (case data-state
-    :stale   [:> rn/View {:style (tw "mb-6")}
-              [:> paper/Button {:icon     "refresh"
+(defn re-calc-button
+  [{:keys [data-state on-press]}]
+  [:> rn/View {:style (tw "mt-6 mb-3")}
+   (case data-state
+     :stale   [:> paper/Button {:icon     "refresh"
                                 :mode     "contained"
                                 :on-press on-press}
-               "re-calculate"]]
-    :loading [:> paper/Text "Loading..."]
-    :valid   [:> rn/View]))
+               "re-calculate"]
+     :loading [:> paper/Text "Loading..."]
+     :valid   [:> rn/View])])
 
 (defn pattern-graph []
   (let [data       (<sub [:pattern-data])
@@ -141,11 +128,16 @@
                        :on-press #(>evt [:add-pie-chart-tag-group])} "Add tag group"]]))
 
 (defn stacked-bar-chart []
-  [:> rn/View (tw "p-2 my-6")
-   [:> charts/StackedBarChart {:data        (j/lit tmp-stacked-data)
-                               :width       400
-                               :height      220
-                               :chartConfig (j/lit chart-config)}]])
+  (let [data       (<sub [:bar-chart-data])
+        data-state (<sub [:bar-chart-data-state])]
+    [:> rn/View
+     [re-calc-button {:data-state data-state
+                      :on-press   #(>evt [:generate-bar-chart-data])}]
+     [:> rn/View (tw "p-2 my-6")
+      [:> charts/StackedBarChart {:data        (j/lit data)
+                                  :width       400
+                                  :height      220
+                                  :chartConfig (j/lit chart-config)}]]]))
 
 (defn interval-buttons []
   (let [{:keys [beginning-value

@@ -77,7 +77,8 @@
   {:db       db
    :navigate screen-name
    :fx       [[:dispatch [:set-pie-chart-data-state :stale]]
-              [:dispatch [:set-pattern-data-state :stale]]]})
+              [:dispatch [:set-pattern-data-state :stale]]
+              [:dispatch [:set-bar-chart-data-state :stale]]]})
 (reg-event-fx :navigate [base-interceptors] navigate)
 
 (defn set-tag-remove-modal
@@ -739,7 +740,8 @@
            ;; TODO alert
            db))
    :fx [[:dispatch [:set-pie-chart-data-state :stale]]
-        [:dispatch [:set-pattern-data-state :stale]]]})
+        [:dispatch [:set-pattern-data-state :stale]]
+        [:dispatch [:set-bar-chart-data-state :stale]]]})
 (reg-event-fx :set-report-interval [base-interceptors] set-report-interval)
 
 (defn add-pie-chart-tag-group
@@ -842,3 +844,24 @@
                                  :tags            (tags db nil)
                                  :report-interval (report-interval db nil)}]]})
 (reg-event-fx :generate-pattern-data [base-interceptors] generate-pattern-data)
+
+(defn set-bar-chart-data
+  [{:keys [db]} [_ new-data]]
+  {:db (->> db (setval [:app-db.reports.bar-chart/data] new-data))
+   :fx [[:dispatch [:set-bar-chart-data-state :valid]]]})
+(reg-event-fx :set-bar-chart-data [base-interceptors] set-bar-chart-data)
+
+(defn set-bar-chart-data-state
+  [db [_ new-state]]
+  (->> db (setval [:app-db.reports.bar-chart/data-state] new-state)))
+(reg-event-db :set-bar-chart-data-state [base-interceptors] set-bar-chart-data-state)
+
+(defn generate-bar-chart-data
+  [{:keys [db]} _]
+  {:db db
+   :fx [[:dispatch [:set-bar-chart-data-state :loading]]
+        [:generate-bar-chart-data {:calendar        (calendar db nil)
+                                   :sessions        (sessions db nil)
+                                   :tags            (tags db nil)
+                                   :report-interval (report-interval db nil)}]]})
+(reg-event-fx :generate-bar-chart-data [base-interceptors] generate-bar-chart-data)
