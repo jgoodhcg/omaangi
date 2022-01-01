@@ -390,28 +390,64 @@
 (comment
   (require '[re-frame.db])
   (require '[app.subscriptions :refer [calendar sessions tags report-interval]])
-  (let [db                @re-frame.db/app-db
-        calendar          (calendar db nil)
-        sessions          (sessions db nil)
-        tags              (tags db nil)
-        report-interval   (report-interval db nil)
-        sessions-tracked  (smooshed-and-tagged-sessions-for-interval
-                            (p/map-of calendar sessions tags report-interval sessions))
-        type              :session/plan
-        sessions-planned  (smooshed-and-tagged-sessions-for-interval
-                            (p/map-of calendar sessions tags report-interval sessions type))
-        total-planned     (->> sessions-planned
-                               sessions->min-col
-                               (reduce +))
-        total-tracked     (->> sessions-tracked
-                               sessions->min-col
-                               (reduce +))
-        total-interval    (total-interval-minutes report-interval)
-        time-logged-score (-> total-planned (+ total-tracked)
-                              (/ (-> total-interval (* 2)))
-                              (* 100)
-                              (->> (j/call js/Math :round)))
+  (let [db                   @re-frame.db/app-db
+        calendar             (calendar db nil)
+        sessions             (sessions db nil)
+        tags                 (tags db nil)
+        report-interval      (report-interval db nil)
+        sessions-tracked     (smooshed-and-tagged-sessions-for-interval
+                               (p/map-of calendar sessions tags report-interval sessions))
+        type                 :session/plan
+        sessions-planned     (smooshed-and-tagged-sessions-for-interval
+                               (p/map-of calendar sessions tags report-interval sessions type))
+        total-planned        (->> sessions-planned
+                                  sessions->min-col
+                                  (reduce +))
+        total-tracked        (->> sessions-tracked
+                                  sessions->min-col
+                                  (reduce +))
+        total-interval       (total-interval-minutes report-interval)
+        time-logged-score    (-> total-planned (+ total-tracked)
+                                 (/ (-> total-interval (* 2)))
+                                 (* 100)
+                                 (->> (j/call js/Math :round)))
+        tag-path             [sp/ALL (sp/keypath :session/tags) sp/ALL (sp/keypath :tag/id)]
+        total-for-tag-id-fn  (fn [sessions]
+                               (fn [tag-id]
+                                 {:tag/id  tag-id
+                                  :minutes (->> sessions
+                                                (filter (fn [session]
+                                                          (some? (some #{tag-id} (select (rest tag-path) session)))))
+                                                sessions->min-col
+                                                (reduce +))}))
+        planned-tags         (->> sessions-planned
+                                  (select tag-path)
+                                  distinct)
+        tracked-tags         (->> sessions-tracked
+                                  (select tag-path)
+                                  distinct)
+        total-p-tags         (->> planned-tags
+                                  (mapv (total-for-tag-id-fn sessions-planned)))
+        total-t-tags-indexed (->> tracked-tags
+                                  (mapv (total-for-tag-id-fn sessions-tracked))
+                                  (group-by :tag/id)
+                                  (transform [sp/MAP-VALS] first))
+        plan-tracked-score   (->> total-p-tags
+                                  (mapv (fn [{tag-id  :tag/id
+                                              minutes :minutes}]
+                                          (let [tracked-minutes (-> total-t-tags-indexed
+                                                                    (get tag-id)
+                                                                    (get :minutes))
+                                                ratio           (if (some? tracked-minutes)
+                                                                  (-> minutes (/ tracked-minutes))
+                                                                  0)
+                                                score           (if (-> ratio (> 1))
+                                                                  (-> 1 (- (-> ratio (- 1))) (* 100))
+                                                                  (-> ratio (* 100)))]
+                                            score)))
+                                  (#(-> (reduce + %) (/ (count %))))
+                                  (j/call js/Math :round))
         ]
-    (p/map-of total-planned total-tracked total-interval time-logged-score)
+    (p/map-of plan-tracked-score time-logged-score)
     )
   )
