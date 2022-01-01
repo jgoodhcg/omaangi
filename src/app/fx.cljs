@@ -16,7 +16,7 @@
    [tick.alpha.api :as t]
 
    [app.misc :refer [>evt
-                     >evt-sync
+                     average
                      sessions->min-col
                      session-minutes
                      smoosh-sessions
@@ -432,22 +432,48 @@
                                   (mapv (total-for-tag-id-fn sessions-tracked))
                                   (group-by :tag/id)
                                   (transform [sp/MAP-VALS] first))
+        ratio-score          (fn [planned-min tracked-min]
+                               ;; Going 2x over results in a 0 score
+                               ;; Having 1/2x tracked results in a 50 score
+                               ;; Having 0x tracked results in a 0 score
+                               ;; Having 1.5x tracked results results in a 50 score
+                               (let [ratio (-> (or tracked-min 0) (/ planned-min))]
+                                 (if (-> ratio (> 1))
+                                   (-> 1 (- (-> ratio (- 1))) (* 100))
+                                   (-> ratio (* 100)))))
         plan-tracked-score   (->> total-p-tags
                                   (mapv (fn [{tag-id  :tag/id
                                               minutes :minutes}]
                                           (let [tracked-minutes (-> total-t-tags-indexed
                                                                     (get tag-id)
-                                                                    (get :minutes))
-                                                ratio           (if (some? tracked-minutes)
-                                                                  (-> minutes (/ tracked-minutes))
-                                                                  0)
-                                                score           (if (-> ratio (> 1))
-                                                                  (-> 1 (- (-> ratio (- 1))) (* 100))
-                                                                  (-> ratio (* 100)))]
-                                            score)))
-                                  (#(-> (reduce + %) (/ (count %))))
+                                                                    (get :minutes))]
+                                            (ratio-score minutes tracked-minutes))))
+                                  average
+                                  (j/call js/Math :round))
+        alignment-score      (->> sessions-planned
+                                  (mapv (fn [{p-start :session/start
+                                              p-stop  :session/stop
+                                              :as     ps}]
+                                          (let [ps-tag-id-set (->> ps (select (rest tag-path)) set)
+                                                time-aligned  (->> sessions-tracked
+                                                                   (filter #(= (->> % (select (rest tag-path)) set)
+                                                                               ps-tag-id-set))
+                                                                   (mapv (fn [{t-start :session/start
+                                                                               t-stop  :session/stop}]
+                                                                           (let [concur (t/concur {:tick/beginning p-start
+                                                                                                   :tick/end       p-stop}
+                                                                                                  {:tick/beginning t-start
+                                                                                                   :tick/end       t-stop})]
+                                                                             (if (some? concur)
+                                                                               (->> concur
+                                                                                    (#(t/between (:tick/beginning %) (:tick/end %)))
+                                                                                    t/minutes)
+                                                                               0))))
+                                                                   (reduce +))]
+                                            (ratio-score (session-minutes ps) time-aligned))))
+                                  average
                                   (j/call js/Math :round))
         ]
-    (p/map-of plan-tracked-score time-logged-score)
+    (p/map-of plan-tracked-score time-logged-score alignment-score)
     )
   )

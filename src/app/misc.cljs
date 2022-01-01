@@ -300,6 +300,10 @@
                                    {:session/color          mixed-color
                                     :session-template/color mixed-color}))))))))
 
+(defn average
+  [col]
+  (-> (reduce + col) (/ (count col))))
+
 (comment
   (time
     (->> [{:session/start (t/+ (t/now) (t/new-duration 1 :minutes))
