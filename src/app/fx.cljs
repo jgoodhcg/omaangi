@@ -322,8 +322,9 @@
         days-of-week    [t/MONDAY t/TUESDAY t/WEDNESDAY t/THURSDAY t/FRIDAY t/SATURDAY t/SUNDAY]
         hours-of-day    (-> 24 range vec)
         session-matches (fn [day-of-week hour {:session/keys [start stop]}]
-                          (let [days (->> (t/range start stop (t/new-duration 1 :minutes))
-                                          (map #(t/day-of-week %))
+                          (let [days (->> (t/range (t/date start) (t/date stop))
+                                          (concat [(t/date start)]) ;; t/range is empty if start and stop are on the same day
+                                          (mapv #(t/day-of-week %))
                                           distinct)]
                             (and
                               ;; The session overlaps this day of the week
