@@ -209,8 +209,9 @@
               (-> rn/Alert (j/call :alert "error creating backup directory " (str e)))))))
 
 (defn smooshed-and-tagged-sessions-for-interval
-  [{:keys [report-interval calendar sessions tags type]
-    :or   {type :session/track}}]
+  [{:keys [report-interval calendar sessions tags type truncated]
+    :or   {type      :session/track
+           truncated true}}]
   (let [{beg-intrvl :app-db.reports/beginning-date
          end-intrvl :app-db.reports/end-date}
         report-interval
@@ -223,14 +224,25 @@
                                   :calendar/sessions])
                          flatten
                          set
-                         vec)]
+                         vec)
+        beg-instant (-> beg-intrvl (t/at "00:00") t/instant)
+        end-instant (-> end-intrvl (t/at "00:00") t/instant)]
     (->> sessions
          (select [(sp/submap session-ids)
                   sp/MAP-VALS])
          (filter #(= type (:session/type %)))
          (smoosh-sessions)
          (mapv (partial replace-tag-refs-with-objects tags))
-         (mapv (partial set-session-ish-color {:hex true})))))
+         (mapv (partial set-session-ish-color {:hex true}))
+         ;; TODO combine this with truncate-session
+         (mapv (fn [session]
+                 (if truncated
+                   (cond-> session
+                     (-> session :session/start (t/< beg-instant))
+                     (merge session {:session/start beg-instant})
+                     (-> session :session/stop (t/> end-instant))
+                     (merge session {:session/stop end-instant}))
+                   session))))))
 
 (defn total-interval-minutes
   [{beg-intrvl :app-db.reports/beginning-date
