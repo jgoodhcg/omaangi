@@ -226,7 +226,7 @@
                          set
                          vec)
         beg-instant (-> beg-intrvl (t/at "00:00") t/instant)
-        end-instant (-> end-intrvl (t/at "00:00") t/instant)]
+        end-instant (-> end-intrvl (t/at "23:59") t/instant)]
     (->> sessions
          (select [(sp/submap session-ids)
                   sp/MAP-VALS])
