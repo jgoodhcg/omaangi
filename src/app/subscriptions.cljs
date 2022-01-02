@@ -642,7 +642,7 @@
 
 (defn backup-keys
   [db _]
-  (->> db (select-one [:app-db/backup-keys]) reverse vec))
+  (->> db (select-one [:app-db/backup-keys])))
 (reg-sub :backup-keys backup-keys)
 
 (defn report-interval
