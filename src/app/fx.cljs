@@ -391,6 +391,27 @@
           (-> #(generate-pattern-data args)
               (js/setTimeout 500))))
 
+(defn ratio-score [planned-min tracked-min]
+  ;; Going 2x over results in a 0 score
+  ;; Having 1/2x tracked results in a 50 score
+  ;; Having 0x tracked results in a 0 score
+  ;; Having 1.5x tracked results results in a 50 score
+  (let [ratio (-> (or tracked-min 0) (/ planned-min))]
+    (if (-> ratio (> 1))
+      (-> 1
+          (- (-> ratio (- 1)))
+          (->> (j/call js/Math :max 0))
+          (* 100))
+      (-> ratio (* 100)))))
+
+(comment
+  (ratio-score 1000 10)
+  (ratio-score 10 1000)
+  (ratio-score 50 50)
+  (ratio-score 75 50)
+  (ratio-score 50 75)
+  )
+
 (defn generate-bar-chart-data
   [{:keys [calendar sessions tags report-interval]}]
   (let [sessions-tracked (smooshed-and-tagged-sessions-for-interval
@@ -412,7 +433,8 @@
                                                           sessions->min-col
                                                           (reduce +))
                                 total-interval       (total-interval-minutes report-interval)
-                                time-logged-score    (-> total-planned (+ total-tracked)
+                                time-logged-score    (-> total-planned
+                                                         (+ total-tracked)
                                                          (/ (-> total-interval (* 2)))
                                                          (* 100)
                                                          (->> (j/call js/Math :round)))
@@ -437,15 +459,6 @@
                                                           (mapv (total-for-tag-id-fn sessions-tracked))
                                                           (group-by :tag/id)
                                                           (transform [sp/MAP-VALS] first))
-                                ratio-score          (fn [planned-min tracked-min]
-                                                       ;; Going 2x over results in a 0 score
-                                                       ;; Having 1/2x tracked results in a 50 score
-                                                       ;; Having 0x tracked results in a 0 score
-                                                       ;; Having 1.5x tracked results results in a 50 score
-                                                       (let [ratio (-> (or tracked-min 0) (/ planned-min))]
-                                                         (if (-> ratio (> 1))
-                                                           (-> 1 (- (-> ratio (- 1))) (* 100))
-                                                           (-> ratio (* 100)))))
                                 plan-tracked-score   (->> total-p-tags
                                                           (mapv (fn [{tag-id  :tag/id
                                                                       minutes :minutes}]
