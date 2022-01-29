@@ -239,9 +239,9 @@
                  (if truncated
                    (cond-> session
                      (-> session :session/start (t/< beg-instant))
-                     (merge session {:session/start beg-instant})
+                     (merge {:session/start beg-instant})
                      (-> session :session/stop (t/> end-instant))
-                     (merge session {:session/stop end-instant}))
+                     (merge {:session/stop end-instant}))
                    session))))))
 
 (defn total-interval-minutes
@@ -332,12 +332,23 @@
           (-> #(generate-pie-chart-data args)
               (js/setTimeout 500))))
 
+(comment
+  (-> (t/now) (t/date) (t/at "00:00") (t/day-of-week))
+  (-> (t/now) (t/> (-> (t/yesterday) (t/at "00:00") (t/instant)))))
+
 (defn session-days-of-week
   [{:session/keys [start stop]}]
-  (->> (t/range (t/date start) (t/date stop))
+  (->> (t/range (t/date start) (-> stop t/date (t/+ (t/new-period 1 :days))))
        (concat [(t/date start)]) ;; t/range is empty if start and stop are on the same day
        (mapv #(t/day-of-week %))
        distinct))
+
+(comment
+  (-> {:session/start (-> (t/date "2022-01-27") (t/at "10:00") t/instant)
+       :session/stop  (-> (t/date "2022-01-28") (t/at "12:00") t/instant)}
+      session-days-of-week
+      )
+  )
 
 (defn session-matches-day-of-week
   ([day-of-week session]
@@ -379,12 +390,17 @@
                                :hours (->> hours-of-day
                                            (mapv (fn [hour]
                                                    (->> sessions
-                                                        (filter (partial session-matches-day-of-week-and-hour
-                                                                         day-of-week hour))
+                                                        (filter
+                                                         (partial
+                                                          session-matches-day-of-week-and-hour
+                                                          day-of-week hour))
                                                         (map :session/tags)
                                                         flatten
                                                         (filter #(-> % :tag/color hex-if-some))
-                                                        (map #(-> % :tag/color hex-if-some (or "#ffffff")))
+                                                        (map #(-> %
+                                                                  :tag/color
+                                                                  hex-if-some
+                                                                  (or "#ffffff")))
                                                         frequencies
                                                         (map identity)
                                                         (sort-by second)
@@ -396,6 +412,42 @@
                                                         :mixed-color
                                                         hex-if-some))))})))]
     (>evt [:set-pattern-data results])))
+
+(comment
+  (->> {:calendar {(t/date "2022-01-28")
+                   {:calendar/sessions [#uuid "f822da04-f58c-4114-bc26-1079ed2db997"]}
+                   (t/date "2022-01-29")
+                   {:calendar/sessions [#uuid "a93d723a-6f3b-475c-9311-a513f6cce655"
+                                        #uuid "f822da04-f58c-4114-bc26-1079ed2db997"]}
+                   (t/date "2022-01-30")
+                   {:calendar/sessions [#uuid "b371719d-1284-4ad1-a3d2-d2060d1b4fc5"]}}
+        :sessions {#uuid "f822da04-f58c-4114-bc26-1079ed2db997"
+                   {:session/id    #uuid "f822da04-f58c-4114-bc26-1079ed2db997"
+                    :session/tags  [#uuid "ff07f1c6-2361-4d40-a30c-a6a656c8e488"]
+                    :session/type  :session/track
+                    :session/color (make-color-if-some "#55aabb")
+                    :session/start (-> (t/date "2022-01-27") (t/at "22:00") t/instant)
+                    :session/stop  (-> (t/date "2022-01-28") (t/at "06:00") t/instant)}
+                   #uuid "a93d723a-6f3b-475c-9311-a513f6cce655"
+                   {:session/id    #uuid "a93d723a-6f3b-475c-9311-a513f6cce655"
+                    :session/tags  []
+                    :session/type  :session/track
+                    :session/start (-> (t/date "2022-01-29") (t/at "04:00") t/instant)
+                    :session/stop  (-> (t/date "2022-01-29") (t/at "06:00") t/instant)}
+                   #uuid "b371719d-1284-4ad1-a3d2-d2060d1b4fc5"
+                   {:session/id    #uuid "b371719d-1284-4ad1-a3d2-d2060d1b4fc5"
+                    :session/tags  []
+                    :session/type  :session/track
+                    :session/start (-> (t/date "2022-01-29") (t/at "04:00") t/instant)
+                    :session/stop  (-> (t/date "2022-01-30") (t/at "06:00") t/instant)}}
+        :tags {#uuid "ff07f1c6-2361-4d40-a30c-a6a656c8e488"
+               {:tag/id #uuid "ff07f1c6-2361-4d40-a30c-a6a656c8e488"
+                :tag/color (make-color-if-some "#bbaa77")}}
+        :report-interval {:app-db.reports/beginning-date (t/date "2022-01-28")
+                          :app-db.reports/end-date       (t/date "2022-01-30")}}
+       generate-pattern-data
+       )
+  )
 
 (reg-fx :generate-pattern-data
         (fn [args]
