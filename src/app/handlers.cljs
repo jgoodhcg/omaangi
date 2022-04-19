@@ -521,6 +521,7 @@
                      :template/label             "new template" ;; TODO make a better default
                      :template/session-templates []}))})
 (reg-event-fx :create-template-from-nothing [base-interceptors id-gen insert-now] create-template-from-nothing)
+
 ;; TODO remove this because it is unused?
 (defn create-session-template
   [db [_ {id :session-template/id :as session-template}]]

@@ -1,9 +1,11 @@
 (ns app.fx
   (:require
    ["@react-native-async-storage/async-storage" :as async-storage]
+   ["expo-background-fetch" :as background-fetch]
    ["expo-constants" :as expo-constants]
    ["expo-file-system" :as expo-file-system]
    ["expo-sharing" :as expo-sharing]
+   ["expo-task-manager" :as task-manager]
    ["react-native" :as rn]
 
    [applied-science.js-interop :as j]
@@ -107,25 +109,65 @@
                  (j/get :manifest)
                  (j/get :version)))
 
+(def persist-app-db-task "PERSIST_APP_DB")
+
+(-> task-manager
+    (j/call :defineTask
+            persist-app-db-task
+            (fn []
+              (try
+                (tap> "saving db from background task")
+                (>evt [:save-db])
+                (-> background-fetch (j/get :BackgroundFetchResult) (j/get :NewData))
+                (catch js/Object _
+                  (-> background-fetch (j/get :BackgroundFetchResult) (j/get :Failed)))))))
+
 (reg-fx :post-load-db
         (fn [_]
-          (>evt [:set-version version])
-          (>evt [:set-selected-day (t/now)])
-          (>evt [:load-backup-keys])
-          (-> rn/AppState
-              (j/call :addEventListener
-                      "change"
-                      #(do
-                         ;; The tick rate is rather slow (5 sec as of 2021-10-01)
-                         ;; because faster rates interfere with buttons
-                         ;; Because of that we want to tick when app state changes
-                         ;; so the user doesn't have to wait 5 seconds after opening
-                         (>evt [:tick-tock])
+          (go
+            (try
+              (tap> "running post load")
+              (>evt [:set-version version])
+              (>evt [:set-selected-day (t/now)])
+              (>evt [:load-backup-keys])
+              (-> rn/AppState
+                  (j/call :addEventListener
+                          "change"
+                          #(do
+                             (tap> {:location :post-load-db/app-state-event
+                                    :msg "status changed"})
+                             ;; The tick rate is rather slow (5 sec as of 2021-10-01)
+                             ;; because faster rates interfere with buttons
+                             ;; Because of that we want to tick when app state changes
+                             ;; so the user doesn't have to wait 5 seconds after opening
+                             (>evt [:tick-tock])
 
-                         ;; Persisting the app-db to the file system happens on app state change
-                         ;; It used to happen on `:tick-tock` but that was performance inhibiting
-                         (>evt [:save-db])
-                         )))))
+                             ;; Persisting the app-db to the file system happens on app state change
+                             ;; It used to happen on `:tick-tock` but that was performance inhibiting
+                             ;; This doesn't work on closing the app (only backgrounding it) -- on android
+                             (>evt [:save-db]))))
+
+              ;; I'm not sure if this is necessary but it can't hurt -- right?
+              (-> background-fetch
+                  (j/call :unregisterTaskAsync persist-app-db-task)
+                  <p!)
+
+              ;; Persisting the app-db to the file system happens in the background as well as app state change
+              ;; This is because app state change doesn't trigger on app close (in android)
+              ;; This background task should run on android
+              (-> background-fetch
+                  (j/call :registerTaskAsync
+                          persist-app-db-task
+                          (j/lit {:minimumInterval 5
+                                  ;; stopOnTerminate only applies to android
+                                  :stopOnTerminate false}))
+                  <p!)
+
+              (tap> (-> background-fetch (j/call :getStatusAsync) <p!))
+
+              (catch js/Object e
+                (tap> {:location :post-load-db
+                       :error    e}))))))
 
 (reg-fx :load-backup-keys
         (fn [_]
