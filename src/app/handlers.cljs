@@ -282,8 +282,7 @@
 (defn tick-tock
   [{:keys [now db]} _]
   {:db (->> db (setval [:app-db/current-time] now))
-   :fx [[:dispatch [:update-tracking]]
-        [:dispatch [:save-db]]]})
+   :fx [[:dispatch [:update-tracking]]]})
 (reg-event-fx :tick-tock [base-interceptors insert-now] tick-tock)
 
 (defn create-session-from-event

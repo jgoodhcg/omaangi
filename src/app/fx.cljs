@@ -112,12 +112,20 @@
           (>evt [:set-version version])
           (>evt [:set-selected-day (t/now)])
           (>evt [:load-backup-keys])
-          ;; The tick rate is rather slow (5 sec as of 2021-10-01) because faster rates interfere with buttons
-          ;; Because of that we want to tick when app state changes -- so the user doesn't have to wait 5 seconds after opening
           (-> rn/AppState
               (j/call :addEventListener
                       "change"
-                      #(>evt [:tick-tock])))))
+                      #(do
+                         ;; The tick rate is rather slow (5 sec as of 2021-10-01)
+                         ;; because faster rates interfere with buttons
+                         ;; Because of that we want to tick when app state changes
+                         ;; so the user doesn't have to wait 5 seconds after opening
+                         (>evt [:tick-tock])
+
+                         ;; Persisting the app-db to the file system happens on app state change
+                         ;; It used to happen on `:tick-tock` but that was performance inhibiting
+                         (>evt [:save-db])
+                         )))))
 
 (reg-fx :load-backup-keys
         (fn [_]
