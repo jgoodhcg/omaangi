@@ -6,8 +6,9 @@
     [umeng.backend.env :refer [defaults]]
 
     ;; Edges
+    [xtdb.api]
     [xtdb.jdbc]
-    [kit.edge.db.xtdb]     
+    [kit.edge.db.xtdb]
     [kit.edge.server.undertow]
     [umeng.backend.web.handler]
 

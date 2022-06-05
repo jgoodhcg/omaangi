@@ -16,6 +16,21 @@
                     :task (shell {:dir "."} "clj -T:build all")}
 
          format    {:doc  "Formats codebase"
-                    :task (shell 
-                           {:dir "src"}
-                           "cljstyle fix")}}}
+                    :task (shell {:dir "src"} "cljstyle fix")}
+
+         deploy    {:doc "Builds a docker image, publishes to DockerHub, then deploys it to Digital Ocean App Platform"
+                    :task (do
+                            (shell
+                             {:dir "."}
+                             (str "docker build . -t jgoodhcg/umeng:latest -t jgoodhcg/umeng:"
+                                  (-> (java.time.LocalDateTime/now)
+                                      str
+                                      (clojure.string/replace "T" "-")
+                                      (clojure.string/replace ":" "-")
+                                      (clojure.string/replace "." "-"))))
+                            (shell
+                             {:dir "."}
+                             "docker push jgoodhcg/umeng")
+                            (shell
+                             {:dir "."}
+                             "doctl apps create-deployment 5d984be2-26fc-4e29-8f84-2dc3ffd86067"))}}}

@@ -1,5 +1,4 @@
-{
- :system/env
+{:system/env
  #profile {:dev  :dev
            :test :test
            :prod :prod}
@@ -48,27 +47,22 @@
 
  ;; https://docs.xtdb.com/administration/configuring/
  :db.xtdb/node
- #profile {:dev {:xtdb.http-server/server {:port 3100}
-                 :xtdb/tx-log             {:kv-store {:xtdb/module xtdb.rocksdb/->kv-store
-                                                      :db-dir      "data/dev/tx-log"
-                                                      :sync?       true}}
-                 :xtdb/document-store     {:kv-store {:xtdb/module xtdb.rocksdb/->kv-store
-                                                      :db-dir      "data/dev/doc-store"
-                                                      :sync?       true}}
-                 :xtdb/index-store        {:kv-store {:xtdb/module xtdb.rocksdb/->kv-store
-                                                      :db-dir      "data/dev/index-store"
-                                                      :sync?       true}}}
-              #_{:xtdb.http-server/server   {:port 3100}
-                 :xtdb.jdbc/connection-pool {:dialect             {:xtdb/module xtdb.jdbc.psql/->dialect}
-                                             :pool-opts           {  }
-                                             :db-spec             {:host     "postgresql://localhost:54322"
-                                                                   :dbname   "postgres"
-                                                                   :user     "postgres"
-                                                                   :password "postgres"}
-                                             :xtdb/tx-log         {:xtdb/module     xtdb.jdbc/->tx-log
-                                                                   :connection-pool :xtdb.jdbc/connection-pool}
-                                             :xtdb/document-store {:xtdb/module     xtdb.jdbc/->document-store
-                                                                   :connection-pool :xtdb.jdbc/connection-pool}
-                                             :test                {}
-                                             :prod                {}}
-                 }}}
+ #profile {:dev  {:xtdb.http-server/server   {:port 3100}
+                  :xtdb.jdbc/connection-pool {:dialect   {:xtdb/module xtdb.jdbc.psql/->dialect}
+                                              :pool-opts {  }
+                                              :db-spec   {:jdbcUrl "jdbc:postgresql://localhost:54322/postgres?user=postgres&password=postgres"}}
+                  :xtdb/tx-log               {:xtdb/module     xtdb.jdbc/->tx-log
+                                              :connection-pool :xtdb.jdbc/connection-pool}
+                  :xtdb/document-store       {:xtdb/module     xtdb.jdbc/->document-store
+                                              :connection-pool :xtdb.jdbc/connection-pool}}
+           :test {}
+           :prod {:xtdb.jdbc/connection-pool {:dialect   {:xtdb/module xtdb.jdbc.psql/->dialect}
+                                              :pool-opts {  }
+                                              :db-spec   {:host     "db.wcerxpyhynmtditronqq.supabase.co"
+                                                          :dbname   "postgres"
+                                                          :user     "postgres"
+                                                          :password #env DB_PASS}}
+                  :xtdb/tx-log               {:xtdb/module     xtdb.jdbc/->tx-log
+                                              :connection-pool :xtdb.jdbc/connection-pool}
+                  :xtdb/document-store       {:xtdb/module     xtdb.jdbc/->document-store
+                                              :connection-pool :xtdb.jdbc/connection-pool}}}}

@@ -12,4 +12,6 @@ COPY --from=build /target/backend-standalone.jar /backend/backend-standalone.jar
 
 EXPOSE $PORT
 
+EXPOSE $DB_PORT
+
 ENTRYPOINT exec java $JAVA_OPTS -jar /backend/backend-standalone.jar

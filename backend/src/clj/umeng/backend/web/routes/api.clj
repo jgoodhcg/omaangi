@@ -11,13 +11,13 @@
     [reitit.swagger :as swagger]))
 
 ;; Routes
-(defn api-routes [_opts]
+(defn api-routes [{:keys [xtdb-node] :as _opts}]
   [["/swagger.json"
     {:get {:no-doc  true
            :swagger {:info {:title "umeng.backend API"}}
            :handler (swagger/create-swagger-handler)}}]
    ["/health"
-    {:get health/healthcheck!}]])
+    {:get (partial health/healthcheck! xtdb-node)}]])
 
 (defn route-data
   [opts]
@@ -46,7 +46,7 @@
 (derive :reitit.routes/api :reitit/routes)
 
 (defmethod ig/init-key :reitit.routes/api
-  [_ {:keys [base-path xtdb-node]
+  [_ {:keys [base-path]
       :or   {base-path ""}
       :as   opts}]
   [base-path (route-data opts) (api-routes opts)])
