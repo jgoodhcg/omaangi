@@ -23,27 +23,29 @@
        (let [theme (->> [:theme] <sub get-theme)
              tags  (<sub [:tag-list])]
 
-         ;; TODO justin 2021-02-07 Do we need safe area view everywhere?
-         [:> rn/ScrollView {:style (merge (tw "flex flex-1")
-                                          {:background-color (-> theme (j/get :colors) (j/get :background))})}
+         [:> rn/SafeAreaView {:style (merge (tw "flex flex-1")
+                                            {:background-color (-> theme (j/get :colors) (j/get :background))})}
 
-          [:> rn/StatusBar {:visibility "hidden"}]
+          [:> rn/ScrollView {:style (merge (tw "flex flex-1")
+                                           {:background-color (-> theme (j/get :colors) (j/get :background))})}
 
-          [top-section/component props (:tags screens)]
+           [:> rn/StatusBar {:visibility "hidden"}]
 
-          [:> rn/View {:style (tw "flex flex-col")}
+           [top-section/component props (:tags screens)]
 
-           [:> rn/View {:style (tw "flex flex-row flex-wrap items-center mb-8")}
-            (for [{color :tag/color
-                   label :tag/label
-                   id    :tag/id} tags]
-              (let [on-press #(do (>evt [:set-selected-tag id])
-                                  (>evt [:navigate (:tag screens)]))
-                    style    (tw "ml-4 mb-4")]
-                [:> rn/View {:key   id
-                             :style style}
-                 [components/tag-button (p/map-of color label on-press)]]))]
+           [:> rn/View {:style (tw "flex flex-col")}
 
-           [:> paper/Button {:mode     "flat"
-                             :icon     "plus"
-                             :on-press #(>evt [:create-tag])} "Add new tag"]]]))]))
+            [:> rn/View {:style (tw "flex flex-row flex-wrap items-center mb-8")}
+             (for [{color :tag/color
+                    label :tag/label
+                    id    :tag/id} tags]
+               (let [on-press #(do (>evt [:set-selected-tag id])
+                                   (>evt [:navigate (:tag screens)]))
+                     style    (tw "ml-4 mb-4")]
+                 [:> rn/View {:key   id
+                              :style style}
+                  [components/tag-button (p/map-of color label on-press)]]))]
+
+            [:> paper/Button {:mode     "flat"
+                              :icon     "plus"
+                              :on-press #(>evt [:create-tag])} "Add new tag"]]]]))]))

@@ -865,3 +865,9 @@
                                    :tags            (tags db nil)
                                    :report-interval (report-interval db nil)}]]})
 (reg-event-fx :generate-bar-chart-data [base-interceptors] generate-bar-chart-data)
+
+(defn import-backup
+  [{:keys [db]} _]
+  {:db            db
+   :import-backup-fx (-> db (select-keys [:app-db/current-time]))})
+(reg-event-fx :import-backup [base-interceptors] import-backup)

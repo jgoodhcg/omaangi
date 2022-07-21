@@ -167,7 +167,7 @@
 
      [tracking-sessions]]))
 
-(defn sessions-component []
+(defn ^:deprecated sessions-component []
   (let [theme         (->> [:theme] <sub get-theme)
         sessions      (<sub [:sessions-for-this-day])
         border-radius (-> theme (j/get :roundness))]

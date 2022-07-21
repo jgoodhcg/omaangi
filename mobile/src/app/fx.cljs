@@ -5,6 +5,7 @@
    ["expo-file-system" :as expo-file-system]
    ["expo-sharing" :as expo-sharing]
    ["react-native" :as rn]
+   ["expo-document-picker" :as doc-picker]
 
    [applied-science.js-interop :as j]
    [com.rpl.specter :as sp :refer [select transform]]
@@ -135,7 +136,7 @@
                              ;; Persisting used to happen on `:tick-tock` but that was performance inhibiting too
 
                              ;; This doesn't work on closing the app (only backgrounding it) -- on android
-                             ;; I guess so ios works ... uncomfirmed
+                             ;; I guess ios works on closing ... uncomfirmed
                              (when (not= next-app-state "active")
                                (>evt [:save-db])))))
 
@@ -592,6 +593,27 @@
           (-> #(generate-bar-chart-data args)
               (js/setTimeout 500))))
 
+(reg-fx :import-backup-fx
+        (fn [{timestamp :app-db/current-time}]
+          (tap> (p/map-of :import-backup-fx))
+          (go
+            (try
+              (let [file-uri (-> doc-picker
+                                 (j/call :getDocumentAsync {})
+                                 <p!
+                                 #_(j/get :uri))]
+                (tap> (p/map-of file-uri :import-backup-fx))
+                #_(-> expo-file-system
+                      (j/call :copyAsync (j/lit {:from file-uri
+                                                 :to (str backups-dir
+                                                          (t/date-time timestamp)
+                                                          "--import.edn")}))
+                      <p!)
+                #_(>evt [:load-backup-keys]))
+                   (catch js/Object e
+                         (tap> (str "error importing backup " e))
+                         (-> rn/Alert (j/call :alert "error importing backup " (str e))))))))
+
 ;; Some helpful repl stuff
 (comment
   ;; Hard reset app-db
@@ -613,4 +635,15 @@
         report-interval (report-interval db nil)
         ]
     )
+  )
+
+;; document picker
+(comment
+  (go
+    (-> doc-picker
+        (j/call :getDocumentAsync {})
+        <p!
+        #_(j/get :uri)
+        tap>
+        ))
   )

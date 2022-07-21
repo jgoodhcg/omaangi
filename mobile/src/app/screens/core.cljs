@@ -9,4 +9,5 @@
               :templates        "Templates"
               :template         "Template"
               :session-template "Session-template"
-              :backups          "Backups"})
+              :backups          "Backups"
+              :import           "Import"})

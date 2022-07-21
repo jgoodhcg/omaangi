@@ -33,6 +33,7 @@
    [app.screens.template :as template]
    [app.screens.session-template :as session-template]
    [app.screens.backups :as backups]
+   [app.screens.import :as import]
    [potpuri.core :as p]))
 
 ;; must use defonce and must refresh full app so metro can fill these in
@@ -135,7 +136,7 @@
 
        [:> (drawer-navigator) {:drawer-content         custom-drawer
                                :drawer-style           drawer-style
-                               ;; :initial-route-name     (:day screens)
+                               :initial-route-name     (:import screens)
                                :drawer-content-options {:active-tint-color   (-> theme (j/get :colors) (j/get :accent))
                                                         :inactive-tint-color (-> theme (j/get :colors) (j/get :text))}}
         (drawer-screen {:name      (:day screens)
@@ -220,7 +221,10 @@
                         :component (paper/withTheme settings/screen)})
         (drawer-screen {:name      (:backups screens)
                         :options   {:drawerIcon (drawer-icon "tune")}
-                        :component (paper/withTheme backups/screen)})]]]]))
+                        :component (paper/withTheme backups/screen)})
+        (drawer-screen {:name      (:import screens)
+                        :options   {:drawerIcon (drawer-icon "tune")}
+                        :component (paper/withTheme import/screen)})]]]]))
 
 (defn start
   {:dev/after-load true}

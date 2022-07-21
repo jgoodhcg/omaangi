@@ -41,11 +41,11 @@
 
         (when is-selected
           [:> rn/View {:style (merge
-                                (tw "absolute flex flex-row items-center")
-                                {:top    (-> top (- 2))
-                                 :height 2
-                                 :left   -50
-                                 :right  0})}
+                               (tw "absolute flex flex-row items-center")
+                               {:top    (-> top (- 2))
+                                :height 2
+                                :left   -50
+                                :right  0})}
            [:> paper/Text start-label]
            [:> rn/View {:style (merge (tw "w-full ml-1")
                                       {:height           2
@@ -53,11 +53,11 @@
 
         (when is-selected
           [:> rn/View {:style (merge
-                                (tw "absolute flex flex-row items-center")
-                                {:top    (-> top (+ height) (+ 2))
-                                 :height 2
-                                 :left   -50
-                                 :right  0})}
+                               (tw "absolute flex flex-row items-center")
+                               {:top    (-> top (+ height) (+ 2))
+                                :height 2
+                                :left   -50
+                                :right  0})}
            [:> paper/Text stop-label]
            [:> rn/View {:style (merge (tw "w-full ml-1")
                                       {:height           2
@@ -69,18 +69,19 @@
 
 
          [:> rn/View {:style (merge
-                               (tw "absolute")
-                               {:top    top
-                                :left   left
-                                :height height
-                                :width  width})}
-          [:> g/RectButton {:style          (-> (tw "h-full w-full")
-                                                (merge {:background-color color-hex}
-                                                       (when (not is-selected)
-                                                         {:border-radius border-radius})))
-                            :on-press       (partial button-handler is-selected id)
-                            :ripple-color   ripple-color-hex
-                            :underlay-color ripple-color-hex
-                            :active-opacity 0.7}
+                              (tw "absolute")
+                              {:top    top
+                               :left   left
+                               :height height
+                               :width  width})}
+          [:> rn/TouchableOpacity
+           {:style          (-> (tw "h-full w-full")
+                                (merge {:background-color color-hex}
+                                       (when (not is-selected)
+                                         {:border-radius border-radius})))
+            :on-press       (partial button-handler is-selected id)
+            :ripple-color   ripple-color-hex
+            :underlay-color ripple-color-hex
+            :active-opacity 0.7}
            [:> rn/View {:style (tw "h-full w-full overflow-hidden p-1")}
             [:> paper/Text {:style {:color text-color-hex}} label]]]]]])]))
