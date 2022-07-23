@@ -8,7 +8,6 @@
    ["@react-navigation/native" :as nav]
    ["@react-navigation/drawer" :as d]
    ["@react-navigation/stack" :as s]
-   ["react-native-appearance" :as appearance]
    ["react-native-paper" :as paper]
 
    [applied-science.js-interop :as j]
@@ -101,130 +100,126 @@
                                                (j/call :lighten 0.25)
                                                (j/call :hex))}]
 
-    ;; TODO justin 2021-01-24 Right now appearance provider doesn't do anything
-    ;; As far as I can tell it is just a way to programatically determine user theme settings
-    ;; Might use this in the future if I support toggling between light and dark mode
-    [:> appearance/AppearanceProvider
-     [:> paper/Provider
-      {:theme theme}
+    [:> paper/Provider
+     {:theme theme}
 
-      [:> nav/NavigationContainer
-       {:ref             (fn [el] (reset! !navigation-ref el))
-        :on-ready        (fn []
-                           (swap! !route-name-ref merge {:current (-> @!navigation-ref
-                                                                      (j/call :getCurrentRoute)
-                                                                      (j/get :name))}))
-        :on-state-change (fn []
-                           (let [current-route-name (-> @!navigation-ref
-                                                        (j/call :getCurrentRoute)
-                                                        (j/get :name))
-                                 prev-route-name    (->  @!route-name-ref :current)]
+     [:> nav/NavigationContainer
+      {:ref             (fn [el] (reset! !navigation-ref el))
+       :on-ready        (fn []
+                          (swap! !route-name-ref merge {:current (-> @!navigation-ref
+                                                                     (j/call :getCurrentRoute)
+                                                                     (j/get :name))}))
+       :on-state-change (fn []
+                          (let [current-route-name (-> @!navigation-ref
+                                                       (j/call :getCurrentRoute)
+                                                       (j/get :name))
+                                prev-route-name    (->  @!route-name-ref :current)]
 
-                             ;; This is a bit of a hack 😬
-                             ;; I needed a way to "deselect" session when going "back" from session to day screen
-                             ;; TODO figure out a better way to do this
-                             (when (and (-> current-route-name (= (:day screens)))
-                                        (-> prev-route-name (= (:session screens))))
-                               (>evt [:set-selected-session nil]))
+                            ;; This is a bit of a hack 😬
+                            ;; I needed a way to "deselect" session when going "back" from session to day screen
+                            ;; TODO figure out a better way to do this
+                            (when (and (-> current-route-name (= (:day screens)))
+                                       (-> prev-route-name (= (:session screens))))
+                              (>evt [:set-selected-session nil]))
 
-                             ;; same hack but different set of screens
-                             (when (and (-> current-route-name (= (:template screens)))
-                                        (-> prev-route-name (= (:session-template screens))))
-                               (>evt [:set-selected-session-template nil]))
+                            ;; same hack but different set of screens
+                            (when (and (-> current-route-name (= (:template screens)))
+                                       (-> prev-route-name (= (:session-template screens))))
+                              (>evt [:set-selected-session-template nil]))
 
-                             (swap! !route-name-ref merge {:current current-route-name})))}
+                            (swap! !route-name-ref merge {:current current-route-name})))}
 
-       [:> (drawer-navigator) {:drawer-content         custom-drawer
-                               :drawer-style           drawer-style
-                               :initial-route-name     (:import screens)
-                               :drawer-content-options {:active-tint-color   (-> theme (j/get :colors) (j/get :accent))
-                                                        :inactive-tint-color (-> theme (j/get :colors) (j/get :text))}}
-        (drawer-screen {:name      (:day screens)
-                        :options   {:drawerIcon (drawer-icon "calendar")}
-                        :component #(r/as-element
-                                      [:> (stack-navigator) {:initial-route-name (:day screens)}
-                                       (stack-screen {:name      (:day screens)
-                                                      :component (paper/withTheme day/screen)
-                                                      :options   {:headerShown false}})
-                                       (stack-screen {:name      (:session screens)
-                                                      :options   {:headerTintColor (-> theme
-                                                                                       (j/get :colors)
-                                                                                       (j/get :text))
-                                                                  :headerTitleStyle
-                                                                  #js {:display "none"}
-                                                                  :headerStyle
-                                                                  ;; for some reason the :surface color comes out the same as :background when used on paper/Surface
-                                                                  ;; when using :background here it has a weird opacity issue or something
-                                                                  #js {:backgroundColor (-> theme
-                                                                                            (j/get :colors)
-                                                                                            (j/get :surface))}}
-                                                      :component (paper/withTheme session/screen)})])})
-        (drawer-screen {:name      (:reports screens)
-                        :options   {:drawerIcon (drawer-icon "hamburger")}
-                        :component (paper/withTheme reports/screen)})
-        (drawer-screen {:name      (:tags screens)
-                        :options   {:drawerIcon (drawer-icon "hamburger")}
-                        :component #(r/as-element
-                                      [:> (stack-navigator) {:initial-route-name (:tags screens)}
-                                       (stack-screen {:name      (:tags screens)
-                                                      :component (paper/withTheme tags/screen)
-                                                      :options   {:headerShown false}})
-                                       (stack-screen {:name      (:tag screens)
-                                                      :options   {:headerTintColor (-> theme
-                                                                                       (j/get :colors)
-                                                                                       (j/get :text))
-                                                                  :headerTitleStyle
-                                                                  #js {:display "none"}
-                                                                  :headerStyle
-                                                                  ;; for some reason the :surface color comes out the same as :background when used on paper/Surface
-                                                                  ;; when using :background here it has a weird opacity issue or something
-                                                                  #js {:backgroundColor (-> theme
-                                                                                            (j/get :colors)
-                                                                                            (j/get :surface))}}
-                                                      :component (paper/withTheme tag/screen)})])})
-        (drawer-screen {:name      (:templates screens)
-                        :options   {:drawerIcon (drawer-icon "hamburger")}
-                        :component #(r/as-element
-                                      [:> (stack-navigator) {:initial-route-name (:templates screens)}
-                                       (stack-screen {:name      (:templates screens)
-                                                      :component (paper/withTheme templates/screen)
-                                                      :options   {:headerShown false}})
-                                       (stack-screen {:name      (:template screens)
-                                                      :options   {:headerTintColor (-> theme
-                                                                                       (j/get :colors)
-                                                                                       (j/get :text))
-                                                                  :headerTitleStyle
-                                                                  #js {:display "none"}
-                                                                  :headerStyle
-                                                                  ;; for some reason the :surface color comes out the same as :background when used on paper/Surface
-                                                                  ;; when using :background here it has a weird opacity issue or something
-                                                                  #js {:backgroundColor (-> theme
-                                                                                            (j/get :colors)
-                                                                                            (j/get :surface))}}
-                                                      :component (paper/withTheme template/screen)})
-                                       (stack-screen {:name      (:session-template screens)
-                                                      :options   {:headerTintColor (-> theme
-                                                                                       (j/get :colors)
-                                                                                       (j/get :text))
-                                                                  :headerTitleStyle
-                                                                  #js {:display "none"}
-                                                                  :headerStyle
-                                                                  ;; for some reason the :surface color comes out the same as :background when used on paper/Surface
-                                                                  ;; when using :background here it has a weird opacity issue or something
-                                                                  #js {:backgroundColor (-> theme
-                                                                                            (j/get :colors)
-                                                                                            (j/get :surface))}}
-                                                      :component (paper/withTheme session-template/screen)})
-                                       ])})
-        (drawer-screen {:name      (:settings screens)
-                        :options   {:drawerIcon (drawer-icon "tune")}
-                        :component (paper/withTheme settings/screen)})
-        (drawer-screen {:name      (:backups screens)
-                        :options   {:drawerIcon (drawer-icon "tune")}
-                        :component (paper/withTheme backups/screen)})
-        (drawer-screen {:name      (:import screens)
-                        :options   {:drawerIcon (drawer-icon "tune")}
-                        :component (paper/withTheme import/screen)})]]]]))
+      [:> (drawer-navigator) {:drawer-content         custom-drawer
+                              :drawer-style           drawer-style
+                              :initial-route-name     (:import screens)
+                              :drawer-content-options {:active-tint-color   (-> theme (j/get :colors) (j/get :accent))
+                                                       :inactive-tint-color (-> theme (j/get :colors) (j/get :text))}}
+       (drawer-screen {:name      (:day screens)
+                       :options   {:drawerIcon (drawer-icon "calendar")}
+                       :component #(r/as-element
+                                    [:> (stack-navigator) {:initial-route-name (:day screens)}
+                                     (stack-screen {:name      (:day screens)
+                                                    :component (paper/withTheme day/screen)
+                                                    :options   {:headerShown false}})
+                                     (stack-screen {:name      (:session screens)
+                                                    :options   {:headerTintColor (-> theme
+                                                                                     (j/get :colors)
+                                                                                     (j/get :text))
+                                                                :headerTitleStyle
+                                                                #js {:display "none"}
+                                                                :headerStyle
+                                                                ;; for some reason the :surface color comes out the same as :background when used on paper/Surface
+                                                                ;; when using :background here it has a weird opacity issue or something
+                                                                #js {:backgroundColor (-> theme
+                                                                                          (j/get :colors)
+                                                                                          (j/get :surface))}}
+                                                    :component (paper/withTheme session/screen)})])})
+       (drawer-screen {:name      (:reports screens)
+                       :options   {:drawerIcon (drawer-icon "hamburger")}
+                       :component (paper/withTheme reports/screen)})
+       (drawer-screen {:name      (:tags screens)
+                       :options   {:drawerIcon (drawer-icon "hamburger")}
+                       :component #(r/as-element
+                                    [:> (stack-navigator) {:initial-route-name (:tags screens)}
+                                     (stack-screen {:name      (:tags screens)
+                                                    :component (paper/withTheme tags/screen)
+                                                    :options   {:headerShown false}})
+                                     (stack-screen {:name      (:tag screens)
+                                                    :options   {:headerTintColor (-> theme
+                                                                                     (j/get :colors)
+                                                                                     (j/get :text))
+                                                                :headerTitleStyle
+                                                                #js {:display "none"}
+                                                                :headerStyle
+                                                                ;; for some reason the :surface color comes out the same as :background when used on paper/Surface
+                                                                ;; when using :background here it has a weird opacity issue or something
+                                                                #js {:backgroundColor (-> theme
+                                                                                          (j/get :colors)
+                                                                                          (j/get :surface))}}
+                                                    :component (paper/withTheme tag/screen)})])})
+       (drawer-screen {:name      (:templates screens)
+                       :options   {:drawerIcon (drawer-icon "hamburger")}
+                       :component #(r/as-element
+                                    [:> (stack-navigator) {:initial-route-name (:templates screens)}
+                                     (stack-screen {:name      (:templates screens)
+                                                    :component (paper/withTheme templates/screen)
+                                                    :options   {:headerShown false}})
+                                     (stack-screen {:name      (:template screens)
+                                                    :options   {:headerTintColor (-> theme
+                                                                                     (j/get :colors)
+                                                                                     (j/get :text))
+                                                                :headerTitleStyle
+                                                                #js {:display "none"}
+                                                                :headerStyle
+                                                                ;; for some reason the :surface color comes out the same as :background when used on paper/Surface
+                                                                ;; when using :background here it has a weird opacity issue or something
+                                                                #js {:backgroundColor (-> theme
+                                                                                          (j/get :colors)
+                                                                                          (j/get :surface))}}
+                                                    :component (paper/withTheme template/screen)})
+                                     (stack-screen {:name      (:session-template screens)
+                                                    :options   {:headerTintColor (-> theme
+                                                                                     (j/get :colors)
+                                                                                     (j/get :text))
+                                                                :headerTitleStyle
+                                                                #js {:display "none"}
+                                                                :headerStyle
+                                                                ;; for some reason the :surface color comes out the same as :background when used on paper/Surface
+                                                                ;; when using :background here it has a weird opacity issue or something
+                                                                #js {:backgroundColor (-> theme
+                                                                                          (j/get :colors)
+                                                                                          (j/get :surface))}}
+                                                    :component (paper/withTheme session-template/screen)})
+                                     ])})
+       (drawer-screen {:name      (:settings screens)
+                       :options   {:drawerIcon (drawer-icon "tune")}
+                       :component (paper/withTheme settings/screen)})
+       (drawer-screen {:name      (:backups screens)
+                       :options   {:drawerIcon (drawer-icon "tune")}
+                       :component (paper/withTheme backups/screen)})
+       (drawer-screen {:name      (:import screens)
+                       :options   {:drawerIcon (drawer-icon "tune")}
+                       :component (paper/withTheme import/screen)})]]]))
 
 (defn start
   {:dev/after-load true}

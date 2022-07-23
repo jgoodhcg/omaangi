@@ -23,7 +23,8 @@
   [spec db event]
   (when-not (s/valid? spec db)
     (let [explanation (s/explain-str spec db)]
-      (throw (str "Spec check failed: " event " " explanation))
+      (tap> {:spec-failure-event event})
+      (throw (str "Spec check failed: " (first event) " " explanation))
       true)))
 
 (defn validate-spec

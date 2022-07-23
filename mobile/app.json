@@ -9,7 +9,7 @@
       "android",
       "web"
     ],
-    "version": "0.0.26",
+    "version": "0.0.27",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "splash": {
@@ -28,8 +28,13 @@
       "supportsTablet": true,
       "userInterfaceStyle": "dark",
       "infoPlist": {
-        "UIBackgroundModes": ["location", "fetch"]
-      }
+        "UIBackgroundModes": [
+          "location",
+          "fetch"
+        ]
+      },
+      "usesIcloudStorage": true,
+      "bundleIdentifier": "com.jgoodhcg.umeng"
     },
     "android": {
       "userInterfaceStyle": "dark",

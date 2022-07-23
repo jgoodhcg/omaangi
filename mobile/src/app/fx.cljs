@@ -601,18 +601,18 @@
               (let [file-uri (-> doc-picker
                                  (j/call :getDocumentAsync {})
                                  <p!
-                                 #_(j/get :uri))]
+                                 (j/get :uri))]
                 (tap> (p/map-of file-uri :import-backup-fx))
-                #_(-> expo-file-system
-                      (j/call :copyAsync (j/lit {:from file-uri
-                                                 :to (str backups-dir
+                (-> expo-file-system
+                    (j/call :copyAsync (j/lit {:from file-uri
+                                               :to   (str backups-dir
                                                           (t/date-time timestamp)
                                                           "--import.edn")}))
-                      <p!)
-                #_(>evt [:load-backup-keys]))
-                   (catch js/Object e
-                         (tap> (str "error importing backup " e))
-                         (-> rn/Alert (j/call :alert "error importing backup " (str e))))))))
+                    <p!)
+                (>evt [:load-backup-keys]))
+              (catch js/Object e
+                (tap> (str "error importing backup " e))
+                (-> rn/Alert (j/call :alert "error importing backup " (str e))))))))
 
 ;; Some helpful repl stuff
 (comment

@@ -265,7 +265,7 @@
                    :session/stop                                     ::instant
                    :session/type                                     (s/spec #{:session/track :session/plan})
                    :session/tags                                     [uuid?]
-                   (ds/opt :session/label)                           string?
+                   (ds/opt :session/label)                           (ds/maybe string?)
                    (ds/opt :session/color)                           ::color
                    (ds/opt :session/tracked-from)                    uuid?
                    (ds/opt :session/generated-from-session-template) uuid?
