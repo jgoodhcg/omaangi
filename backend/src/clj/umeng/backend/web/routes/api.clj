@@ -1,8 +1,10 @@
 (ns umeng.backend.web.routes.api
   (:require
     [umeng.backend.web.controllers.health :as health]
+    [umeng.backend.web.controllers.graph :as graph]
     [umeng.backend.web.middleware.exception :as exception]
     [umeng.backend.web.middleware.formats :as formats]
+    [umeng.backend.web.middleware.body-string :as body-string]
     [integrant.core :as ig]
     [reitit.coercion.malli :as malli]
     [reitit.ring.coercion :as coercion]
@@ -17,7 +19,11 @@
            :swagger {:info {:title "umeng.backend API"}}
            :handler (swagger/create-swagger-handler)}}]
    ["/health"
-    {:get (partial health/healthcheck! xtdb-node)}]])
+    {:get (partial health/healthcheck! xtdb-node)}]
+   ["/graph"
+    {:post      {:parameters {:body map?}}
+     :responses {200 {:body map?}}
+     :handler   graph/api}]])
 
 (defn route-data
   [opts]
@@ -41,7 +47,9 @@
                   ;; coercing request parameters
                   coercion/coerce-request-middleware
                   ;; exception handling
-                  exception/wrap-exception]}))
+                  exception/wrap-exception
+                  ;; make req body stream a string
+                  #_body-string/wrap-body-string]}))
 
 (derive :reitit.routes/api :reitit/routes)
 
