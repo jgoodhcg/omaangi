@@ -22,3 +22,5 @@ test/
 **/supabase/.temp
 
 backend/data/
+
+mobile/app/

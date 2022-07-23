@@ -1,4 +1,8 @@
-{:paths ["src"]
+{:paths
+ ["src/dev"
+  "src/main"
+  "src/test"]
+
  :deps  {
          applied-science/js-interop          {:mvn/version "0.2.7"}
          camel-snake-kebab/camel-snake-kebab {:mvn/version "0.4.1"}
@@ -7,8 +11,8 @@
          metosin/potpuri                     {:mvn/version "0.5.3"}
          org.clojure/test.check              {:mvn/version "1.1.0"} ;; TODO dev dep?
          org.clojure/core.async              {:mvn/version "1.4.627"}
-         reagent/reagent                     {:mvn/version "1.0.0-alpha2"}
+         reagent/reagent                     {:mvn/version "1.1.0"}
          re-frame/re-frame                   {:mvn/version "1.1.1"}
          tick/tick                           {:mvn/version "0.4.27-alpha"}
-         thheller/shadow-cljs                {:mvn/version "2.11.1"}
+         thheller/shadow-cljs                {:mvn/version "2.17.2"}
          }}

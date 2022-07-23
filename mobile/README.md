@@ -1,54 +1,40 @@
-This project was bootstrapped with [Create Expo CLJS App](https://github.com/jgoodhcg/create-expo-cljs-app).
-
-## Developing
-- Find and replace all occurrences of `new-project-name` and `new_project_name` with their kebab and snake case equivalents for your new project
-
-- Install all deps
+## Development
 ```
 $ yarn
-```
-
-- Start shadow-cljs
-```
 $ shadow-cljs watch app
-;; Wait for first compile to finish or expo gets confused
+;; wait for first compile to finish or expo gets confused
+$ expo start
 ```
 
-- (In another terminal) Start expo
+## Building with EAS Build
+
+There is a post-install hook in `package.json` that will automatically call `shadow-cljs release app` when building with EAS Build. Check the [EAS Build documentation](https://docs.expo.dev/build/introduction/) for the possibilities.
+
+e.g.:
 ```
-$ yarn start
+$ eas build --platform=all --profile=production --auto-submit
 ```
 
-## Production Builds
-```
-$ shadow-cljs release app
-$ expo build
-;; optionally expo publish if a build already exists to OTA update to
-```
+## Web
+
+You can also use `expo start --web` in order to run [react native web](https://github.com/necolas/react-native-web).
 
 ## Tests
-
-To run handler and subscriptions tests using `cljs.test`
-```
-$ shadow-cljs watch test
-```
 
 You can find an example of using `jest` to test `react-native` apps here.
 
 - https://github.com/mynomoto/reagent-expo/tree/jest-test
 
-## Useful resources
-    
-Clojurians Slack http://clojurians.net/.
+## Notes
 
-CLJS FAQ (for JavaScript developers) https://clojurescript.org/guides/faq-js.
+The `:app` build will create an `app/index.js`. In `release` mode that is the only file needed. In dev mode the `app` directory will contain many more `.js` files.
 
-Official CLJS API https://cljs.github.io/api/.
+`:init-fn` is called after all files are loaded and in the case of `expo` must render something synchronously as it will otherwise complain about a missing root component. The `shadow.expo/render-root` takes care of registration and setup.
 
-Quick reference https://cljs.info/cheatsheet/.
+You should disable Fast Refresh in the Expo Go app and let `shadow-cljs` handle that instead as they will otherwise interfere with each other.
 
-Offline searchable docs https://devdocs.io/.
+Source maps don't seem to work properly. `metro` propably doesn't read input source maps when converting sources as things are correctly mapped to the source .js files but not their sources.
 
-VSCode plugin https://github.com/BetterThanTomorrow/calva.
+Initial load in dev is quite slow since `metro` processes the generated `.js` files.
 
-
+`reagent.core` loads `reagent.dom` which will load `react-dom` which we don't have or need. Including the `src/main/reagent/dom.cljs` to create an empty shell. Copied from [re-natal](https://github.com/drapanjanas/re-natal/blob/master/resources/cljs-reagent6/reagent_dom.cljs).

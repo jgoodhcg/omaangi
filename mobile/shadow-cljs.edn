@@ -1,15 +1,10 @@
 ;; shadow-cljs configuration
 {:deps true
- :builds
- {:app
-  {:target           :react-native
-   :init-fn          app.index/init
-   :output-dir       "build"
-   :devtools         {:autoload true
-                      :preloads [shadow.expo.keep-awake]}
-   :compiler-options {:optimizations :simple}}
 
-  :test
-  {:target    :node-test
-   :output-to "test/node-tests.js"
-   :autorun   true}}}
+  :builds
+ {:app
+  {:target :react-native
+   :init-fn umeng.app/init
+   :output-dir "app"
+   :devtools {:autoload true
+              :preloads [shadow.expo.keep-awake]}}}}
