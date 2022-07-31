@@ -131,7 +131,7 @@
 
       [:> (drawer-navigator) {:drawer-content         custom-drawer
                               :drawer-style           drawer-style
-                              :initial-route-name     (:import screens)
+                              :initial-route-name     (:day screens)
                               :drawer-content-options {:active-tint-color   (-> theme (j/get :colors) (j/get :accent))
                                                        :inactive-tint-color (-> theme (j/get :colors) (j/get :text))}}
        (drawer-screen {:name      (:day screens)
@@ -232,7 +232,10 @@
        {:x (js/Date.now)}])))
 
 (defn init []
-  (dispatch-sync [:initialize-db]) ;; this just keepts the subs from blowing up
-  (dispatch-sync [:check-for-saved-db]) ;; load from local file system or default then start ticking
-  (dispatch-sync [:create-backups-directory]) ;; create directory for backups if it doesn't exist
-  (start))
+  (try
+    (dispatch-sync [:initialize-db]) ;; this just keepts the subs from blowing up
+    (dispatch-sync [:check-for-saved-db]) ;; load from local file system or default then start ticking
+    (dispatch-sync [:create-backups-directory]) ;; create directory for backups if it doesn't exist
+    (start)
+    (catch js/Object e
+      (-> rn/Alert (j/call :alert "Failure on startup" (str e))))))

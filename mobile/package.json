@@ -1,5 +1,5 @@
 {
-  "name": "hello-world",
+  "name": "umeng",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
@@ -29,6 +29,8 @@
     "expo-file-system": "~14.0.0",
     "expo-localization": "~13.0.0",
     "expo-sharing": "~10.2.0",
+    "expo-splash-screen": "~0.15.1",
+    "expo-system-ui": "~1.2.0",
     "expo-task-manager": "~10.2.1",
     "expo-updates": "~0.13.3",
     "faker": "^5.1.0",

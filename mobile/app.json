@@ -3,7 +3,7 @@
     "name": "umeng",
     "slug": "umeng",
     "privacy": "public",
-    "entryPoint": "./build/index.js",
+    "entryPoint": "./app/index.js",
     "platforms": [
       "ios",
       "android",
@@ -36,6 +36,15 @@
       "usesIcloudStorage": true,
       "bundleIdentifier": "com.jgoodhcg.umeng"
     },
+    "plugins": [
+      [
+        "expo-document-picker",
+        {
+          "appleTeamId": "85AM629RKZ",
+          "iCloudContainerEnvironment": "Production"
+        }
+      ]
+],
     "android": {
       "userInterfaceStyle": "dark",
       "package": "com.jgoodhcg.umeng",
