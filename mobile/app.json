@@ -2,13 +2,6 @@
   "expo": {
     "name": "umeng",
     "slug": "umeng",
-    "privacy": "public",
-    "entryPoint": "./app/index.js",
-    "platforms": [
-      "ios",
-      "android",
-      "web"
-    ],
     "version": "0.0.27",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -23,16 +16,8 @@
     "assetBundlePatterns": [
       "**/*"
     ],
-    "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": true,
-      "userInterfaceStyle": "dark",
-      "infoPlist": {
-        "UIBackgroundModes": [
-          "location",
-          "fetch"
-        ]
-      },
       "usesIcloudStorage": true,
       "bundleIdentifier": "com.jgoodhcg.umeng"
     },
@@ -44,11 +29,17 @@
           "iCloudContainerEnvironment": "Production"
         }
       ]
-],
+    ],
     "android": {
-      "userInterfaceStyle": "dark",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FFFFFF"
+      },
       "package": "com.jgoodhcg.umeng",
       "versionCode": 3
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
     }
   }
 }
