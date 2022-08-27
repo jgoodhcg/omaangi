@@ -9,7 +9,8 @@
    [camel-snake-kebab.core :as csk]
    [camel-snake-kebab.extras :as cske]
    [com.rpl.specter :as sp :refer [setval select transform]]
-   [tick.alpha.api :as t]
+   [tick.core :as t]
+   [tick.alpha.interval :as t.i]
    [re-frame.core :refer [subscribe dispatch dispatch-sync]]
    [potpuri.core :as p]))
 
@@ -43,8 +44,8 @@
   (if (and (some? a)
            (some? b))
     (not (some? (some #{:precedes :preceded-by} ;; checks that these are not the relation
-                      [(t/relation (make-session-ish-interval a)
-                                   (make-session-ish-interval b))])))
+                      [(t.i/relation (make-session-ish-interval a)
+                                     (make-session-ish-interval b))])))
     false))
 
 (defn chance [p]
@@ -111,7 +112,7 @@
       (/ zoom)
       (int)
       (t/new-duration :minutes)
-      (->> (t/+ (t/time "00:00")))))
+      (->> (t/>> (t/time "00:00")))))
 
 (defn native-event->type
   [{:keys [event width]}]
@@ -145,8 +146,8 @@
   (if (and (some? a)
            (some? b))
     (not (some? (some #{:precedes :preceded-by :meets :met-by} ;; checks that these are not the relation
-                      [(t/relation (make-session-ish-interval a)
-                                   (make-session-ish-interval b))])))
+                      [(t.i/relation (make-session-ish-interval a)
+                                     (make-session-ish-interval b))])))
     false))
 
 (defn combinations
@@ -312,27 +313,27 @@
 
 (comment
   (time
-    (->> [{:session/start (t/+ (t/now) (t/new-duration 1 :minutes))
-           :session/stop  (t/+ (t/now) (t/new-duration 2 :minutes))
+    (->> [{:session/start (t/>> (t/now) (t/new-duration 1 :minutes))
+           :session/stop  (t/>> (t/now) (t/new-duration 2 :minutes))
            :session/tags  [:a]}
-          {:session/start (t/+ (t/now) (t/new-duration 1 :minutes))
-           :session/stop  (t/+ (t/now) (t/new-duration 3 :minutes))}
-          {:session/start (t/+ (t/now) (t/new-duration 1 :minutes))
-           :session/stop  (t/+ (t/now) (t/new-duration 5 :minutes))
+          {:session/start (t/>> (t/now) (t/new-duration 1 :minutes))
+           :session/stop  (t/>> (t/now) (t/new-duration 3 :minutes))}
+          {:session/start (t/>> (t/now) (t/new-duration 1 :minutes))
+           :session/stop  (t/>> (t/now) (t/new-duration 5 :minutes))
            :session/tags  [:c]}
 
-          {:session/start (t/+ (t/now) (t/new-duration 6 :minutes))
-           :session/stop  (t/+ (t/now) (t/new-duration 7 :minutes))
+          {:session/start (t/>> (t/now) (t/new-duration 6 :minutes))
+           :session/stop  (t/>> (t/now) (t/new-duration 7 :minutes))
            :session/tags  [:c :d]}
 
-          {:session/start (t/+ (t/now) (t/new-duration 8 :minutes))
-           :session/stop  (t/+ (t/now) (t/new-duration 10 :minutes))
+          {:session/start (t/>> (t/now) (t/new-duration 8 :minutes))
+           :session/stop  (t/>> (t/now) (t/new-duration 10 :minutes))
            :session/tags  [:d :e :f :a]}
-          {:session/start (t/+ (t/now) (t/new-duration 9 :minutes))
-           :session/stop  (t/+ (t/now) (t/new-duration 12 :minutes))
+          {:session/start (t/>> (t/now) (t/new-duration 9 :minutes))
+           :session/stop  (t/>> (t/now) (t/new-duration 12 :minutes))
            :session/tags  [:a]}
-          {:session/start (t/+ (t/now) (t/new-duration 10 :minutes))
-           :session/stop  (t/+ (t/now) (t/new-duration 11 :minutes))
+          {:session/start (t/>> (t/now) (t/new-duration 10 :minutes))
+           :session/stop  (t/>> (t/now) (t/new-duration 11 :minutes))
            :session/tags  []}
           ]
          (smoosh-sessions)

@@ -11,7 +11,8 @@
                                    transform
                                    select-one
                                    select-one!]]
-   [tick.alpha.api :as t]
+   [tick.core :as t]
+   [tick.alpha.interval :as t.i]
    [umeng.app.colors :refer [white black]]
    [umeng.app.misc :refer [combine-tag-labels
                      days-of-week
@@ -70,7 +71,7 @@
 
 (defn truncate-session
   [day session]
-  (let [{:tick/keys [beginning end]} (t/bounds day)
+  (let [{:tick/keys [beginning end]} (t.i/bounds day)
         beginning                    (t/instant beginning)
         end                          (t/instant end)
         {:session/keys [start stop]} session]
@@ -87,7 +88,7 @@
   [i zoom]
   (-> i
       t/date
-      t/bounds
+      t.i/bounds
       t/beginning
       (#(t/duration {:tick/beginning (t/date-time %)
                      :tick/end       (t/date-time i)}))
@@ -98,7 +99,7 @@
   [time zoom]
   (try
     (->> time
-         (t/new-interval (t/time "00:00"))
+         (t.i/new-interval (t/time "00:00"))
          t/duration
          t/minutes
          (* zoom))
@@ -147,7 +148,7 @@
                                       (str "%"))
         elevation                 (-> collision-index (* 2)) ;; pulled from old code idk why it works
         top                       (instant-or-time->top-position start zoom)
-        height                    (-> (t/new-interval start stop)
+        height                    (-> (t.i/new-interval start stop)
                                       t/duration
                                       t/minutes
                                       (max 1)
@@ -211,7 +212,7 @@
              (mapv #(merge % {:session/is-tracking (-> tracking-ids set (some [(:session/id %)]) some?)}))
              (sort-by (fn [s] (->> s
                                    :session/start
-                                   (t/new-interval (t/epoch))
+                                   (t.i/new-interval (t/epoch))
                                    t/duration
                                    t/millis)))
              (group-by :session/type)
@@ -330,7 +331,7 @@
 
 (defn hours
   [[selected-day zoom] _]
-  (->> (let [intvl (t/bounds selected-day)]
+  (->> (let [intvl (t.i/bounds selected-day)]
          (t/range
            (t/beginning intvl)
            (t/end intvl)
@@ -608,7 +609,7 @@
              (sort-by (fn [s] (try
                                 (->> s
                                      :session-template/start
-                                     (t/new-interval (t/time "00:00"))
+                                     (t.i/new-interval (t/time "00:00"))
                                      t/duration
                                      t/millis)
                                 (catch js/Object _ 0))))

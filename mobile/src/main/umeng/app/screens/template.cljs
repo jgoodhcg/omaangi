@@ -9,7 +9,6 @@
    [applied-science.js-interop :as j]
    [potpuri.core :as p]
    [reagent.core :as r]
-   [tick.alpha.api :as t]
 
    [umeng.app.misc :refer [<sub
                      >evt

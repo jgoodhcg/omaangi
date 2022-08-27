@@ -20,7 +20,7 @@
                      active-gesture?]]
    [umeng.app.screens.core :refer [screens]]
    [umeng.app.tailwind :refer [tw]]
-   [tick.alpha.api :as t]))
+   [tick.core :as t]))
 
 (defn date-indicator []
   (let [{:keys [day-of-week
@@ -43,7 +43,7 @@
        [:> paper/IconButton
         {:icon     "less-than"
          :on-press #(do
-                      (>evt [:set-selected-day (t/now)])
+                      (>evt [:set-selected-day (t/now)]) ;; TODO 2022-08-13 Justin this should be injected
                       (>evt clear-datetime-picker))}])
 
      [:> g/RectButton {:style    (tw "flex flex-row justify-center")

@@ -10,9 +10,10 @@
    [clojure.spec.alpha :as s]
    [spec-tools.data-spec :as ds]
    [spec-tools.core :as st]
-   [tick.alpha.api :as t]
+   [tick.core :as t]
    [tick.timezone]
-   [cljs.reader :refer [read-string]] ;; TODO justin 2021-09-26 is this a security threat?
+   [tick.alpha.interval :as t.i]
+   [cljs.tools.reader.edn :refer [read-string]] ;; TODO justin 2021-09-26 is this a security threat?
    [clojure.spec.gen.alpha :as gen]
    [clojure.string :refer [replace]]
    ;; needed to `gen/sample` or `gen/generate`
@@ -30,8 +31,8 @@
     ;; generating this range repeatedly is costly so it's _cached_ with memoize
     ;; not sure if this is actually useful or not
     (fn []
-      (t/range (-> (t/yesterday) (t/bounds) (t/beginning))
-               (-> (t/tomorrow) (t/bounds) (t/end))
+      (t/range (-> (t/yesterday) (t.i/bounds) (t/beginning))
+               (-> (t/tomorrow) (t.i/bounds) (t/end))
                (t/new-duration 1 :minutes)))))
 
 (def arbitrary-date-times
@@ -39,8 +40,8 @@
     ;; generating this range repeatedly is costly so it's _cached_ with memoize
     ;; not sure if this is actually useful or not
     (fn [d]
-      (t/range (-> d (t/bounds) (t/beginning))
-               (-> d (t/bounds) (t/end))
+      (t/range (-> d (t.i/bounds) (t/beginning))
+               (-> d (t.i/bounds) (t/end))
                (t/new-duration 1 :minutes)))))
 
 (defn start-before-stop [{:session/keys [start stop]}]
@@ -90,13 +91,13 @@
                             (t/new-duration :minutes))
          start          (if within
                           instant
-                          (t/- instant random-minutes))
+                          (t/<< instant random-minutes))
          stop           (if within
                           (-> instant
-                              (t/+ random-minutes)
-                              (t/min (-> day (t/bounds) (t/end) (t/instant))))
+                              (t/>> random-minutes)
+                              (t/min (-> day (t.i/bounds) (t/end) (t/instant))))
                           (-> instant
-                              (t/+ random-minutes)))]
+                              (t/>> random-minutes)))]
      (merge
        #:session {:id          (random-uuid)
                   :start       start
@@ -227,7 +228,7 @@
                          (->> sessions-with-tags
                               (select [sp/MAP-VALS
                                        (fn [{:session/keys [start stop]}]
-                                         (touches (->> (t/bounds day)
+                                         (touches (->> (t.i/bounds day)
                                                        (transform [sp/MAP-VALS] t/instant))
                                                   {:tick/beginning start
                                                    :tick/end       stop}))
@@ -495,7 +496,7 @@
        :app-db.view.date-time-picker/id                  nil
        :app-db.view.color-picker/visible                 false
        :app-db.view.color-picker/value                   nil
-       :app-db.reports/beginning-date                    (-> (t/now) (t/- (t/new-duration 7 :days)) (t/date))
+       :app-db.reports/beginning-date                    (-> (t/now) (t/<< (t/new-duration 7 :days)) (t/date))
        :app-db.reports/end-date                          (-> (t/now) (t/date))
        :app-db.reports.pie-chart/tag-groups              {}
        :app-db.reports.pie-chart/selected-tag-group      nil
@@ -530,7 +531,11 @@
   [app-db]
   (->> app-db
 
-       read-string
+       (read-string {:readers {'time/date    t/date
+                               'uuid         uuid
+                               'time/instant t/instant
+                               'time/time    t/time
+                               'time/zone    t/zone}})
 
        (transform [:app-db.view.tag-remove-modal/color] make-color-if-some)
        (transform [:app-db.view.color-picker/value ] make-color-if-some)

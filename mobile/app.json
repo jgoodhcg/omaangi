@@ -2,7 +2,7 @@
   "expo": {
     "name": "umeng",
     "slug": "umeng",
-    "version": "0.0.27",
+    "version": "0.0.28",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "splash": {
@@ -10,6 +10,7 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    "userInterfaceStyle": "dark",
     "updates": {
       "fallbackToCacheTimeout": 0
     },

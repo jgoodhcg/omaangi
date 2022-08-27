@@ -14,7 +14,8 @@
    [clojure.set :refer [subset?]]
    [re-frame.core :refer [reg-fx]]
    [potpuri.core :as p]
-   [tick.alpha.api :as t]
+   [tick.core :as t]
+   [tick.alpha.interval :as t.i]
 
    [umeng.app.misc :refer [>evt
                      average
@@ -96,6 +97,14 @@
               (catch js/Object e
                 (-> rn/Alert (j/call :alert "Failure on getInfoAsync" (str e))))))       ))
 
+;; remove persisted app-db
+(comment
+  (go
+    (-> expo-file-system
+        (j/call :deleteAsync app-db-file-path))
+    <p!)
+  )
+
 (reg-fx :save-db
         (fn [app-db]
           (try
@@ -108,6 +117,7 @@
                  (j/get :manifest)
                  (j/get :version)))
 
+;; TODO deprecate remove
 (def persist-app-db-task "PERSIST_APP_DB")
 
 (reg-fx :post-load-db
@@ -241,7 +251,7 @@
          end-intrvl :app-db.reports/end-date}
         report-interval
         days        (vec (t/range beg-intrvl
-                                  (t/+ end-intrvl
+                                  (t/>> end-intrvl
                                        (t/new-period 1 :days))))
         session-ids (->> calendar
                          (select [(sp/submap days)
@@ -363,7 +373,7 @@
 
 (defn session-days-of-week
   [{:session/keys [start stop]}]
-  (->> (t/range (t/date start) (-> stop t/date (t/+ (t/new-period 1 :days))))
+  (->> (t/range (t/date start) (-> stop t/date (t/>> (t/new-period 1 :days))))
        (concat [(t/date start)]) ;; t/range is empty if start and stop are on the same day
        (mapv #(t/day-of-week %))
        distinct))
@@ -567,7 +577,7 @@
                                                                                                        ps-tag-id-set))
                                                                                            (mapv (fn [{t-start :session/start
                                                                                                        t-stop  :session/stop}]
-                                                                                                   (let [concur (t/concur {:tick/beginning p-start
+                                                                                                   (let [concur (t.i/concur {:tick/beginning p-start
                                                                                                                            :tick/end       p-stop}
                                                                                                                           {:tick/beginning t-start
                                                                                                                            :tick/end       t-stop})]

@@ -10,7 +10,7 @@
                           debug]]
    [com.rpl.specter :as sp :refer [select select-one setval transform selected-any?]]
    [clojure.spec.alpha :as s]
-   [tick.alpha.api :as t]
+   [tick.core :as t]
    [potpuri.core :as p]
 
    [umeng.app.db :as db :refer [default-app-db app-db-spec start-before-stop start-before-stop-times]]
@@ -265,19 +265,19 @@
                              (if (some? stop)
                                {:session/start
                                 (-> stop
-                                    (t/- (t/new-duration 60 :minutes)))}
+                                    (t/<< (t/new-duration 60 :minutes)))}
                                ;; TODO inject now
                                {:session/start (t/now)
-                                :session/stop  (-> (t/now) (t/+ 60 :minutes))}))
+                                :session/stop  (-> (t/now) (t/>> (t/new-duration 60 :minutes)))}))
                            (when (and set-stop
                                       (nil? stop))
                              (if (some? start)
                                {:session/stop
                                 (-> start
-                                    (t/+ (t/new-duration 60 :minutes)))}
+                                    (t/>> (t/new-duration 60 :minutes)))}
                                ;; TODO inject now
                                {:session/start (t/now)
-                                :session/stop  (-> (t/now) (t/+ 60 :minutes))})))))))
+                                :session/stop  (-> (t/now) (t/>> (t/new-duration 60 :minutes)))})))))))
 (reg-event-db :set-initial-timestamp [base-interceptors] set-initial-timestamp)
 
 (defn tick-tock
@@ -294,7 +294,7 @@
         selected-day (:app-db.selected/day db)
         start-time   (-> (p/map-of event zoom) native-event->time)
         start        (-> start-time (t/on selected-day) (t/in timezone) t/instant)
-        stop         (-> start (t/+ (t/new-duration 45 :minutes))) ;; TODO make this a setting default
+        stop         (-> start (t/>> (t/new-duration 45 :minutes))) ;; TODO make this a setting default
         type         (-> (p/map-of event width) native-event->type)
         session      {:session/id          new-uuid
                       :session/created     now
@@ -409,7 +409,7 @@
                                   :session/last-edited  now
                                   :session/label        label
                                   :session/start        now
-                                  :session/stop         (-> now (t/+ (t/new-duration 1 :seconds)))
+                                  :session/stop         (-> now (t/>> (t/new-duration 1 :seconds)))
                                   :session/type         :session/track
                                   :session/tracked-from from-session-id
                                   :session/tags         []}
@@ -482,7 +482,7 @@
                      :session/last-edited now
                      :session/label       ""
                      :session/start       now
-                     :session/stop        (-> now (t/+ (t/new-duration 1 :seconds)))
+                     :session/stop        (-> now (t/>> (t/new-duration 1 :seconds)))
                      :session/type        :session/track
                      :session/tags        []})]
     (tap> (p/map-of session :create-track-session-from-nothing))
@@ -602,7 +602,7 @@
   (let [selected-template-id (->> db (select-one [:app-db.selected/template]))
         zoom                 (:app-db.view/zoom db)
         start                (-> (p/map-of event zoom) native-event->time)
-        stop                 (-> start (t/+ (t/new-duration 45 :minutes))) ;; TODO make this a setting default
+        stop                 (-> start (t/>> (t/new-duration 45 :minutes))) ;; TODO make this a setting default
         session-template     {:session-template/id          new-uuid
                               :session-template/created     now
                               :session-template/last-edited now

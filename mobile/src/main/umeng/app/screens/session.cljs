@@ -7,7 +7,7 @@
    [applied-science.js-interop :as j]
    [potpuri.core :as p]
    [reagent.core :as r]
-   [tick.alpha.api :as t]
+   [tick.core :as t]
 
    [umeng.app.components.color-override :as color-override]
    [umeng.app.components.tag-related :as tags]
@@ -56,7 +56,6 @@
                 (= dtp-id :session))
        [:> DateTimePicker
         {:is-visible           visible
-         :is-dark-mode-enabled true
          :date                 value
          :mode                 mode
 
