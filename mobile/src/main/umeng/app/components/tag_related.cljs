@@ -9,9 +9,10 @@
    [umeng.app.tailwind :refer [tw]]))
 
 (defn tag-button
-  [{:keys [color label on-press style]}]
+  [{:keys [color label on-press style assigned-to-selected]}]
   [:> paper/Button
    (merge
+     (when assigned-to-selected {:disabled true})
      (when (some? on-press)
        {:on-press on-press})
      (when (some? style)
@@ -27,8 +28,9 @@
         (<sub [:tag-remove-modal])]
 
     [:> paper/Portal
-     [:> paper/Modal {:visible    visible
-                      :on-dismiss close-fn}
+     [:> paper/Modal {:visible     visible
+                      :dismissable false
+                      :on-dismiss  close-fn}
       [:> paper/Surface
        [:> rn/View {:style (tw "p-2 flex-col")}
         ;; close button
@@ -52,24 +54,25 @@
          "remove it"]]]]]))
 
 (defn tag-add-modal [{:keys [add-fn close-fn]}]
-  (let [all-tags                        (<sub [:tags-not-on-selected-session])
+  (let [all-tags                        (<sub [:tags-with-on-selected-session-marked])
         {:tag-add-modal/keys [visible]} (<sub [:tag-add-modal])]
 
     [:> paper/Portal
-     [:> paper/Modal {:visible    visible
-                      :on-dismiss close-fn}
+     [:> paper/Modal {:visible     visible
+                      :dismissable false
+                      :on-dismiss  close-fn}
       [:> paper/Surface {:style (tw "m-1")}
        [:> rn/ScrollView
         [:> paper/IconButton {:icon     "close"
                               :on-press close-fn}]
 
         [:> rn/View {:style (tw "flex flex-row flex-wrap items-center p-4")}
-         (for [{:tag/keys [label color id]} all-tags]
+         (for [{:tag/keys [label color id assigned-to-selected]} all-tags]
            [tag-button
             (merge {:key      id
                     :style    (tw "m-2")
                     :on-press (partial add-fn id)}
-                   (p/map-of label color id))])]]]]]))
+                   (p/map-of label color id assigned-to-selected))])]]]]]))
 
 (defn tags-component
   "`add-fn` and `remove-fn` are meant to dispatch the session-ish update given the tag-id"
@@ -115,6 +118,6 @@
      [tag-add-modal {:close-fn #(>evt [:set-tag-add-modal
                                        #:tag-add-modal {:visible false}])
                      :add-fn   (fn [tag-id]
-                                 (>evt [:set-tag-add-modal
+                                 #_(>evt [:set-tag-add-modal
                                         #:tag-add-modal {:visible false}])
                                  (add-fn tag-id))}]]))

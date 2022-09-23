@@ -504,6 +504,26 @@
 
          tags-not-on-selected-session)
 
+(defn tags-with-on-selected-session-marked
+  [[all-tags selected-session] _]
+  (let [session-tags (->> selected-session
+                            (select [(sp/keypath :session/tags)
+                                     sp/ALL
+                                     (sp/keypath :tag/id)])
+                            set)]
+    (->> all-tags
+         (mapv (fn [{:tag/keys [id]
+                     :as tag}]
+                 (if (subset? #{id} session-tags)
+                   (merge tag {:tag/assigned-to-selected true})
+                   tag))))))
+(reg-sub :tags-with-on-selected-session-marked
+
+         :<- [:tag-list]
+         :<- [:selected-session]
+
+         tags-with-on-selected-session-marked)
+
 (defn is-selected-playing?
   [[tracking-ids selected-session-id]]
   (some? (some  #{selected-session-id} tracking-ids)))

@@ -53,6 +53,7 @@
   (and (t/time? start)
        (t/time? stop)
        (t/< start stop)))
+
 ;;
 ;; independent generators
 ;;
@@ -138,6 +139,7 @@
      :template/session-templates []}
     (when (chance :med)
       {:template/label (-> faker (j/get :random) (j/call :words))})))
+
 ;;
 ;; coll generators
 ;;
@@ -179,6 +181,7 @@
                 :template/session-templates []}
                (when (chance :med)
                  {:template/label (-> faker (j/get :random) (j/call :words))})))))
+
 ;;
 ;; relational generators
 ;;
