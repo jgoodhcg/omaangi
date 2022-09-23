@@ -24,3 +24,5 @@ test/
 backend/data/
 
 /mobile/app/
+
+mobile/dist/
