@@ -33,7 +33,7 @@
     "expo-splash-screen": "~0.15.1",
     "expo-system-ui": "~1.2.0",
     "expo-task-manager": "~10.2.1",
-    "expo-updates": "~0.13.3",
+    "expo-updates": "~0.13.4",
     "faker": "^5.1.0",
     "node-emoji": "^1.10.0",
     "react": "17.0.2",
