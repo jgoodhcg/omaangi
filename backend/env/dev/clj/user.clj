@@ -13,6 +13,7 @@
     [lambdaisland.classpath.watch-deps :as watch-deps]      ;; hot loading for deps
     [umeng.backend.core :refer [start-app]]
     [tick.core :as t]
+    [tick.alpha.interval :as t.i]
     ))
 
 ;; uncomment to enable hot loading for deps
@@ -61,11 +62,13 @@
 
 (comment
   (require '[tick.core :as t])
+  (require '[tick.alpha.interval :as t.i])
   (t/new-duration 1 :minutes)
   (t/new-duration 100 :seconds)
   (t/new-period 2 :months)
 
   (random-uuid)
+
 
   )
 

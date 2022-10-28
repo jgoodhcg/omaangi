@@ -1,0 +1,2 @@
+{:paths ["src"]
+ :deps  {metosin/spec-tools {:mvn/version "0.10.5"}}}
