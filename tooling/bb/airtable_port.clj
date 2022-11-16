@@ -79,7 +79,7 @@
    :exercise-log/data [{:sets 1 :reps 2 :weight 3 :weight-unit "lbs" :duration #time/duration "PT1M40S"}
                            ;; could also include any of these keys
                            ;; semantically only weight and weight-unit would be in either type
-                       {:distance 12 :distance-unit "miles" :elevation-gain "" :elevation-gain-unit ""}
+                       {:distance 12 :distance-unit "miles" :elevation-gain "" :elevation-gain-unit "" :duration #time/duration "PT1M40S"}
                            ;; this one is specific to inversion table but with a schemaless I can use whatever
-                       {:angle 60}]}
+                       {:angle 60 :duration #time/duration "PT1M40S"}]}
 )

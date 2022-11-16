@@ -1,2 +1,4 @@
 {:paths ["src"]
- :deps  {metosin/spec-tools {:mvn/version "0.10.5"}}}
+ :deps  {org.clojure/clojure {:mvn/version "1.11.1"}
+         metosin/spec-tools  {:mvn/version "0.10.5"}
+         tick/tick           {:mvn/version "0.5.0"}}}

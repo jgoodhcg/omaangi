@@ -42,6 +42,3 @@
 
 (defn -main [& _]
   (start-app))
-
-(comment
-  ())
