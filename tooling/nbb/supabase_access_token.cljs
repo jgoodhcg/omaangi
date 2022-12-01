@@ -2,8 +2,8 @@
   (:require ["@supabase/supabase-js" :as supa]
             [promesa.core :as p]))
 
-(p/let [[supa-url
-         supa-anon-key
+(p/let [[supa-url ;; probably 'http://supabase_kong_backend:8000'
+         supa-anon-key ;; get by running supabase status
          email
          password
          signup] *command-line-args*

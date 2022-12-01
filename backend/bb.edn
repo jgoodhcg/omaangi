@@ -42,6 +42,7 @@
                               {:dir "."}
                               "doctl apps create-deployment 5d984be2-26fc-4e29-8f84-2dc3ffd86067")))}
 
+                  ;; TODO 2022-11-28 Justin move to tooling?
                   test-graph-api
                   {:doc  ""
                    :task
@@ -59,7 +60,8 @@
                                            {:body payload
                                             :headers
                                             {"Accept"       "application/transit+json"
-                                             "Content-Type" "application/transit+json"}})
+                                             "Content-Type" "application/transit+json"
+                                             "Authorization" "Bearer "}})
                                           :body)
                          in           (java.io.ByteArrayInputStream.
                                        (bytes (byte-array
