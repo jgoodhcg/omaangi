@@ -38,6 +38,7 @@
  {:base-path   "/api"
   :env         #ig/ref :system/env
   :xtdb-node   #ig/ref :db.xtdb/node
+  ;; TODO 2022-12-03 is it safe to have that default? maybe default for dev profile
   :auth-secret #or [#env SUPA_SECRET "super-secret-jwt-token-with-at-least-32-characters-long"]}
 
  :router/routes

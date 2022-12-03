@@ -2,7 +2,7 @@
   (:require ["@supabase/supabase-js" :as supa]
             [promesa.core :as p]))
 
-(p/let [[supa-url ;; probably 'http://supabase_kong_backend:8000'
+(p/let [[supa-url
          supa-anon-key ;; get by running supabase status
          email
          password
@@ -19,14 +19,14 @@
               :password      password
               :signup        signup})
 
-  (when signup
+  #_(when signup
     (-> maybe-new-user
         (. -error)
         (println)))
 
-  (println "----------------- access token")
-  (-> maybe-login
-        (. -data)
-        (. -session)
-        (. -access_token)
-        (println)))
+  #_(println "----------------- access token")
+
+  (prn {:access-token (-> maybe-login
+                          (. -data)
+                          (. -session)
+                          (. -access_token))}))

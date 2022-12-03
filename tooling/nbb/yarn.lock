@@ -9,10 +9,10 @@
   dependencies:
     cross-fetch "^3.1.5"
 
-"@supabase/gotrue-js@^2.2.0":
-  version "2.2.1"
-  resolved "https://registry.yarnpkg.com/@supabase/gotrue-js/-/gotrue-js-2.2.1.tgz#8216aaa766286d9f59ee751a961c276515976852"
-  integrity sha512-CgQaYAJmGbOLPSqan4mjRgGikzsrlkKdPq0UNG7WZQv5HlHJlAYW8HeyNw/SKfIbxQBm8s2dBCeUyX+NdfB2Rw==
+"@supabase/gotrue-js@^2.3.1":
+  version "2.4.1"
+  resolved "https://registry.yarnpkg.com/@supabase/gotrue-js/-/gotrue-js-2.4.1.tgz#6470cc2d2b8f43ad7cabb8c017b16693af2fff6a"
+  integrity sha512-Q47ImUx22ZhUtjKcO51efDDoY/pd3n8SittTnp8Rc2Jaj2/duQ+kDtHVJhCBs1EbFPxPg7pZAHwLhWX+O4QTFQ==
   dependencies:
     cross-fetch "^3.1.5"
 
@@ -39,12 +39,12 @@
     cross-fetch "^3.1.5"
 
 "@supabase/supabase-js@^2.0.4":
-  version "2.0.4"
-  resolved "https://registry.yarnpkg.com/@supabase/supabase-js/-/supabase-js-2.0.4.tgz#ef3dc01c9603001d53998bd33de40f2b0e66781c"
-  integrity sha512-Z5uLyJm9bz5LMFnt5d1I6ccxVTdvKbJa0RsYGgKlA+QiyGvBxRRvVh8pqlYP1571DlycGG7bWngNwdv7/pehrg==
+  version "2.1.1"
+  resolved "https://registry.yarnpkg.com/@supabase/supabase-js/-/supabase-js-2.1.1.tgz#927f04213b835286797989795d8acf6f38ed0ccc"
+  integrity sha512-6uBz31zrYfXkb5f2lzSHtncLWDQG5LvuH/OrmIAJqnjvliyd1pXMCGn/03xTfnflbjMolbOva+XMrydkyIMDfQ==
   dependencies:
     "@supabase/functions-js" "^2.0.0"
-    "@supabase/gotrue-js" "^2.2.0"
+    "@supabase/gotrue-js" "^2.3.1"
     "@supabase/postgrest-js" "^1.1.0"
     "@supabase/realtime-js" "^2.1.0"
     "@supabase/storage-js" "^2.0.0"
@@ -140,9 +140,9 @@ find-replace@^3.0.0:
     array-back "^3.0.1"
 
 import-meta-resolve@^2.1.0:
-  version "2.1.0"
-  resolved "https://registry.yarnpkg.com/import-meta-resolve/-/import-meta-resolve-2.1.0.tgz#c8952d331ed6e9bb6ad524a7549deb3d34af41ce"
-  integrity sha512-yG9pxkWJVTy4cmRsNWE3ztFdtFuYIV8G4N+cbCkO8b+qngkLyIUhxQFuZ0qJm67+0nUOxjMPT7nfksPKza1v2g==
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/import-meta-resolve/-/import-meta-resolve-2.2.0.tgz#701aa29a044954bd135214049294745ac70dd607"
+  integrity sha512-CpPOtiCHxP9HdtDM5F45tNiAe66Cqlv3f5uHoJjt+KlaLrUh9/Wz9vepADZ78SlqEo62aDWZtj9ydMGXV+CPnw==
 
 is-typedarray@^1.0.0:
   version "1.0.0"
@@ -160,9 +160,9 @@ ms@2.0.0:
   integrity sha512-Tpp60P6IUJDTuOq/5Z8cdskzJujfwqfOTkrwIwj7IRISpnkJnT6SyJ4PCPnGMoFjC9ddhal5KVIYtAt97ix05A==
 
 nbb@^1.0.139:
-  version "1.0.139"
-  resolved "https://registry.yarnpkg.com/nbb/-/nbb-1.0.139.tgz#86610f2422134296ab95f0dafa1bcc4d3d129246"
-  integrity sha512-4ZNGedw8m3BVjoC4s9XXSjrr5UX8FVxH/mK8S58M911twzAVqwRFJkmNDpen7zeZOL+5J6SP5d25nvO4IIEOew==
+  version "1.1.151"
+  resolved "https://registry.yarnpkg.com/nbb/-/nbb-1.1.151.tgz#3a9d1b5e11a98160c5e2b783751c8c71bec45560"
+  integrity sha512-HX6VlsAnam/k17yU2bCdpq72WLeeGQkOdi92pfMLuyb5qaDNl7D71L00VhwwzBxEjegT/sLTQJGpuQLreNsNMQ==
   dependencies:
     import-meta-resolve "^2.1.0"
 
