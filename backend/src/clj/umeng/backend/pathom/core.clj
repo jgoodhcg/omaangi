@@ -14,11 +14,24 @@
             [com.wsscode.pathom3.interface.eql :as p.eql]
             [com.wsscode.pathom3.interface.smart-map :as psm]
             [com.wsscode.pathom3.path :as p.path]
-            [com.wsscode.pathom3.plugin :as p.plugin]))
+            [com.wsscode.pathom3.plugin :as p.plugin]
+            [umeng.shared.specs.exercises :as e-specs]
+            [clojure.spec.alpha :as spec]))
 
 
 (pco/defresolver test-resolver
   [{input :test-resolver/input}]
   {:test-resolver/output (str input "+ some more")})
 
+#_(pco/defmutation add-exercises
+  [env {exercises :umeng/exercises}]
+  )
+
 (def indexes (pci/register [test-resolver]))
+
+(comment
+  (spec/valid? e-specs/exercise-spec {:xt/id #uuid "5bf4dbb9-5931-4f7c-9095-48e6477bdefc"
+                                      :umeng/type :exercise :exercise/label "Pushup"})
+  (spec/explain e-specs/exercise-spec {:xt/id #uuid "5bf4dbb9-5931-4f7c-9095-48e6477bdefc"
+                                       :umeng/type :exercise :exercise/label "Pushup"})
+  )
