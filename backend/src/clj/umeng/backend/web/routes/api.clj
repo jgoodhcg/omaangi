@@ -4,7 +4,6 @@
     [umeng.backend.web.controllers.graph :as graph]
     [umeng.backend.web.middleware.exception :as exception]
     [umeng.backend.web.middleware.formats :as formats]
-    [umeng.backend.web.middleware.body-string :as body-string]
     [integrant.core :as ig]
     [reitit.coercion.malli :as malli]
     [reitit.ring.coercion :as coercion]
@@ -12,17 +11,6 @@
     [reitit.ring.middleware.parameters :as parameters]
     [reitit.swagger :as swagger]
     [ring.middleware.jwt :as jwt]))
-
-;; TODO move this to middleware namespace
-#_(defn access-token [handler secret]
-  (fn [{:keys [headers] :as request}]
-    ;; get access token
-    ;; validate
-    ;; check exp
-    ;; take out claims and put in request
-    ;; call handlers
-    (let [access-token ()])
-    ))
 
 ;; Routes
 (defn api-routes [{:keys [xtdb-node auth-secret] :as _opts}]
@@ -37,8 +25,7 @@
       {:post       {:parameters {:body map?}}
        :responses  {200 {:body map?}}
        :handler    graph/api
-       :middleware [#_[access-token auth-secret]
-                    [jwt/wrap-jwt {:issuers {:no-issuer {:alg    :HS256
+       :middleware [[jwt/wrap-jwt {:issuers {:no-issuer {:alg    :HS256
                                                          :secret auth-secret}}}]]}]]
     (throw (Exception. "forgot to set SUPA_SCRET envvar"))))
 

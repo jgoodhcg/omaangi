@@ -20,8 +20,11 @@
               err]}          (-> (process command {:dir "../nbb"} ))
       {:keys [access-token]} (-> out slurp edn/read-string)
       error                  (-> err slurp)
-      req-body               '[{(:>/test {:test-resolver/input "yo"})
-                                [:test-resolver/output]}]
+      req-body               [`(umeng.backend.pathom.core/add-exercises
+                                {:umeng/exercises [{:xt/id      "whatev"
+                                                    :umeng/type :exercisey :exercise/label "Pushup"}]})]
+      ;;'[{(:>/test {:test-resolver/input "yo"})
+      ;;      [:test-resolver/output]}]
       out                    (java.io.ByteArrayOutputStream. 4096)
       writer                 (transit/writer
                               out
