@@ -18,12 +18,12 @@
    :exercise/body-areas     [keyword?]})
 
 (def exercise-session
-  {(ds/req :xt/id)                      uuid?
-   :umeng/type                          ::type
-   :exercise-session.interval/beginning t/instant?
-   :exercise-session.interval/end       t/instant?
-   :exercise-session/notes              string?
-   :exercise-session/relativety-score   keyword?})
+  {(ds/req :xt/id)                               uuid?
+   (ds/req :umeng/type)                          ::type
+   (ds/req :exercise-session.interval/beginning) t/instant?
+   (ds/req :exercise-session.interval/end)       t/instant?
+   :exercise-session/notes                       string?
+   :exercise-session/relativety-score            keyword?})
 
 (def exercise-log
   {(ds/req :xt/id)                  uuid?
@@ -60,4 +60,10 @@
   (ds/spec
    {:name         ::exercise-log-spec
     :spec         exercise-log
+    :keys-default ds/opt}))
+
+(def exercise-session-spec
+  (ds/spec
+   {:name         ::exercise-session-spec
+    :spec         exercise-session
     :keys-default ds/opt}))

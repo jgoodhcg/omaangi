@@ -19,7 +19,7 @@
             [umeng.shared.specs.exercises :as e-specs]
             [clojure.spec.alpha :as spec]
             [xtdb.api :as xt]
-            [potpuri.core :as p]))
+            [potpuri.core :as pot]))
 
 (def xtdb-atom (atom nil))
 
@@ -30,25 +30,37 @@
   [{input :test-resolver/input}]
   {:test-resolver/output (str input "+ some more")})
 
-(pco/defmutation add-exercises
-  [{exercises :umeng/exercises}]
-  {::pco/output [:add-exercises/error
-                 :exercises]} ;; 2022-12-04 Justin add all keys for exercise or remove this
-  (let [invalid-items (->> exercises (remove (fn [exercise] (spec/valid? e-specs/exercise-spec exercise))))]
-    (if (empty? invalid-items)
-      (do (xtdb-submit-tx (->> exercises
-                               (mapv (fn [exercise] [:xtdb.api/put exercise]))))
-          {:add-exercises/error nil
-           :exercises           exercises})
-      {:add-exercises/error (->> exercises
-                                 (mapv (fn [exercise]
-                                         (-> exercise
-                                              (->> (spec/explain-data e-specs/exercise-spec))
-                                              (select-keys [:clojure.spec.alpha/problems])
-                                              (merge {:item exercise})))))
-       :exercises           exercises})))
+(defn- explain-item-xform [item item-spec]
+  (-> item
+      (->> (spec/explain-data item-spec))
+      (select-keys [:clojure.spec.alpha/problems])
+      (merge (pot/map-of item))))
 
-(def indexes (pci/register [test-resolver add-exercises]))
+(defmulti  valid-item? :umeng/type)
+(defmethod valid-item? :exercise         [item] (spec/valid? e-specs/exercise-spec item))
+(defmethod valid-item? :exercise-log     [item] (spec/valid? e-specs/exercise-log-spec item))
+(defmethod valid-item? :exercise-session [item] (spec/valid? e-specs/exercise-session-spec item))
+
+(defmulti  explain-item :umeng/type)
+(defmethod explain-item :exercise         [item] (explain-item-xform item e-specs/exercise))
+(defmethod explain-item :exercise-log     [item] (explain-item-xform item e-specs/exercise-log))
+(defmethod explain-item :exercise-session [item] (explain-item-xform item e-specs/exercise-session))
+
+(pco/defmutation upsert-items
+  [{items :umeng/items}]
+  {::pco/output [:add-items/errors
+                 :umeng/items]}
+  (let [invalid-items (->> items (remove valid-item?))]
+    (if (empty? invalid-items)
+      (do (xtdb-submit-tx (->> items
+                               (mapv (fn [item] [:xtdb.api/put item]))))
+          {:add-items/error nil
+           :umeng/items     items})
+      {:add-items/error (->> invalid-items
+                             (mapv explain-item))
+       :umeng/items     items})))
+
+(def indexes (pci/register [test-resolver upsert-items]))
 
 (defmethod ig/init-key :api/xtdb
   [_ {xtdb-node :xtdb-node}]
