@@ -1,6 +1,9 @@
 (ns umeng.notebooks.index
   (:require [scicloj.clay.v2.api :as clay]
-            [scicloj.kindly-default.v1.api :as kindly-default]))
+            [scicloj.kindly.v3.api :as kindly]
+            [scicloj.kindly.v3.kind :as kind]
+            [scicloj.kindly-default.v1.api :as kindly-default]
+            ))
 
 (kindly-default/setup!)
 
