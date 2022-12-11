@@ -26,3 +26,5 @@ backend/data/
 /mobile/app/
 
 mobile/dist/
+
+notebooks/data/
