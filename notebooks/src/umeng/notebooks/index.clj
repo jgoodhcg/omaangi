@@ -5,9 +5,15 @@
             [scicloj.kindly-default.v1.api :as kindly-default]
             ))
 
-(kindly-default/setup!)
-
-(clay/start!)
+(defn start [opts]
+  (println "starting kindly ...")
+  (kindly-default/setup!)
+  (println "starting clay ...")
+  (clay/start!)
+  (println "Showing airtable doc")
+  (Thread/sleep 10000) ;; this is necessary, without it the browser just hangs on the result of clay/start!
+  (clay/show-doc! "src/umeng/notebooks/2022_12_11_airtable_data.clj")
+  )
 
 (comment
   (clay/show-doc! "src/umeng/notebooks/index.clj")

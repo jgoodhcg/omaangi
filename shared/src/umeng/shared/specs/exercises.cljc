@@ -48,7 +48,9 @@
                                       :exercise-log.data/elevation-gain      float?
                                       :exercise-log.data/elevation-gain-unit keyword?
                                       :exercise-log.data/inversion-angle     float?
-                                      :exercise-log.data/notes               string?}]})
+                                      :exercise-log.data/notes               string?
+                                      :exercise-log.data/relativety-score    keyword?
+                                      }]})
 
 (def exercise-spec
   (ds/spec
