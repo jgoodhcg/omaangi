@@ -6,12 +6,13 @@
             ))
 
 (defn start [opts]
-  (println "starting kindly ...")
+  (println "starting kindly and waiting 10 seconds ...")
   (kindly-default/setup!)
-  (println "starting clay ...")
+  (Thread/sleep 10000)
+  (println "starting clay and waiting 10 seconds ...")
   (clay/start!)
-  (println "Showing airtable doc")
-  (Thread/sleep 10000) ;; this is necessary, without it the browser just hangs on the result of clay/start!
+  (Thread/sleep 10000)
+  (println "showing airtable doc")
   (clay/show-doc! "src/umeng/notebooks/2022_12_11_airtable_data.clj")
   )
 
