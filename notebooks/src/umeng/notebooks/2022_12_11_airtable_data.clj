@@ -8,6 +8,10 @@
             [scicloj.kindly.v3.kind :as kind]
             [scicloj.kindly-default.v1.api :as kindly-default]
             [umeng.shared.data-xform.airtable-exercises :refer [xform-exercise]]
+            [umeng.shared.specs.exercises :refer [exercise-spec
+                                                  exercise-log-spec
+                                                  exercise-session-spec]]
+            [clojure.spec.alpha :as s]
             [tick.core :as t]
             [clojure.set :refer [rename-keys]]
             [com.rpl.specter :as sp]
@@ -29,10 +33,17 @@
 (def exercises
   (-> exercises-raw
       (->> (mapv #(cske/transform-keys csk/->kebab-case-keyword %)))
+      (->> (remove (fn [{:keys [fields]}] (-> fields :name (#(or (nil? %) (empty? %)))))))
       (->> (mapv xform-exercise))))
 
 ;; An xformed example
 (-> exercises rand-nth)
+
+;; Valid?
+(->> exercises
+     (mapv #(s/explain-data exercise-spec %))
+     (filter some?)
+     empty?)
 
 ;; Now let's index these for easier processing of related items
 (def exercises-indexed
@@ -73,8 +84,8 @@
          is-average         :airtable/average-duration
          is-average-average :airtable/average-of-average-duration} fields
 
-        beginning     (t/instant timestamp)
-        end           (-> beginning (t/>> (t/new-duration duration :seconds)))
+        end           (t/instant timestamp)
+        beginning     (-> end (t/<< (t/new-duration duration :seconds)))
         airtable-e-id (first exercise)
         exercise-item (get exercises-indexed airtable-e-id)
         e-id          (get exercise-item :xt/id) ;; desctructing these throws an error for some weird reason
@@ -88,25 +99,25 @@
     (-> {:xt/id                           (java.util.UUID/randomUUID)
          :umeng/type                      :exercise-log
          :exercise-session/id             (java.util.UUID/randomUUID) ;; TODO map over these and create stubs
+         :exercise/id                     e-id
          :exercise-log.interval/beginning beginning
          :exercise-log.interval/end       end
          :airtable/id                     id
          :airtable/exercise-id            airtable-e-id
-         :airtable/ported                 true
-         :exercise-log/data
-         [(->  {:exercise/id                          e-id
-                :exercise-log.data.interval/beginning beginning
-                :exercise-log.data.interval/end       end
-                :exercise-log.data/sets               1}
-               (merge (when (some? reps) {:exercise-log.data/reps reps}))
-               (merge (when (some? weight) {:exercise-log.data/weight weight}))
-               (merge (when (some? e-weight-unit) {:exercise-log.data/weight-unit (keyword e-weight-unit)}))
-               (merge (when (some? distance) {:exercise-log.data/distance      distance
-                                              :exercise-log.data/distance-unit :miles}))
-               (merge (when (some? angle) {:exercise-log.data/inversion-angle angle}))
-               (merge (when (some? notes) {:exercise-log.data/notes notes}))
-               (merge (when (some? relativety) {:exercise-log.data/relativety-score relativety})))]}
-        (merge (when (some? is-average) {:airtable/average-duration true}))
+         :airtable/ported                 true}
+
+        (merge (when (some? reps)
+                 {:exercise-log/sets [(-> {:exercise-log.set/reps reps}
+                                          (merge (when (some? weight)
+                                                   {:exercise-log.set/weight weight}))
+                                          (merge (when (some? e-weight-unit)
+                                                   {:exercise-log.set/weight-unit (keyword e-weight-unit)})))]}))
+        (merge (when (some? distance)           {:exercise-log/distance      distance
+                                                 :exercise-log/distance-unit :miles}))
+        (merge (when (some? angle)              {:exercise-log/inversion-angle angle}))
+        (merge (when (some? notes)              {:exercise-log/notes notes}))
+        (merge (when (some? relativety)         {:exercise-log/relativety-score relativety}))
+        (merge (when (some? is-average)         {:airtable/average-duration true}))
         (merge (when (some? is-average-average) {:airtable/average-of-average-duration true})))))
 
 (def exercise-logs-with-durations
@@ -118,21 +129,20 @@
       (->> (mapv xform-exercise-log))))
 
 (def average-durations
-  (-> exercise-logs-subset-with-durations
+  (-> exercise-logs-with-durations
       (->> (group-by :airtable/exercise-id))
       (->> (pot/map-vals
             (fn [[& e-logs]]
-              (count e-logs)
               (->> e-logs
                    (transduce
                     (map (fn [e-log]
-                           (let [beg (get-in e-log [:exercise-log/data 0 :exercise-log.data.interval/beginning])
-                                 end (get-in e-log [:exercise-log/data 0 :exercise-log.data.interval/end])
-                                 xtid (get :xt/id e-log)]
-                             (pprint (pot/map-of beg end xtid))
+                           (let [beg (get-in e-log [:exercise-log.interval/beginning])
+                                 end (get-in e-log [:exercise-log.interval/end])]
                              (-> (t/between beg end) t/seconds))))
                     mean)))))))
 
+;; Instead of just taking the average we could categorize and take the average of similar exercises
+;; This is way lazier though
 (def average-of-average-durations
   (transduce identity mean (vals average-durations)))
 

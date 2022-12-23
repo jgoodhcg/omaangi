@@ -15,42 +15,54 @@
    (ds/req :exercise/label) string?
    :exercise/notes          string?
    :exercise/source         string?
-   :exercise/body-areas     [keyword?]})
+   :exercise/body-areas     [keyword?]
+   :airtable/ported         true
+   :airtable/created-time   string?
+   :airtable/distance-unit  string?
+   :airtable/id             string?
+   :airtable/exercise-log   [string?]
+   :airtable/weight-unit    string?
+   :airtable/log-count      integer?
+   :airtable/latest-done    string?})
 
 (def exercise-session
   {(ds/req :xt/id)                               uuid?
    (ds/req :umeng/type)                          ::type
    (ds/req :exercise-session.interval/beginning) t/instant?
    (ds/req :exercise-session.interval/end)       t/instant?
+   (ds/req :exercise-session/exercise-log-ids)      [uuid?]
    :exercise-session/notes                       string?
    :exercise-session/relativety-score            keyword?})
 
-(def exercise-log
+(def exercise-superset
   {(ds/req :xt/id)                  uuid?
-   (ds/req :umeng/type)             ::type
-   ;; Eventually I would like to have a top leve location or "starting location"
-   ;; and then a series of gps coordinates within data
-   ;; using something like https://github.com/Factual/geo
-   (ds/req :exercise-session/id)    uuid?
-   :exercise-log.interval/beginning t/instant?
-   :exercise-log.interval/end       t/instant?
-   :exercise-log/notes              string?
-   :exercise-log/relativety-score   keyword?
-   (ds/req :exercise-log/data)      [{(ds/req :exercise/id )                 uuid?
-                                      :exercise-log.data.interval/beginning  t/instant?
-                                      :exercise-log.data.interval/end        t/instant?
-                                      :exercise-log.data/sets                integer?
-                                      :exercise-log.data/reps                integer?
-                                      :exercise-log.data/weight              float?
-                                      :exercise-log.data/weight-unit         keyword?
-                                      :exercise-log.data/distance            float?
-                                      :exercise-log.data/distance-unit       keyword?
-                                      :exercise-log.data/elevation-gain      float?
-                                      :exercise-log.data/elevation-gain-unit keyword?
-                                      :exercise-log.data/inversion-angle     float?
-                                      :exercise-log.data/notes               string?
-                                      :exercise-log.data/relativety-score    keyword?
-                                      }]})
+   (ds/req :exercise-superset/logs) [uuid?]})
+
+;; Eventually I would like to have a top leve location or "starting location"
+;; and then a series of gps coordinates within data
+;; using something like https://github.com/Factual/geo
+(def exercise-log
+  {(ds/req :xt/id)                       uuid?
+   (ds/req :umeng/type)                  ::type
+   (ds/req :exercise-session/id)         uuid?
+   (ds/req :exercise/id )                uuid?
+   :exercise-log.interval/beginning      t/instant?
+   :exercise-log.interval/end            t/instant?
+   :exercise-log/sets                    [{:exercise-log.set/reps        integer?
+                                           :exercise-log.set/weight      float?
+                                           :exercise-log.set/weight-unit keyword?}]
+   :exercise-log/distance                float?
+   :exercise-log/distance-unit           keyword?
+   :exercise-log/elevation-gain          float?
+   :exercise-log/elevation-gain-unit     keyword?
+   :exercise-log/inversion-angle         float?
+   :exercise-log/notes                   string?
+   :exercise-log/relativety-score        keyword?
+   :airtable/exercise-id                 string?
+   :airtable/id                          string?
+   :airtable/ported                      boolean?
+   :airtable/average-duration            boolean?
+   :airtable/average-of-average-duration boolean?})
 
 (def exercise-spec
   (ds/spec
