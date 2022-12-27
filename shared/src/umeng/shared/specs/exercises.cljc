@@ -16,7 +16,7 @@
    :exercise/notes          string?
    :exercise/source         string?
    :exercise/body-areas     [keyword?]
-   :airtable/ported         true
+   :airtable/ported         boolean?
    :airtable/created-time   string?
    :airtable/distance-unit  string?
    :airtable/id             string?
@@ -30,13 +30,14 @@
    (ds/req :umeng/type)                          ::type
    (ds/req :exercise-session.interval/beginning) t/instant?
    (ds/req :exercise-session.interval/end)       t/instant?
-   (ds/req :exercise-session/exercise-log-ids)      [uuid?]
+   (ds/req :exercise-session/exercise-log-ids)   [uuid?]
    :exercise-session/notes                       string?
-   :exercise-session/relativety-score            keyword?})
+   :exercise-session/relativety-score            keyword?
+   :airtable/ported                              boolean?})
 
 (def exercise-superset
-  {(ds/req :xt/id)                  uuid?
-   (ds/req :exercise-superset/logs) [uuid?]})
+  {(ds/req :xt/id)                              uuid?
+   (ds/req :exercise-superset/exercise-log-ids) [uuid?]})
 
 ;; Eventually I would like to have a top leve location or "starting location"
 ;; and then a series of gps coordinates within data
@@ -48,9 +49,10 @@
    (ds/req :exercise/id )                uuid?
    :exercise-log.interval/beginning      t/instant?
    :exercise-log.interval/end            t/instant?
-   :exercise-log/sets                    [{:exercise-log.set/reps        integer?
-                                           :exercise-log.set/weight      float?
-                                           :exercise-log.set/weight-unit keyword?}]
+   :exercise-log/sets                    [{:exercise-log.set/reps integer?
+                                           (ds/opt :exercise-log.set/weight)
+                                           {:exercise-log.set.weight/amount      float?
+                                            :exercise-log.set.weight/weight-unit keyword?}}]
    :exercise-log/distance                float?
    :exercise-log/distance-unit           keyword?
    :exercise-log/elevation-gain          float?

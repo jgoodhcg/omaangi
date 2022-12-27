@@ -98,7 +98,7 @@
 
     (-> {:xt/id                           (java.util.UUID/randomUUID)
          :umeng/type                      :exercise-log
-         :exercise-session/id             (java.util.UUID/randomUUID) ;; TODO map over these and create stubs
+         :exercise-session/id             (java.util.UUID/randomUUID)
          :exercise/id                     e-id
          :exercise-log.interval/beginning beginning
          :exercise-log.interval/end       end
@@ -109,14 +109,15 @@
         (merge (when (some? reps)
                  {:exercise-log/sets [(-> {:exercise-log.set/reps reps}
                                           (merge (when (some? weight)
-                                                   {:exercise-log.set/weight weight}))
-                                          (merge (when (some? e-weight-unit)
-                                                   {:exercise-log.set/weight-unit (keyword e-weight-unit)})))]}))
-        (merge (when (some? distance)           {:exercise-log/distance      distance
+                                                   {:exercise-log.set/weight
+                                                    {:exercise-log.set.weight/amount      (float weight)
+                                                     :exercise-log.set.weight/weight-unit (or (keyword e-weight-unit)
+                                                                                              :lbs)}})))]}))
+        (merge (when (some? distance)           {:exercise-log/distance      (float distance)
                                                  :exercise-log/distance-unit :miles}))
-        (merge (when (some? angle)              {:exercise-log/inversion-angle angle}))
+        (merge (when (some? angle)              {:exercise-log/inversion-angle (float angle)}))
         (merge (when (some? notes)              {:exercise-log/notes notes}))
-        (merge (when (some? relativety)         {:exercise-log/relativety-score relativety}))
+        (merge (when (some? relativety)         {:exercise-log/relativety-score (keyword relativety)}))
         (merge (when (some? is-average)         {:airtable/average-duration true}))
         (merge (when (some? is-average-average) {:airtable/average-of-average-duration true})))))
 
@@ -170,7 +171,17 @@
       (->> (filter #(or (-> % :fields :timestamp nil?)
                         (-> % :fields :exercise nil?))))))
 
+(def final-exercise-logs
+  (-> [exercise-logs-with-durations exercise-logs-without-durations] flatten))
+
+;; valid?
+(->> final-exercise-logs
+     (mapv #(s/explain-data exercise-log-spec %))
+     (filter some?)
+     empty?)
+
 (count exercise-logs-raw)
+
 (count exercise-logs-without-durations)
 (count exercise-logs-with-durations)
 (count invalid-exercise-logs)
@@ -178,4 +189,29 @@
 (= (count exercise-logs-raw)
    (+ (count exercise-logs-without-durations)
       (count exercise-logs-with-durations)
+      (count invalid-exercise-logs))
+   (+ (count final-exercise-logs)
       (count invalid-exercise-logs)))
+
+(defn exercise-log->session [{xt-id :exercise-session/id
+                              beg   :exercise-log.interval/beginning
+                              end   :exercise-log.interval/end
+                              el-id :xt/id}]
+
+  {:xt/id                               xt-id
+   :umeng/type                          :exercise-session
+   :exercise-session.interval/beginning beg
+   :exercise-session.interval/end       end
+   :exercise-session/exercise-log-ids   [el-id]
+   :airtable/ported                     true})
+
+;; Exercise sessions
+(def exercise-sessions
+  (-> final-exercise-logs
+    (->> (map exercise-log->session))))
+
+;; valid?
+(->> exercise-sessions
+     (mapv #(s/explain-data exercise-session-spec %))
+     (filter some?)
+     empty?)
