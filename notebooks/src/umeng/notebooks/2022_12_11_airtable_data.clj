@@ -3,20 +3,14 @@
             [camel-snake-kebab.core :as csk]
             [camel-snake-kebab.extras :as cske]
             [potpuri.core :as pot]
-            [scicloj.clay.v2.api :as clay]
-            [scicloj.kindly.v3.api :as kindly]
-            [scicloj.kindly.v3.kind :as kind]
-            [scicloj.kindly-default.v1.api :as kindly-default]
             [umeng.shared.data-xform.airtable-exercises :refer [xform-exercise]]
             [umeng.shared.specs.exercises :refer [exercise-spec
                                                   exercise-log-spec
                                                   exercise-session-spec]]
             [clojure.spec.alpha :as s]
             [tick.core :as t]
-            [clojure.set :refer [rename-keys]]
             [com.rpl.specter :as sp]
-            [kixi.stats.core :refer [mean]]
-            [clojure.pprint :refer [pprint]]))
+            [kixi.stats.core :refer [mean]]))
 
 ;; ## Data manipulation
 
