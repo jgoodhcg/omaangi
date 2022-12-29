@@ -11,7 +11,8 @@
             [tick.core :as t]
             [com.rpl.specter :as sp]
             [kixi.stats.core :refer [mean]]
-            [clojure.pprint :refer [pprint]]))
+            [clojure.pprint :refer [pprint]]
+            [clojure.set :as set]))
 
 ;; # Airtable -> Umeng/types
 
@@ -66,6 +67,7 @@
 ;; ### Example of raw log
 (-> exercise-logs-raw rand-nth)
 
+;; TODO move this to shared ns
 (defn xform-exercise-log
   [{:keys [id fields]}]
   (let [{:keys
@@ -96,7 +98,7 @@
 
     (-> {:xt/id                           (java.util.UUID/randomUUID)
          :umeng/type                      :exercise-log
-         :exercise-session/id             (java.util.UUID/randomUUID)
+         :exercise-session/id             (java.util.UUID/randomUUID) ;; placeholder and gets changed later
          :exercise/id                     e-id
          :exercise-log.interval/beginning beginning
          :exercise-log.interval/end       end
@@ -211,16 +213,65 @@
    :exercise-session/exercise-log-ids   [el-id]
    :airtable/ported                     true})
 
+(defn add-log-to-session [session log]
+  (let [new-end (:exercise-log.interval/end log)
+        log-id  (:xt/id log)]
+    (->> session
+         (sp/setval [:exercise-session/exercise-log-ids sp/END] [log-id])
+         (sp/setval [:exercise-session.interval/end] new-end))))
+
 (def exercise-sessions
   (-> final-exercise-logs
-    (->> (map exercise-log->session))))
+      (->> (sort-by :exercise-log.interval/beginning))
+      (->> (reduce
+            (fn [sessions log]
+              (let [last-session     (last sessions)
+                    last-session-end (:exercise-session.interval/end last-session)
+                    this-log-beg     (:exercise-log.interval/beginning log)]
+                (if (and (some? last-session)
+                         (-> last-session-end (t/between this-log-beg) t/minutes (< 10)))
+                ;; Update the session
+                  (->> sessions (sp/setval [sp/LAST] (add-log-to-session last-session log)))
+                ;; Start a new session
+                  (->> sessions (sp/setval [sp/END] [(exercise-log->session log)])))))
+          ;; Start with no sessions
+            []))
+      (->> (sort-by :exercise-session.interval/beginning))
+      vec))
 
 ;; ### All valid xforms?
-(->> exercise-sessions
-     (mapv #(s/explain-data exercise-session-spec %))
-     (filter some?)
+(-> exercise-sessions
+     (->> (mapv #(s/explain-data exercise-session-spec %)))
+     (->> (filter some?))
      empty?)
 
+;; ### Update the logs with new session ids (backlinking is important!)
+(def really-final-exercise-logs
+  (-> exercise-sessions
+      (->> (map (fn [session]
+                  (let [log-ids (:exercise-session/exercise-log-ids session)
+                        session-id (:xt/id session)]
+                    (->> final-exercise-logs
+                         ;; get all of the logs in this session
+                         (sp/select [sp/ALL #(some (set log-ids) [(:xt/id %)])])
+                         ;; reset their session id
+                         (sp/setval [sp/ALL :exercise-session/id] session-id))))))
+    flatten
+    (->> (sort-by :exercise-log.interval/beginning))
+    vec))
+
+(->> [{:i 1} {:i 2} {:i 3}]
+     (sp/select [sp/ALL #(some (set [1 3]) [(:i %)])])
+     (sp/setval [sp/ALL :i] 4))
+
+(identity {:logs     (-> really-final-exercise-logs
+                     (->> (take 10))
+                     (->> (map (fn [log] (select-keys log [:xt/id :exercise-session/id])))))
+           :sessions (-> exercise-sessions
+                         (->> (take 4))
+                         (->> (map
+                               (fn [session]
+                                 (select-keys session [:xt/id :exercise-session/exercise-log-ids])))))})
 ;; ## Put the data into an edn file
 (comment
   (->> {:exercise-session exercise-sessions
