@@ -232,3 +232,26 @@
 ;; It's really showing weeks that have a day where the closest phase is a full moon.
 ;; This chart also shows how much of my life is in the future/past.
 (kind/hiccup life-chart-enhanced)
+
+(defn moon-phase-number [instant]
+  (-> MoonIllumination
+    (. compute)
+    (. on instant)
+    (. execute)
+    (. getPhase)))
+
+(moon-phase-number (t/now))
+
+(into [:div {:display "flex" :flex-direction "column"}]
+        (-> years
+            (* days-per-year)
+            (range)
+            (->> (map
+                  (fn [d]
+                    (let [date (t/>> birthday (t/new-duration d :days))
+                          mp   (moon-phase-number date)]
+                      {:date         date
+                       :moon-phase   mp
+                       :is-full-moon (and (> mp -10)
+                                          (< mp 10))}))))
+            (->> (filter :is-full-moon))))

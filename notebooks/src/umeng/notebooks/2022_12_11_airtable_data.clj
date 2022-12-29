@@ -10,18 +10,19 @@
             [clojure.spec.alpha :as s]
             [tick.core :as t]
             [com.rpl.specter :as sp]
-            [kixi.stats.core :refer [mean]]))
+            [kixi.stats.core :refer [mean]]
+            [clojure.pprint :refer [pprint]]))
 
-;; ## Data manipulation
+;; # Airtable -> Umeng/types
 
-;; #### Exercises
+;; ## Exercises
 ;; Straight forward and don't rely on anything
 (def exercises-raw
   (-> "data/2022_12_11__15_16_exercises.edn"
       slurp
       edn/read-string))
 
-;; A raw item example
+;; ### Example of a raw exercise
 (-> exercises-raw rand-nth)
 
 (def exercises
@@ -30,29 +31,29 @@
       (->> (remove (fn [{:keys [fields]}] (-> fields :name (#(or (nil? %) (empty? %)))))))
       (->> (mapv xform-exercise))))
 
-;; An xformed example
+;; ### Example of xform exercise
 (-> exercises rand-nth)
 
-;; Valid?
+;; ### All valid exercise xforms?
 (->> exercises
      (mapv #(s/explain-data exercise-spec %))
      (filter some?)
      empty?)
 
-;; Now let's index these for easier processing of related items
+;; ### Indexing exercises for log processing
 (def exercises-indexed
   (-> exercises
       (->> (group-by :airtable/id))
       (->> (pot/map-vals first))))
 
-;; #### Exercise Logs
+;; ## Exercise Logs
 ;; This is tricky
 ;; ######
 ;; Sessions are introduced at this level of the data model.
 ;; ######
 ;; We can assume every log has a session of just that log.
 ;; ######
-;; Each log has `:exercise-log/data` which has some attributes like `:exercise-log.data/weight-unit`.
+;; Logs can have attributes like `:exercise-log.set/weight-unit`.
 ;; ######
 ;; Previously attributes like that were on the exercise item itself.
 ;; ######
@@ -61,6 +62,9 @@
   (-> "data/2022_12_11__15_17_exercise_log.edn"
       slurp
       edn/read-string))
+
+;; ### Example of raw log
+(-> exercise-logs-raw rand-nth)
 
 (defn xform-exercise-log
   [{:keys [id fields]}]
@@ -123,6 +127,9 @@
       (->> (remove #(-> % :fields :duration nil?))) ;; 1776 (these are still valid though)
       (->> (mapv xform-exercise-log))))
 
+;; ### Example of log xform
+(-> exercise-logs-with-durations rand-nth)
+
 (def average-durations
   (-> exercise-logs-with-durations
       (->> (group-by :airtable/exercise-id))
@@ -159,6 +166,9 @@
 
       (->> (mapv xform-exercise-log))))
 
+;; ### Example of log xform no durations
+(-> exercise-logs-without-durations rand-nth)
+
 (def invalid-exercise-logs
   (-> exercise-logs-raw
       (->> (mapv #(cske/transform-keys csk/->kebab-case-keyword %)))
@@ -168,24 +178,26 @@
 (def final-exercise-logs
   (-> [exercise-logs-with-durations exercise-logs-without-durations] flatten))
 
-;; valid?
+;; ### All valid log xforms?
 (->> final-exercise-logs
      (mapv #(s/explain-data exercise-log-spec %))
      (filter some?)
      empty?)
 
+;; ### Does everything add up?
 (count exercise-logs-raw)
-
 (count exercise-logs-without-durations)
 (count exercise-logs-with-durations)
 (count invalid-exercise-logs)
-
 (= (count exercise-logs-raw)
    (+ (count exercise-logs-without-durations)
       (count exercise-logs-with-durations)
       (count invalid-exercise-logs))
    (+ (count final-exercise-logs)
       (count invalid-exercise-logs)))
+
+;; ## Exercise Sessions
+;; These are derived from the logs. There is no concept of session in airtable.
 
 (defn exercise-log->session [{xt-id :exercise-session/id
                               beg   :exercise-log.interval/beginning
@@ -199,13 +211,20 @@
    :exercise-session/exercise-log-ids   [el-id]
    :airtable/ported                     true})
 
-;; Exercise sessions
 (def exercise-sessions
   (-> final-exercise-logs
     (->> (map exercise-log->session))))
 
-;; valid?
+;; ### All valid xforms?
 (->> exercise-sessions
      (mapv #(s/explain-data exercise-session-spec %))
      (filter some?)
      empty?)
+
+;; ## Put the data into an edn file
+(comment
+  (->> {:exercise-session exercise-sessions
+        :exercise         exercises
+        :exercise-log     final-exercise-logs}
+       (#(with-out-str (pprint %)))
+       (spit "data/2022_12_11__15_16_exercises_logs_sessions_xformed.edn")))
