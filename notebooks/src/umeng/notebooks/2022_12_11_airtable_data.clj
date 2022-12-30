@@ -1,3 +1,5 @@
+;; # Airtable -> Umeng/types
+
 (ns umeng.notebooks.2022-12-11-airtable-data
   (:require [clojure.edn :as edn]
             [camel-snake-kebab.core :as csk]
@@ -13,8 +15,6 @@
             [kixi.stats.core :refer [mean]]
             [clojure.pprint :refer [pprint]]
             [clojure.set :as set]))
-
-;; # Airtable -> Umeng/types
 
 ;; ## Exercises
 ;; Straight forward and don't rely on anything
@@ -264,6 +264,7 @@
      (sp/select [sp/ALL #(some (set [1 3]) [(:i %)])])
      (sp/setval [sp/ALL :i] 4))
 
+;; I should write a test but I'll settle for just spot checking that the backlinking is correct
 (identity {:logs     (-> really-final-exercise-logs
                      (->> (take 10))
                      (->> (map (fn [log] (select-keys log [:xt/id :exercise-session/id])))))
@@ -272,10 +273,11 @@
                          (->> (map
                                (fn [session]
                                  (select-keys session [:xt/id :exercise-session/exercise-log-ids])))))})
+
 ;; ## Put the data into an edn file
 (comment
   (->> {:exercise-session exercise-sessions
         :exercise         exercises
-        :exercise-log     final-exercise-logs}
+        :exercise-log     really-final-exercise-logs}
        (#(with-out-str (pprint %)))
        (spit "data/2022_12_11__15_16_exercises_logs_sessions_xformed.edn")))

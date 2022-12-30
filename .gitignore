@@ -29,8 +29,6 @@ mobile/dist/
 
 notebooks/data/
 
-notebooks/docs/
-
 notebooks/.dir-locals.el
 
 notebooks/dev/user.clj
