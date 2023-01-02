@@ -1,5 +1,4 @@
 ;; # Airtable -> Umeng/types
-
 (ns umeng.notebooks.2022-12-11-airtable-data
   (:require [clojure.edn :as edn]
             [camel-snake-kebab.core :as csk]
@@ -54,7 +53,7 @@
 ;; ######
 ;; We can assume every log has a session of just that log.
 ;; ######
-;; Logs can have attributes like `:exercise-log.set/weight-unit`.
+;; Logs can have attributes like `:exercise-log.set.weight/unit`.
 ;; ######
 ;; Previously attributes like that were on the exercise item itself.
 ;; ######
@@ -111,8 +110,8 @@
                                           (merge (when (some? weight)
                                                    {:exercise-log.set/weight
                                                     {:exercise-log.set.weight/amount      (float weight)
-                                                     :exercise-log.set.weight/weight-unit (or (keyword e-weight-unit)
-                                                                                              :lbs)}})))]}))
+                                                     :exercise-log.set.weight/unit (or (keyword e-weight-unit)
+                                                                                       :lb)}})))]}))
         (merge (when (some? distance)           {:exercise-log/distance      (float distance)
                                                  :exercise-log/distance-unit :miles}))
         (merge (when (some? angle)              {:exercise-log/inversion-angle (float angle)}))
@@ -259,10 +258,6 @@
     flatten
     (->> (sort-by :exercise-log.interval/beginning))
     vec))
-
-(->> [{:i 1} {:i 2} {:i 3}]
-     (sp/select [sp/ALL #(some (set [1 3]) [(:i %)])])
-     (sp/setval [sp/ALL :i] 4))
 
 ;; I should write a test but I'll settle for just spot checking that the backlinking is correct
 (identity {:logs     (-> really-final-exercise-logs

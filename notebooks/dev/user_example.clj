@@ -9,6 +9,6 @@
   (kindly-default/setup!)
   ;; Wait a few seconds before running start!
   ;; It also helps to have the browser open
-  ;; You might have to kill the repl and retry a few times
+  ;; You might have to close the repl and retry a few times
   (clay/start!)
   (clay/show-doc! "src/umeng/notebooks/index.clj"))

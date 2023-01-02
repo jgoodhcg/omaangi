@@ -52,7 +52,7 @@
    :exercise-log/sets                    [{:exercise-log.set/reps integer?
                                            (ds/opt :exercise-log.set/weight)
                                            {:exercise-log.set.weight/amount      float?
-                                            :exercise-log.set.weight/weight-unit keyword?}}]
+                                            :exercise-log.set.weight/unit keyword?}}]
    :exercise-log/distance                float?
    :exercise-log/distance-unit           keyword?
    :exercise-log/elevation-gain          float?
