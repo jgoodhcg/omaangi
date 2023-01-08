@@ -1,5 +1,7 @@
 ;; # Airtable -> Umeng/types
 (ns umeng.notebooks.2022-12-11-airtable-data
+  {:nextjournal.clerk/error-on-missing-vars :off
+   :nextjournal.clerk/toc true}
   (:require [clojure.edn :as edn]
             [camel-snake-kebab.core :as csk]
             [camel-snake-kebab.extras :as cske]
