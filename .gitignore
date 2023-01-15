@@ -34,3 +34,5 @@ notebooks/.dir-locals.el
 notebooks/dev/user.clj
 
 notebooks/.clerk/
+
+notebooks/docs/
