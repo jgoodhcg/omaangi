@@ -1,4 +1,4 @@
-(ns umeng.tooling.bb.airtable-port
+(ns umeng.tooling.bb.airtable-extract
   (:require [babashka.curl :as curl]
             [cheshire.core :as json]
             [clojure.set :refer [rename-keys]]

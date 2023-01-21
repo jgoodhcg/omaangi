@@ -21,12 +21,15 @@
             [nextjournal.clerk :as clerk]))
 
 ;; ## Get the data
-(def data
+;; All of the data is consolidate into a single edn file that can be read in.
+{::clerk/visibility {:code :show :result :hide}}
+(def  data
   (-> "data/2022_12_11__15_16_exercises_logs_sessions_xformed.edn"
       slurp
       (->> (edn/read-string {:readers {'time/instant t/instant}}))))
+{::clerk/visibility {:code :fold :result :show}}
 
-;; ## Data examples
+;; ## Data Examples
 ;; ### Exercise
 (-> data :exercise rand-nth)
 ;; ### Exercise Log
@@ -34,7 +37,8 @@
 ;; ### Exercise Session
 (-> data :exercise-session rand-nth)
 
-;; ## Index by id
+;; ## Data Transformations
+;; ### Index by id
 (def exercises-by-id
   (-> data
       :exercise
@@ -53,8 +57,8 @@
       (->> (group-by :xt/id))
       (->> (pot/map-vals first))))
 
-;; ## Group Sessions
-;; ### By day
+;; ### Group Sessions
+;; By day
 (def sessions-by-day
   (-> data
       :exercise-session
@@ -63,8 +67,8 @@
               (-> beg t/date))))
       (->> (into (sorted-map)))))
 
-;; ### By week
-;; What week is it?
+;; By week
+;; How to determine week number
 (defn days-until-next-week [date]
   (->> date
       t/day-of-week
@@ -115,8 +119,8 @@
                 (str year "-w" (format "%02d" w))))))
       (->> (into (sorted-map)))))
 
-;; ## Enriching sessions
-;; ### Add logs
+;; ### Enrich sessions
+;; Add logs
 (defn enrich-session-with-logs
   [{log-ids :exercise-session/exercise-log-ids
     :as     session}]
@@ -142,7 +146,7 @@
       :exercise-session/exercise-logs
       ))
 
-;; ### Weight conversion to lb
+;; Weight conversion to lb
 ;; lb is always correct and should never be lbs
 (def weight-conversions
   {:lb {:lb 1
@@ -225,98 +229,9 @@
                          :exercise-session.derived-totals/weight-lb             total-weight
                          :exercise-session.derived-totals/seconds-under-tension duration}})))))))
 
-;; ## Visualizing (clay)
-;; This won't be visible when looking at a notebook rendered with clerk
-;; ### Failed group bar chart
-;; This bar chart works but it is so wide it is hard to read and breaks the table of contents
-(comment
-  (def vega-vals
-  (-> derived-totals-per-session
-      (->> (sp/transform
-            [sp/MAP-VALS]
-            (fn [sessions]
-              (let [totals  (-> sessions (->> (map :exercise-session/derived-totals)))
-                    reps    (-> totals
-                                (->> (map :exercise-session.derived-totals/reps))
-                                (->> (reduce +)))
-                    weight  (-> totals
-                                (->> (map :exercise-session.derived-totals/weight-lb))
-                                (->> (reduce +)))
-                    tension (-> totals
-                                (->> (map :exercise-session.derived-totals/seconds-under-tension))
-                                (->> (reduce +)))]
-                {:total-reps                  reps
-                 :total-weight-lb             weight
-                 :total-minutes-under-tension (-> tension
-                                                  (/ 60)
-                                                  float
-                                                  (->> (format "%.2f"))
-                                                  Float/parseFloat)}))))
-      (->> (map (fn [[week-num {:keys [total-reps
-                                      total-weight-lb
-                                      total-minutes-under-tension]}]]
-                  [{:week  week-num
-                      :group "reps"
-                      :value total-reps}
-                     {:week  week-num
-                      :group "weight-lbs"
-                      :value total-weight-lb}
-                     {:week  week-num
-                      :group "minutes-under-tension"
-                      :value total-minutes-under-tension}])))
-      flatten))
-
-  (kind/vega {:data     {:values vega-vals}
-            :mark     "bar"
-            :encoding {:x       {:field "week"}
-                       :y       {:field "value" :type "quantitative"}
-                       :xOffset {:field "group"}
-                       :color   {:field "group"}}}))
-
-;; ### Reps per week line chart
-(def vega-vals
-  (-> derived-totals-per-session
-      (->> (sp/transform
-            [sp/MAP-VALS]
-            (fn [sessions]
-              (let [totals  (-> sessions (->> (map :exercise-session/derived-totals)))
-                    reps    (-> totals
-                                (->> (map :exercise-session.derived-totals/reps))
-                                (->> (reduce +)))
-                    weight  (-> totals
-                                (->> (map :exercise-session.derived-totals/weight-lb))
-                                (->> (reduce +)))
-                    tension (-> totals
-                                (->> (map :exercise-session.derived-totals/seconds-under-tension))
-                                (->> (reduce +)))]
-                {:total-reps                  reps
-                 :total-weight-lb             weight
-                 :total-minutes-under-tension (-> tension
-                                                  (/ 60)
-                                                  float
-                                                  (->> (format "%.2f"))
-                                                  Float/parseFloat)}))))
-      (->> (map (fn [[week-num {:keys [total-reps
-                                      total-weight-lb
-                                      total-minutes-under-tension]}]]
-                  {:week  week-num
-                   :group "reps"
-                   :value total-reps})))))
-
-(kind/vega {:data     {:values vega-vals}
-            :width    600
-            :mark     "line"
-            :encoding {:x {:field "week" :axis {:values
-                                                (-> vega-vals
-                                                    (->> (map :week))
-                                                    (->> (partition 5))
-                                                    (->> (map first))
-                                                    flatten)}}
-                       :y {:field "value" :type "quantitative"}}})
-
-;; ## Visualizing (clerk)
+;; ## First Visualization Attempts
 ;; This won't be visible when looking at a notebook rendered with clay
-;; ### First attempt
+;; ### 📊 First attempt
 ;; This shows each week as a row with a variable number of sessions
 (clerk/plotly
  {:data [{:z (->> derived-totals-per-session
@@ -353,7 +268,7 @@
                   (map str))
           :type "heatmap"}]})
 
-;; ### Second Attempt
+;; ### 📊 Second Attempt
 ;; I want to get a true calendar where each week is a row and each day is a column.
 ;; For that I need to fill out a data structure and iterate over it looking up the week/day from the derived-totals-per-session.
 
@@ -398,7 +313,7 @@
                         1, "#CD4631"]]
           :hoverongaps false}]})
 
-;; ### Third attempt
+;; ### 📊 Third attempt
 
 ;; Another calendar
 (def calendar-3
@@ -436,7 +351,7 @@
           :colorscale  [[0, "#DBD3D8"
                          1, "#CD4631"]]}]})
 
-;; ### Forth attempt (Vega lite heatmap)
+;; ### 📊 Forth attempt (Vega lite heatmap)
 
 (def vl-heatmap-data
   (->> calendar-3
@@ -498,3 +413,108 @@
            :aggregate "max"
            :type      "quantitative"
            :legend    {:title nil}}}})
+
+;; ## Getting Real Insight
+
+;; ### Relative reps weight and duration
+;; Accumulate totals per day with day of the week and week number for placement on heatmap
+(def accumulated-by-date
+  (->> calendar-3
+       (map (fn [[_ days]]
+              (->> days
+                   (map (fn [d]
+                          (let [sessions    (get sessions-by-day d)
+                                totals      (->> sessions
+                                                 (map enrich-session-with-logs)
+                                                 (sp/transform
+                                                  [sp/ALL :exercise-log/sets sp/ALL :exercise-log.set/weight]
+                                                  convert-weight)
+                                                 (map derive-session-totals))
+                                week-number (week-number-of-year d)]
+                            {:date            d
+                             :date-str        (str d)
+                             :month           (str (t/month d))
+                             :day-of-week     (str (t/day-of-week d))
+                             :week-number     week-number
+                             :week            (str (t/year d) "-" (format "%02d" week-number))
+                             :year-month-week (str (t/year d) "-"
+                                                   (format "%02d" (t/int (t/month d))) "-"
+                                                   (format "%02d" week-number))
+                             :reps            (->> totals
+                                               (map :exercise-session.derived-totals/reps)
+                                               (reduce +))
+                             :weight          (->> totals
+                                               (map :exercise-session.derived-totals/weight-lb)
+                                               (reduce +))
+                             :duration        (->> totals
+                                               (map :exercise-session.derived-totals/seconds-under-tension)
+                                               (reduce +))}))))))
+       flatten))
+
+;; Highest duration
+(def max-duration
+  (->> accumulated-by-date
+       (map :duration)
+       (reduce max)))
+
+;; Highest reps
+(def max-reps
+  (->> accumulated-by-date
+       (map :reps)
+       (reduce max)))
+
+;; Highest weight
+(def max-weight
+  (->> accumulated-by-date
+     (map :weight)
+     (reduce max)))
+
+(def relative-accumulated-by-date
+  (->> accumulated-by-date
+       (map (fn [{:keys [reps weight duration]
+                 :as   stats}]
+              (let [relative-reps     (-> reps (/ max-reps) (* 100))
+                    relative-weight   (-> weight (/ max-weight) (* 100))
+                    relative-duration (-> duration (/ max-duration) (* 100))
+                    mean-score        (->> [relative-reps relative-weight relative-duration]
+                                           (transduce identity mean))]
+                (merge stats (pot/map-of relative-reps
+                                         relative-duration
+                                         relative-weight
+                                         mean-score)))))
+       reverse))
+
+;; ### Combining Relative Scores into one score
+;; Relative combined score of reps, weight, duration
+(def year-heatmap-config
+  {:data   {:values []}
+   :mark   "rect"
+   :config {:view {:stroke-width 0
+                   :step         15}}
+   :width  650
+   :encoding
+   {:x     {:field    "date-str"
+            :type     "temporal"
+            :timeUnit "week"
+            :axis     {:labelExpr  "monthAbbrevFormat(month(datum.value))"
+                       :labelAlign "middle"
+                       :title      nil}}
+    :y     {:field "day-of-week"
+            :type  "ordinal"
+            :sort  ["MONDAY" "TUESDAY" "WEDNESDAY" "THURSDAY" "FRIDAY" "SATURDAY"]
+            :axis  {:title nil}}
+    :color {:field     "mean-score"
+            :aggregate "max"
+            :type      "quantitative"
+            :legend    {:title nil}}}})
+
+;; ### 📊 Calendar Heatmaps
+;; 2021
+(clerk/vl (->> year-heatmap-config
+               (sp/setval [:data :values] (->> relative-accumulated-by-date
+                                               (filter #(= (t/int (t/year (:date %))) 2021))))))
+
+;; 2022
+(clerk/vl (->> year-heatmap-config
+               (sp/setval [:data :values] (->> relative-accumulated-by-date
+                                               (filter #(= (t/int (t/year (:date %))) 2022))))))
