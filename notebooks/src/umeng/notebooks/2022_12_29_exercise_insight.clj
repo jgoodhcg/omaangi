@@ -568,8 +568,8 @@
                (sp/setval [:data :values] relative-accumulated-by-date)))
 
 
-;; ### 📊 Lines Plural!
-;; For relative reps, weight, duration and mean score
+;; ### 📊 Layers of Lines
+;; Relative reps, weight, duration and mean score summed by week
 (def layer-config
   {:mark {:type        "line"
           :interpolate "monotone"
@@ -606,6 +606,7 @@
 (clerk/vl (->> line-config-3
                (sp/setval [:data :values] relative-accumulated-by-date)))
 
+;; Relative reps, weight, duration and mean score summed by month
 (def layer-config-2
   {:mark {:type        "line"
           :interpolate "monotone"
@@ -641,3 +642,90 @@
 
 (clerk/vl (->> line-config-4
                (sp/setval [:data :values] relative-accumulated-by-date)))
+
+;; ### ❓ Answering Questions
+;; #### What Is The Best Day...
+;; Of all time?
+(->> relative-accumulated-by-date
+     (reduce (fn [best-so-far day-stat]
+               (if (-> day-stat :mean-score (> (:mean-score best-so-far)))
+                 day-stat
+                 best-so-far))))
+
+;; Of a year (2022)
+(let [year 2022]
+  (->> relative-accumulated-by-date
+      (filter (fn [{:keys [date]}]
+                 (-> date t/year t/int (= year))))
+       (reduce (fn [best-so-far day-stat]
+               (if (-> day-stat :mean-score (> (:mean-score best-so-far)))
+                 day-stat
+                 best-so-far)))))
+
+;; Of a month (2022-01)
+(let [year  2022
+      month 1]
+  (->> relative-accumulated-by-date
+      (filter (fn [{:keys [date]}]
+                (and (-> date t/year t/int (= year))
+                     (-> date t/month t/int (= month)))))
+       (reduce (fn [best-so-far day-stat]
+               (if (-> day-stat :mean-score (> (:mean-score best-so-far)))
+                 day-stat
+                 best-so-far)))))
+
+;; Of a week (Week of 2022-05-13)
+(let [year  2022
+      month 5
+      day   13
+      week-num (week-number-of-year (t/new-date year month day))]
+  (->> relative-accumulated-by-date
+      (filter (fn [{:keys [date]}]
+                (and (-> date t/year t/int (= year))
+                     (-> date week-number-of-year (= week-num)))))
+       (reduce (fn [best-so-far day-stat]
+               (if (-> day-stat :mean-score (> (:mean-score best-so-far)))
+                 day-stat
+                 best-so-far)))))
+
+;; #### What Is The Best Week...
+;; Of all time?
+(->> relative-accumulated-by-date
+     (group-by (fn [{:keys [date]}]
+                 (str (-> date t/year t/int) "-"
+                      (format "%02d" (-> date week-number-of-year)))))
+     (sp/transform [sp/MAP-VALS] (fn [stats]
+                                   (->> stats
+                                        (map :mean-score)
+                                        (reduce +)
+                                        (hash-map :accumulated-mean-score)
+                                        (merge {:all-days stats}))))
+     (map (fn [[w d]] {:week w
+                      :data d}))
+     (reduce (fn [best this]
+               (if (-> this :data :accumulated-mean-score
+                       (> (-> best :data :accumulated-mean-score)))
+                 this
+                 best))))
+
+;; Of the year
+(let [year 2021]
+  (->> relative-accumulated-by-date
+       (filter (fn [{:keys [date]}]
+                 (-> date t/year t/int (= year))))
+       (group-by (fn [{:keys [date]}]
+                   (str (-> date t/year t/int) "-"
+                        (format "%02d" (-> date week-number-of-year)))))
+       (sp/transform [sp/MAP-VALS] (fn [stats]
+                                     (->> stats
+                                          (map :mean-score)
+                                          (reduce +)
+                                          (hash-map :accumulated-mean-score)
+                                          (merge {:all-days stats}))))
+       (map (fn [[w d]] {:week w
+                        :data d}))
+       (reduce (fn [best this]
+                 (if (-> this :data :accumulated-mean-score
+                         (> (-> best :data :accumulated-mean-score)))
+                   this
+                   best)))))
