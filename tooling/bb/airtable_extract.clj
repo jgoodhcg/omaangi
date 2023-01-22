@@ -26,6 +26,8 @@
                (json/parse-string))
            (concat records (-> response (get "records")))))))))
 
+;; This is duplicated in umeng.tooling.bb.deploy-backend and umeng.shared.misc
+;; I can't figure out how to get the shared ns as a local dependency in bb
 (defn timestamp []
   (-> (java.time.LocalDateTime/now)
       str

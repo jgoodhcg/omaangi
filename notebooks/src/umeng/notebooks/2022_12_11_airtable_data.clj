@@ -15,6 +15,7 @@
             [com.rpl.specter :as sp]
             [kixi.stats.core :refer [mean]]
             [clojure.pprint :refer [pprint]]
+            [umeng.shared.misc :refer [timestamp-for-filename]]
             [clojure.set :as set]))
 
 ;; ## Exercises
@@ -108,12 +109,16 @@
          :airtable/ported                 true}
 
         (merge (when (some? reps)
-                 {:exercise-log/sets [(-> {:exercise-log.set/reps reps}
-                                          (merge (when (some? weight)
-                                                   {:exercise-log.set/weight
-                                                    {:exercise-log.set.weight/amount      (float weight)
-                                                     :exercise-log.set.weight/unit (or (keyword e-weight-unit)
-                                                                                       :lb)}})))]}))
+                 {:exercise-log/sets
+                  [(-> {:exercise-log.set/reps reps}
+                       (merge (when (some? weight)
+                                {:exercise-log.set/weight
+                                 {:exercise-log.set.weight/amount
+                                  (float weight)
+                                  :exercise-log.set.weight/unit
+                                  (or (keyword e-weight-unit)
+                                      :lb)}})))]}
+                 {:exercise-log/sets [{:exercise-log.set/reps 1}]}))
         (merge (when (some? distance)           {:exercise-log/distance      (float distance)
                                                  :exercise-log/distance-unit :miles}))
         (merge (when (some? angle)              {:exercise-log/inversion-angle (float angle)}))
@@ -277,4 +282,6 @@
         :exercise         exercises
         :exercise-log     really-final-exercise-logs}
        (#(with-out-str (pprint %)))
-       (spit "data/2022_12_11__15_16_exercises_logs_sessions_xformed.edn")))
+       (spit (str "data/"
+                  (timestamp-for-filename)
+                  "_exercises_logs_sessions_xformed.edn"))))

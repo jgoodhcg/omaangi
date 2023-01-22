@@ -10,6 +10,5 @@
            umeng/shared                          {:local/root "../shared"}
            kixi/stats                            {:mvn/version "0.5.5"}
            org.shredzone.commons/commons-suncalc {:mvn/version "3.5"}
-           io.github.nextjournal/clerk           {:mvn/version "0.12.707"}
-           }
+           io.github.nextjournal/clerk           {:mvn/version "0.12.707"}}
  :aliases {:dev {:extra-paths ["dev"]}}}
