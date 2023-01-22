@@ -21,7 +21,7 @@
 ;; ## Exercises
 ;; Straight forward and don't rely on anything
 (def exercises-raw
-  (-> "data/2022_12_11__15_16_exercises.edn"
+  (-> "data/2023-01-22__13_36_15_742667_exercises.edn"
       slurp
       edn/read-string))
 
@@ -62,7 +62,7 @@
 ;; ######
 ;; Now we will need to look them up in the exercises to determine them for the log data based on some preserved airtable attributes.
 (def exercise-logs-raw
-  (-> "data/2022_12_11__15_17_exercise_log.edn"
+  (-> "data/2023-01-22__13_36_26_351937_exercise_log.edn"
       slurp
       edn/read-string))
 
@@ -108,7 +108,7 @@
          :airtable/exercise-id            airtable-e-id
          :airtable/ported                 true}
 
-        (merge (when (some? reps)
+        (merge (if (some? reps)
                  {:exercise-log/sets
                   [(-> {:exercise-log.set/reps reps}
                        (merge (when (some? weight)
@@ -284,4 +284,5 @@
        (#(with-out-str (pprint %)))
        (spit (str "data/"
                   (timestamp-for-filename)
-                  "_exercises_logs_sessions_xformed.edn"))))
+                  "_exercises_logs_sessions_xformed.edn")))
+  )

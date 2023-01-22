@@ -3,8 +3,9 @@
 
 (defn timestamp-for-filename []
   (-> #?(:clj  (java.time.LocalDateTime/now)
-         :cljs (js/Date.)))
+         :cljs (js/Date.))
       str
+      (str/replace "-" "_")
       (str/replace "T" "__")
       (str/replace ":" "_")
       (str/replace "." "_")))

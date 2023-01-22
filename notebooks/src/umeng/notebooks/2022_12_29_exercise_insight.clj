@@ -24,7 +24,7 @@
 ;; All of the data is consolidate into a single edn file that can be read in.
 {::clerk/visibility {:code :show :result :hide}}
 (def  data
-  (-> "data/2022_12_11__15_16_exercises_logs_sessions_xformed.edn"
+  (-> "data/2023_01_22__13_57_13_599755_exercises_logs_sessions_xformed.edn"
       slurp
       (->> (edn/read-string {:readers {'time/instant t/instant}}))))
 {::clerk/visibility {:code :fold :result :show}}
@@ -37,6 +37,9 @@
 ;; ### Exercise Session
 (-> data :exercise-session rand-nth)
 
+(->> data
+     :exercise-log
+    (map (fn [log] (-> log :exercise-log/sets))))
 ;; ## Data Transformations
 ;; ### Index by id
 (def exercises-by-id
@@ -163,10 +166,10 @@
 
 (defn convert-weight
   [{amount :exercise-log.set.weight/amount
-                 unit   :exercise-log.set.weight/unit
-                 :as weight}]
-              (let [converted-amount (->lb unit amount)]
-                (merge weight {:exercise-log.set.weight/converted-amount-lb converted-amount})))
+    unit   :exercise-log.set.weight/unit
+    :as    weight}]
+  (let [converted-amount (->lb unit amount)]
+    (merge weight {:exercise-log.set.weight/converted-amount-lb converted-amount})))
 
 (def sessions-with-weight-conversions
   (-> sessions-with-logs
@@ -177,27 +180,27 @@
 ;; ### Totalling reps, weight, and time under tension
 (defn derive-session-totals
   [{logs :exercise-session/exercise-logs
-                 :as  session}]
-              (let [sets         (-> logs (->> (map :exercise-log/sets)) flatten (->> (remove nil?)))
-                    total-reps   (-> sets
-                                     (->> (map :exercise-log.set/reps))
-                                     (->> (remove nil?))
-                                     (->> (reduce +)))
-                    total-weight (-> sets
-                                     (->> (map :exercise-log.set/weight))
-                                     (->> (remove nil?))
-                                     (->> (map :exercise-log.set.weight/amount))
-                                     (->> (reduce +)))
-                    duration     (-> logs
-                                     (->> (map
-                                           (fn [{beg :exercise-log.interval/beginning
-                                                end :exercise-log.interval/end}]
-                                             (-> beg (t/between end) t/seconds))))
-                                     (->> (reduce +)))]
-                (merge session
-                       {:exercise-session.derived-totals/reps                  total-reps
-                        :exercise-session.derived-totals/weight-lb             total-weight
-                        :exercise-session.derived-totals/seconds-under-tension duration})))
+    :as  session}]
+  (let [sets         (-> logs (->> (map :exercise-log/sets)) flatten (->> (remove nil?)))
+        total-reps   (-> sets
+                         (->> (map :exercise-log.set/reps))
+                         (->> (remove nil?))
+                         (->> (reduce +)))
+        total-weight (-> sets
+                         (->> (map :exercise-log.set/weight))
+                         (->> (remove nil?))
+                         (->> (map :exercise-log.set.weight/amount))
+                         (->> (reduce +)))
+        duration     (-> logs
+                         (->> (map
+                               (fn [{beg :exercise-log.interval/beginning
+                                    end :exercise-log.interval/end}]
+                                 (-> beg (t/between end) t/seconds))))
+                         (->> (reduce +)))]
+    (merge session
+           {:exercise-session.derived-totals/reps                  total-reps
+            :exercise-session.derived-totals/weight-lb             total-weight
+            :exercise-session.derived-totals/seconds-under-tension duration})))
 
 (def derived-totals-per-session
   (-> sessions-with-weight-conversions
@@ -317,7 +320,7 @@
 
 ;; Another calendar
 (def calendar-3
-  (->> (t/range (t/date "2021-01-01") (t/date "2022-12-31") (t/new-period 1 :days))
+  (->> (t/range (t/date "2021-01-01") latest-day (t/new-period 1 :days))
        (group-by (fn [d] (str (t/day-of-week d))))))
 
 (def z-data-3 ;;reps
@@ -469,6 +472,11 @@
      (map :weight)
      (reduce max)))
 
+(identity (pot/map-of max-weight max-reps max-duration))
+(->> accumulated-by-date
+     rand-nth
+     )
+
 (def relative-accumulated-by-date
   (->> accumulated-by-date
        (map (fn [{:keys [reps weight duration]
@@ -518,3 +526,118 @@
 (clerk/vl (->> year-heatmap-config
                (sp/setval [:data :values] (->> relative-accumulated-by-date
                                                (filter #(= (t/int (t/year (:date %))) 2022))))))
+
+;; 2023
+(clerk/vl (->> year-heatmap-config
+               (sp/setval [:data :values] (->> relative-accumulated-by-date
+                                               (filter #(= (t/int (t/year (:date %))) 2023))))))
+
+;; ### 📊 Line by Day
+(def line-config
+  {:data  {:values []}
+   :mark  "line"
+   :width 650
+   :encoding
+   {:x {:field "date-str"
+        :type  "temporal"
+        :axis  {:labelExpr  "year(datum.value) + ' ' + monthAbbrevFormat(month(datum.value))"
+                :title      nil}}
+    :y {:field "mean-score"
+        :type  "quantitative"}}})
+
+(clerk/vl (->> line-config
+               (sp/setval [:data :values] relative-accumulated-by-date)))
+
+;; ### 📊 Line by Week
+(def line-config-2
+  {:data  {:values []}
+   :mark  {:type        "line"
+           :interpolate "monotone"}
+   :width 650
+   :encoding
+   {:x {:field    "date-str"
+        :type     "temporal"
+        :timeUnit "yearweek"
+        :axis     {:labelExpr  "year(datum.value) + ' ' + monthAbbrevFormat(month(datum.value))"
+                   :title      nil}}
+    :y {:field     "mean-score"
+        :type      "quantitative"
+        :aggregate "sum"}}})
+
+(clerk/vl (->> line-config-2
+               (sp/setval [:data :values] relative-accumulated-by-date)))
+
+
+;; ### 📊 Lines Plural!
+;; For relative reps, weight, duration and mean score
+(def layer-config
+  {:mark {:type        "line"
+          :interpolate "monotone"
+          :strokeWidth 1.5
+          :opacity     0.7}
+   :encoding
+   {:x {:field    "date-str"
+        :type     "temporal"
+        :timeUnit "yearweek"
+        :axis     {:labelExpr  "year(datum.value) + ' ' + monthAbbrevFormat(month(datum.value))"
+                   :title      nil}}
+    :y {:type      "quantitative"
+        :aggregate "sum"
+        :axis      {:title nil}}}})
+
+(def line-config-3
+  {:data  {:values []}
+   :width 650
+   :layer
+   [(->> layer-config
+         (sp/setval [:mark :color] "#A9C19A")
+         (sp/setval [:encoding :y :field] "relative-reps"))
+    (->> layer-config
+         (sp/setval [:mark :color] "#B8DBD9")
+         (sp/setval [:encoding :y :field] "relative-weight"))
+    (->> layer-config
+         (sp/setval [:mark :color] "#A6A1BA")
+         (sp/setval [:encoding :y :field] "relative-duration"))
+    (->> layer-config
+         (sp/setval [:mark :color] "#00487C")
+         (sp/setval [:mark :opacity] 1)
+         (sp/setval [:encoding :y :field] "mean-score"))]})
+
+(clerk/vl (->> line-config-3
+               (sp/setval [:data :values] relative-accumulated-by-date)))
+
+(def layer-config-2
+  {:mark {:type        "line"
+          :interpolate "monotone"
+          :strokeWidth 1.5
+          :opacity     0.7}
+   :encoding
+   {:x {:field    "date-str"
+        :type     "temporal"
+        :timeUnit "yearmonth"
+        :axis     {:labelExpr  "year(datum.value) + ' ' + monthAbbrevFormat(month(datum.value))"
+                   :title      nil}}
+    :y {:type      "quantitative"
+        :aggregate "sum"
+        :axis      {:title nil}}}})
+
+(def line-config-4
+  {:data  {:values []}
+   :width 650
+   :layer
+   [(->> layer-config-2
+         (sp/setval [:mark :color] "#A9C19A")
+         (sp/setval [:encoding :y :field] "relative-reps"))
+    (->> layer-config-2
+         (sp/setval [:mark :color] "#B8DBD9")
+         (sp/setval [:encoding :y :field] "relative-weight"))
+    (->> layer-config-2
+         (sp/setval [:mark :color] "#A6A1BA")
+         (sp/setval [:encoding :y :field] "relative-duration"))
+    (->> layer-config-2
+         (sp/setval [:mark :color] "#00487C")
+         (sp/setval [:mark :opacity] 1)
+         (sp/setval [:encoding :y :field] "mean-score"))]})
+
+(clerk/vl (->> line-config-4
+               (sp/setval [:data :values] relative-accumulated-by-date)))
