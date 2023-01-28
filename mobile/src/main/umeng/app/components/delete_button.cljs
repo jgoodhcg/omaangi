@@ -8,6 +8,6 @@
   [{:keys [on-press]}]
   [:> paper/Button {:mode     "flat"
                     :icon     "delete"
-                    :style    (tw "mr-4 mt-4 w-28")
+                    :style    (tw "m-4")
                     :on-press on-press}
    "Delete Session"])

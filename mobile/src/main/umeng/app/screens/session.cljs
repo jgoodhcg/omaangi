@@ -159,26 +159,7 @@
 
       [:> rn/View {:style (tw "flex p-4 flex-col")}
 
-       (if is-playing
-         [stop-button (p/map-of id)]
-         [start-button (p/map-of id)])
-
-       [label/component {:label     label
-                         :update-fn #(>evt [:update-session {:session/label %
-                                                             :session/id    id}])}]
-
-       [time-stamps-component (p/map-of start stop id)]
-
-       [session-type-component (p/map-of type id)]
-
-       [:> rn/View {:style (tw "mb-8")}
-        [tags/tags-component {:add-fn    #(>evt [:add-tag-to-session
-                                                 {:session/id id
-                                                  :tag/id     %}])
-                              :remove-fn #(>evt [:remove-tag-from-session
-                                                 {:session/id id
-                                                  :tag/id     %}])
-                              :tags      tags}]]
+       [delete-button/component {:on-press #(>evt [:delete-session session])}]
 
        [color-override/component {:update-fn      #(>evt [:update-session
                                                           {:session/color-hex %
@@ -189,4 +170,25 @@
                                   :color          color
                                   :color-override color-override}]
 
-       [delete-button/component {:on-press #(>evt [:delete-session session])}]]]]))
+       [session-type-component (p/map-of type id)]
+
+       [label/component {:label     label
+                         :update-fn #(>evt [:update-session {:session/label %
+                                                             :session/id    id}])}]
+
+       [time-stamps-component (p/map-of start stop id)]
+
+       [:> rn/View {:style (tw "mb-8")}
+        [tags/tags-component {:add-fn    #(>evt [:add-tag-to-session
+                                                 {:session/id id
+                                                  :tag/id     %}])
+                              :remove-fn #(>evt [:remove-tag-from-session
+                                                 {:session/id id
+                                                  :tag/id     %}])
+                              :tags      tags}]]
+
+
+
+       (if is-playing
+         [stop-button (p/map-of id)]
+         [start-button (p/map-of id)])]]]))
