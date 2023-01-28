@@ -12,6 +12,7 @@
 
    [umeng.app.components.menu :as menu]
    [umeng.app.components.time-indicators :as time-indicators]
+   [umeng.app.components.screen-wrap :as screen-wrap]
    [umeng.app.components.session-ishes :as session-ishes]
    [umeng.app.misc :refer [<sub
                      >evt
@@ -282,61 +283,50 @@
 (def sheet-ref (j/call react :createRef))
 
 (defn screen [props]
-  (r/as-element
-   [(fn [] ;; don't pass props here I guess that isn't how `r/as-element` works
-      (let [theme    (-> props (j/get :theme))
-            sessions (<sub [:sessions-for-this-day])
-            zoom     (<sub [:zoom])]
+  (let [sessions (<sub [:sessions-for-this-day])
+        zoom     (<sub [:zoom])]
 
-        [:> rn/View {:style (tw "h-full")}
-         [:> rn/StatusBar {:hidden true}]
-         [:> paper/Surface {:style (-> (tw "h-full")
-                                       #_(merge {:background-color
-                                               (-> theme
-                                                   (j/get :colors)
-                                                   (j/get :background))}))}
-          [:> rn/SafeAreaView {:style (tw "h-full")}
-           [:> rn/StatusBar {:visibility "hidden"}]
+     [screen-wrap/basic
+      [:> rn/View {:style (tw "h-full")}
+       [top-section props]
 
-           [top-section props]
+       [:> rn/View ;; This allows for zoom buttons to be positioned below top section but _over_ scroll view of sessions
+       {:on-layout (fn [e]
+                     (let [native-event (j/get e :nativeEvent)]
+                       (>evt [:set-width-from-event native-event])))}
 
-           [:> rn/View ;; This allows for zoom buttons to be positioned below top section but _over_ scroll view of sessions
-            {:on-layout (fn [e]
-                          (let [native-event (j/get e :nativeEvent)]
-                            (>evt [:set-width-from-event native-event])))}
+       [:> g/ScrollView
+        [:> g/LongPressGestureHandler
+         {:min-duration-ms         800
+          :on-handler-state-change (fn [e]
+                                     (let [is-active (active-gesture? e)]
+                                       (when is-active
+                                         (>evt [:create-session-from-event (j/get e :nativeEvent)]))))}
+         [:> g/TapGestureHandler
+          {:on-handler-state-change (fn [e]
+                                      (let [is-active (active-gesture? e)]
+                                        (when is-active
+                                          (tap> "tapped away"))))}
+          [:> rn/View
+           {:style {:height        (-> 1440 (* zoom))
+                    :margin-bottom 256}}
 
-            [:> g/ScrollView
-             [:> g/LongPressGestureHandler
-              {:min-duration-ms         800
-               :on-handler-state-change (fn [e]
-                                          (let [is-active (active-gesture? e)]
-                                            (when is-active
-                                              (>evt [:create-session-from-event (j/get e :nativeEvent)]))))}
-              [:> g/TapGestureHandler
-               {:on-handler-state-change (fn [e]
-                                           (let [is-active (active-gesture? e)]
-                                             (when is-active
-                                               (tap> "tapped away"))))}
-               [:> rn/View
-                {:style {:height        (-> 1440 (* zoom))
-                         :margin-bottom 256}}
+           [time-indicators/component]
 
-                [time-indicators/component {:theme theme}]
+           [session-ishes/component
+            {:session-ishes sessions
+             :long-press-handler
+             (fn [is-selected id e]
+               (let [is-active (active-gesture? e)]
+                 (when is-active
+                   (if is-selected
+                     (>evt [:set-selected-session nil])
+                     (>evt [:set-selected-session id])))))
+             :button-handler
+             (fn [_ id _]
+               (>evt [:navigate (:session screens)])
+               (>evt [:set-selected-session id]))}]
 
-                [session-ishes/component
-                 {:session-ishes sessions
-                  :long-press-handler
-                  (fn [is-selected id e]
-                    (let [is-active (active-gesture? e)]
-                      (when is-active
-                        (if is-selected
-                          (>evt [:set-selected-session nil])
-                          (>evt [:set-selected-session id])))))
-                  :button-handler
-                  (fn [_ id _]
-                    (>evt [:navigate (:session screens)])
-                    (>evt [:set-selected-session id]))}]
+           [current-time-indicator-component]]]]]
 
-                [current-time-indicator-component]]]]]
-
-            [zoom-buttons]]]]]))]))
+       [zoom-buttons]]]]))

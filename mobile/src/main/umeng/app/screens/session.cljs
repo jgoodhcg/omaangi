@@ -10,10 +10,11 @@
    [tick.core :as t]
 
    [umeng.app.components.color-override :as color-override]
+   [umeng.app.components.delete-button :as delete-button]
+   [umeng.app.components.label :as label]
    [umeng.app.components.tag-related :as tags]
    [umeng.app.components.time-related :as tm]
-   [umeng.app.components.label :as label]
-   [umeng.app.components.delete-button :as delete-button]
+   [umeng.app.components.screen-wrap :as screen-wrap]
    [umeng.app.misc :refer [<sub >evt get-theme clear-datetime-picker >evt-sync]]
    [umeng.app.tailwind :refer [tw]]))
 
@@ -137,60 +138,56 @@
                              {:disabled true}))
     "track"]])
 
-(defn screen [props]
-  (r/as-element
-    [(fn [props]
-       (let [theme (->> [:theme] <sub get-theme)
+(defn screen [_]
+  (let [theme (->> [:theme] <sub get-theme)
 
-             {:session/keys [id
-                             start
-                             stop
-                             type
-                             label
-                             tags
-                             color-override
-                             color]
-              :as           session} (<sub [:selected-session])
+        {:session/keys [id
+                        start
+                        stop
+                        type
+                        label
+                        tags
+                        color-override
+                        color]
+         :as           session} (<sub [:selected-session])
 
-             is-playing (<sub [:is-selected-playing?])]
+        is-playing (<sub [:is-selected-playing?])]
 
-         [:> rn/ScrollView {:style {:background-color
-                                    (-> theme (j/get :colors) (j/get :background))}}
-          [:> paper/Surface {:style (-> (tw "flex flex-1")
-                                        ;; TODO justin 2020-01-23 Move this to tailwind custom theme
-                                        ;; (merge {:background-color (-> theme (j/get :colors) (j/get :background))})
-                                        )}
+    [screen-wrap/basic
+     [:> paper/Text {:variant "displayLarge"} "Hello"]
+     #_[:> rn/ScrollView {:style {:background-color
+                                (-> theme (j/get :colors) (j/get :background))}}
 
-           [:> rn/View {:style (tw "flex p-4 flex-col")}
+      [:> rn/View {:style (tw "flex p-4 flex-col")}
 
-            (if is-playing
-              [stop-button (p/map-of id)]
-              [start-button (p/map-of id)])
+       (if is-playing
+         [stop-button (p/map-of id)]
+         [start-button (p/map-of id)])
 
-            [label/component {:label     label
-                              :update-fn #(>evt [:update-session {:session/label %
-                                                                  :session/id    id}])}]
+       [label/component {:label     label
+                         :update-fn #(>evt [:update-session {:session/label %
+                                                             :session/id    id}])}]
 
-            [time-stamps-component (p/map-of start stop id)]
+       [time-stamps-component (p/map-of start stop id)]
 
-            [session-type-component (p/map-of type id)]
+       [session-type-component (p/map-of type id)]
 
-            [:> rn/View {:style (tw "mb-8")}
-             [tags/tags-component {:add-fn    #(>evt [:add-tag-to-session
-                                                      {:session/id id
-                                                       :tag/id     %}])
-                                   :remove-fn #(>evt [:remove-tag-from-session
-                                                      {:session/id id
-                                                       :tag/id     %}])
-                                   :tags      tags}]]
+       [:> rn/View {:style (tw "mb-8")}
+        [tags/tags-component {:add-fn    #(>evt [:add-tag-to-session
+                                                 {:session/id id
+                                                  :tag/id     %}])
+                              :remove-fn #(>evt [:remove-tag-from-session
+                                                 {:session/id id
+                                                  :tag/id     %}])
+                              :tags      tags}]]
 
-            [color-override/component {:update-fn      #(>evt [:update-session
-                                                               {:session/color-hex %
-                                                                :session/id        id}])
-                                       :remove-fn      #(>evt [:update-session
-                                                               {:session/remove-color true
-                                                                :session/id           id}])
-                                       :color          color
-                                       :color-override color-override}]
+       [color-override/component {:update-fn      #(>evt [:update-session
+                                                          {:session/color-hex %
+                                                           :session/id        id}])
+                                  :remove-fn      #(>evt [:update-session
+                                                          {:session/remove-color true
+                                                           :session/id           id}])
+                                  :color          color
+                                  :color-override color-override}]
 
-            [delete-button/component {:on-press #(>evt [:delete-session session])}]]]]))]))
+       [delete-button/component {:on-press #(>evt [:delete-session session])}]]]]))

@@ -39,9 +39,9 @@
   ;; TODO inject paper from sub? to make testing easier?
   (let [theme-type (->> db (select-one! [:app-db.settings/theme]))]
     (case theme-type
-      :light :DefaultTheme
-      :dark  :DarkTheme
-      :DarkTheme)))
+      :light :MD3LightTheme
+      :dark  :MD3DarkTheme
+      :MD3DarkTheme)))
 (reg-sub :theme theme)
 
 (defn zoom

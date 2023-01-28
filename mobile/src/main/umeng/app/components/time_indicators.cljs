@@ -5,11 +5,12 @@
 
    [applied-science.js-interop :as j]
 
-   [umeng.app.misc :refer [<sub]]
+   [umeng.app.misc :refer [<sub get-theme]]
    [umeng.app.tailwind :refer [tw]]))
 
-(defn component [{:keys [theme]}]
-  (let [hours (<sub [:hours])]
+(defn component []
+  (let [theme (->> [:theme] <sub get-theme)
+        hours (<sub [:hours])]
     [:> rn/View
      (for [{:keys [top val]} hours]
        [:> rn/View {:key   (str (random-uuid) "-time-indicator")

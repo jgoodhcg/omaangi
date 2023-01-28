@@ -79,7 +79,7 @@
 
 (defn custom-drawer [props]
   (let [theme          (->> [:theme] <sub get-theme)
-        text-color-hex (-> theme (j/get :colors) (j/get :text))]
+        text-color-hex (-> theme (j/get :colors) (j/get :onSurface))]
 
     (r/as-element
       [:> d/DrawerContentScrollView (js->clj props)
@@ -89,14 +89,16 @@
                          :icon        (drawer-icon "hamburger" text-color-hex)
                          :on-press    #(tap> "Sharing is caring")}]
        [:> d/DrawerItem {:label       "Contact"
-                         :label-style {:color (-> theme (j/get :colors) (j/get :text))}
+                         :label-style {:color text-color-hex}
                          :icon        (drawer-icon "hamburger" text-color-hex)
                          :on-press    #(tap> "Scotty, come in Scotty!")}]])))
 
-(defn wrap-screen
+(defn hoc-wrap
   [the-screen]
   (gh/gestureHandlerRootHOC
-   (paper/withTheme the-screen)))
+   (paper/withTheme
+    (fn [props]
+      (r/as-element [the-screen props])))))
 
 (defn root []
   (let [theme           (->> [:theme] <sub get-theme)
@@ -141,7 +143,7 @@
        #_[:> (stack-navigator) {:screen-options {:header-shown false}}
           (stack-screen {:name      "test-dashboard"
                          :options   {}
-                         :component (wrap-screen
+                         :component (hoc-wrap
                                      #(r/as-element
                                        [:> rn/View {:style (tw "h-full")}
                                         [:> rn/StatusBar {:hidden true}]
@@ -152,19 +154,23 @@
        [:> (drawer-navigator) {:drawer-content         custom-drawer
                                :drawer-style           drawer-style
                                :initial-route-name     (:day screens)
-                               :drawer-content-options {:active-tint-color   (-> theme (j/get :colors) (j/get :accent))
-                                                        :inactive-tint-color (-> theme (j/get :colors) (j/get :text))}}
+                               :drawer-content-options {:active-tint-color   (-> theme
+                                                                                 (j/get :colors)
+                                                                                 (j/get :onSurface))
+                                                        :inactive-tint-color (-> theme
+                                                                                 (j/get :colors)
+                                                                                 (j/get :onSurfaceVariant))}}
         (drawer-screen {:name      (:day screens)
                         :options   {:drawerIcon (drawer-icon "calendar")}
                         :component #(r/as-element
                                      [:> (stack-navigator) {:initial-route-name (:day screens)}
                                       (stack-screen {:name      (:day screens)
-                                                     :component (wrap-screen day/screen)
+                                                     :component (hoc-wrap day/screen)
                                                      :options   {:headerShown false}})
                                       (stack-screen {:name      (:session screens)
                                                      :options   {:headerTintColor (-> theme
                                                                                       (j/get :colors)
-                                                                                      (j/get :text))
+                                                                                      (j/get :onSurface))
                                                                  :headerTitleStyle
                                                                  #js {:display "none"}
                                                                  :headerStyle
@@ -173,7 +179,7 @@
                                                                  #js {:backgroundColor (-> theme
                                                                                            (j/get :colors)
                                                                                            (j/get :surface))}}
-                                                     :component (wrap-screen session/screen)})])})
+                                                     :component (hoc-wrap session/screen)})])})
         (drawer-screen {:name      (:reports screens)
                         :options   {:drawerIcon (drawer-icon "hamburger")}
                         :component (paper/withTheme reports/screen)})
@@ -182,7 +188,7 @@
                         :component #(r/as-element
                                      [:> (stack-navigator) {:initial-route-name (:tags screens)}
                                       (stack-screen {:name      (:tags screens)
-                                                     :component (wrap-screen tags/screen)
+                                                     :component (hoc-wrap tags/screen)
                                                      :options   {:headerShown false}})
                                       (stack-screen {:name      (:tag screens)
                                                      :options   {:headerTintColor (-> theme
@@ -196,13 +202,13 @@
                                                                  #js {:backgroundColor (-> theme
                                                                                            (j/get :colors)
                                                                                            (j/get :surface))}}
-                                                     :component (wrap-screen tag/screen)})])})
+                                                     :component (hoc-wrap tag/screen)})])})
         (drawer-screen {:name      (:templates screens)
                         :options   {:drawerIcon (drawer-icon "hamburger")}
                         :component #(r/as-element
                                      [:> (stack-navigator) {:initial-route-name (:templates screens)}
                                       (stack-screen {:name      (:templates screens)
-                                                     :component (wrap-screen templates/screen)
+                                                     :component (hoc-wrap templates/screen)
                                                      :options   {:headerShown false}})
                                       (stack-screen {:name      (:template screens)
                                                      :options   {:headerTintColor (-> theme
@@ -211,12 +217,10 @@
                                                                  :headerTitleStyle
                                                                  #js {:display "none"}
                                                                  :headerStyle
-                                                                 ;; for some reason the :surface color comes out the same as :background when used on paper/Surface
-                                                                 ;; when using :background here it has a weird opacity issue or something
                                                                  #js {:backgroundColor (-> theme
                                                                                            (j/get :colors)
-                                                                                           (j/get :surface))}}
-                                                     :component (wrap-screen template/screen)})
+                                                                                           (j/get :background))}}
+                                                     :component (hoc-wrap template/screen)})
                                       (stack-screen {:name      (:session-template screens)
                                                      :options   {:headerTintColor (-> theme
                                                                                       (j/get :colors)
@@ -224,21 +228,19 @@
                                                                  :headerTitleStyle
                                                                  #js {:display "none"}
                                                                  :headerStyle
-                                                                 ;; for some reason the :surface color comes out the same as :background when used on paper/Surface
-                                                                 ;; when using :background here it has a weird opacity issue or something
                                                                  #js {:backgroundColor (-> theme
                                                                                            (j/get :colors)
-                                                                                           (j/get :surface))}}
-                                                     :component (wrap-screen session-template/screen)})])})
+                                                                                           (j/get :background))}}
+                                                     :component (hoc-wrap session-template/screen)})])})
         (drawer-screen {:name      (:settings screens)
                         :options   {:drawerIcon (drawer-icon "tune")}
-                        :component (wrap-screen settings/screen)})
+                        :component (hoc-wrap settings/screen)})
         (drawer-screen {:name      (:backups screens)
                         :options   {:drawerIcon (drawer-icon "tune")}
-                        :component (wrap-screen backups/screen)})
+                        :component (hoc-wrap backups/screen)})
         (drawer-screen {:name      (:import screens)
                         :options   {:drawerIcon (drawer-icon "tune")}
-                        :component (wrap-screen import/screen)})]]]))
+                        :component (hoc-wrap import/screen)})]]]))
 
 (defn start
   {:dev/after-load true}
@@ -262,4 +264,5 @@
 (comment
   (>evt [:set-theme :light])
   (>evt [:set-theme :dark])
+  (->> [:theme] <sub get-theme)
   )
