@@ -34,7 +34,9 @@
    [umeng.app.screens.template :as template]
    [umeng.app.screens.session-template :as session-template]
    [umeng.app.screens.backups :as backups]
-   [umeng.app.screens.import :as import]))
+   [umeng.app.screens.import :as import]
+   [umeng.app.tailwind :refer [tw]]
+   ))
 
 ;; must use defonce and must refresh full app so metro can fill these in
 ;; at live-reload time `require` does not exist and will cause errors
@@ -91,6 +93,11 @@
                          :icon        (drawer-icon "hamburger" text-color-hex)
                          :on-press    #(tap> "Scotty, come in Scotty!")}]])))
 
+(defn wrap-screen
+  [the-screen]
+  (gh/gestureHandlerRootHOC
+   (paper/withTheme the-screen)))
+
 (defn root []
   (let [theme           (->> [:theme] <sub get-theme)
         !route-name-ref (clojure.core/atom {})
@@ -102,10 +109,8 @@
                                                (j/call :hex))}]
 
 
-    [:> gh/GestureHandlerRootView {:style {:flex 1}}
-
-     [:> paper/Provider
-      {:theme theme}
+    [:> paper/Provider
+     {:theme theme}
 
       [:> nav/NavigationContainer
        {:ref             (fn [el] (reset! !navigation-ref el))
@@ -133,6 +138,17 @@
 
                              (swap! !route-name-ref merge {:current current-route-name})))}
 
+       #_[:> (stack-navigator) {:screen-options {:header-shown false}}
+          (stack-screen {:name      "test-dashboard"
+                         :options   {}
+                         :component (wrap-screen
+                                     #(r/as-element
+                                       [:> rn/View {:style (tw "h-full")}
+                                        [:> rn/StatusBar {:hidden true}]
+                                        [:> paper/Surface {:style (tw "h-full justify-center items-center")}
+                                         [:> rn/SafeAreaView
+                                          [:> paper/Text {:variant "displayLarge"} "Hello"]]]]))})]
+
        [:> (drawer-navigator) {:drawer-content         custom-drawer
                                :drawer-style           drawer-style
                                :initial-route-name     (:day screens)
@@ -143,7 +159,7 @@
                         :component #(r/as-element
                                      [:> (stack-navigator) {:initial-route-name (:day screens)}
                                       (stack-screen {:name      (:day screens)
-                                                     :component (paper/withTheme day/screen)
+                                                     :component (wrap-screen day/screen)
                                                      :options   {:headerShown false}})
                                       (stack-screen {:name      (:session screens)
                                                      :options   {:headerTintColor (-> theme
@@ -157,7 +173,7 @@
                                                                  #js {:backgroundColor (-> theme
                                                                                            (j/get :colors)
                                                                                            (j/get :surface))}}
-                                                     :component (paper/withTheme session/screen)})])})
+                                                     :component (wrap-screen session/screen)})])})
         (drawer-screen {:name      (:reports screens)
                         :options   {:drawerIcon (drawer-icon "hamburger")}
                         :component (paper/withTheme reports/screen)})
@@ -166,7 +182,7 @@
                         :component #(r/as-element
                                      [:> (stack-navigator) {:initial-route-name (:tags screens)}
                                       (stack-screen {:name      (:tags screens)
-                                                     :component (paper/withTheme tags/screen)
+                                                     :component (wrap-screen tags/screen)
                                                      :options   {:headerShown false}})
                                       (stack-screen {:name      (:tag screens)
                                                      :options   {:headerTintColor (-> theme
@@ -180,13 +196,13 @@
                                                                  #js {:backgroundColor (-> theme
                                                                                            (j/get :colors)
                                                                                            (j/get :surface))}}
-                                                     :component (paper/withTheme tag/screen)})])})
+                                                     :component (wrap-screen tag/screen)})])})
         (drawer-screen {:name      (:templates screens)
                         :options   {:drawerIcon (drawer-icon "hamburger")}
                         :component #(r/as-element
                                      [:> (stack-navigator) {:initial-route-name (:templates screens)}
                                       (stack-screen {:name      (:templates screens)
-                                                     :component (paper/withTheme templates/screen)
+                                                     :component (wrap-screen templates/screen)
                                                      :options   {:headerShown false}})
                                       (stack-screen {:name      (:template screens)
                                                      :options   {:headerTintColor (-> theme
@@ -200,7 +216,7 @@
                                                                  #js {:backgroundColor (-> theme
                                                                                            (j/get :colors)
                                                                                            (j/get :surface))}}
-                                                     :component (paper/withTheme template/screen)})
+                                                     :component (wrap-screen template/screen)})
                                       (stack-screen {:name      (:session-template screens)
                                                      :options   {:headerTintColor (-> theme
                                                                                       (j/get :colors)
@@ -213,17 +229,16 @@
                                                                  #js {:backgroundColor (-> theme
                                                                                            (j/get :colors)
                                                                                            (j/get :surface))}}
-                                                     :component (paper/withTheme session-template/screen)})
-                                      ])})
+                                                     :component (wrap-screen session-template/screen)})])})
         (drawer-screen {:name      (:settings screens)
                         :options   {:drawerIcon (drawer-icon "tune")}
-                        :component (paper/withTheme settings/screen)})
+                        :component (wrap-screen settings/screen)})
         (drawer-screen {:name      (:backups screens)
                         :options   {:drawerIcon (drawer-icon "tune")}
-                        :component (paper/withTheme backups/screen)})
+                        :component (wrap-screen backups/screen)})
         (drawer-screen {:name      (:import screens)
                         :options   {:drawerIcon (drawer-icon "tune")}
-                        :component (paper/withTheme import/screen)})]]]]))
+                        :component (wrap-screen import/screen)})]]]))
 
 (defn start
   {:dev/after-load true}
@@ -243,3 +258,8 @@
     (start)
     (catch js/Object e
       (-> rn/Alert (j/call :alert "Failure on startup" (str e))))))
+
+(comment
+  (>evt [:set-theme :light])
+  (>evt [:set-theme :dark])
+  )

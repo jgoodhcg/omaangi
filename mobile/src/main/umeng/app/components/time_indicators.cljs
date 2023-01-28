@@ -5,12 +5,11 @@
 
    [applied-science.js-interop :as j]
 
-   [umeng.app.misc :refer [<sub get-theme]]
+   [umeng.app.misc :refer [<sub]]
    [umeng.app.tailwind :refer [tw]]))
 
-(defn component []
-  (let [theme (->> [:theme] <sub get-theme)
-        hours (<sub [:hours])]
+(defn component [{:keys [theme]}]
+  (let [hours (<sub [:hours])]
     [:> rn/View
      (for [{:keys [top val]} hours]
        [:> rn/View {:key   (str (random-uuid) "-time-indicator")
@@ -19,5 +18,5 @@
         [:> paper/Divider]
         [:> paper/Text {:style {:color (-> theme
                                            (j/get :colors)
-                                           (j/get :disabled))}}
+                                           (j/get :onSurfaceDisabled))}}
          val]])]))
