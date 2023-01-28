@@ -154,8 +154,7 @@
         is-playing (<sub [:is-selected-playing?])]
 
     [screen-wrap/basic
-     [:> paper/Text {:variant "displayLarge"} "Hello"]
-     #_[:> rn/ScrollView {:style {:background-color
+     [:> rn/ScrollView {:style {:background-color
                                 (-> theme (j/get :colors) (j/get :background))}}
 
       [:> rn/View {:style (tw "flex p-4 flex-col")}

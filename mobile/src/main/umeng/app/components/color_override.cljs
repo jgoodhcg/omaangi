@@ -2,10 +2,12 @@
   (:require
    ["react-native" :as rn]
    ["react-native-paper" :as paper]
+   ["color" :as color]
 
    [umeng.app.components.color-picker :as color-picker]
    [umeng.app.misc :refer [>evt]]
-   [umeng.app.tailwind :refer [tw]]))
+   [umeng.app.tailwind :refer [tw]]
+   [applied-science.js-interop :as j]))
 
 (defn component [{session-ish-color :color
                   color-override    :color-override
@@ -16,12 +18,13 @@
         label (if (some? session-ish-color) session-ish-color "set color")]
 
     [:> rn/View {:style (tw "flex flex-col mb-8")}
-     [:> paper/Button {:mode     mode
-                       :icon     "palette"
-                       :color    session-ish-color
-                       :on-press #(>evt [:set-color-picker
-                                         #:color-picker {:visible true
-                                                         :value   session-ish-color}])}
+     [:> paper/Button {:mode        mode
+                       :icon        "palette"
+                       :dark        (-> session-ish-color color (j/call :isDark))
+                       :buttonColor session-ish-color
+                       :on-press    #(>evt [:set-color-picker
+                                            #:color-picker {:visible true
+                                                            :value   session-ish-color}])}
       label]
 
      [color-picker/component {:input-color session-ish-color
