@@ -4,10 +4,12 @@
    ["react-native-paper" :as paper]
    ["color" :as color]
 
+   [applied-science.js-interop :as j]
+
    [umeng.app.components.color-picker :as color-picker]
    [umeng.app.misc :refer [>evt]]
    [umeng.app.tailwind :refer [tw]]
-   [applied-science.js-interop :as j]))
+   ))
 
 (defn component [{session-ish-color :color
                   color-override    :color-override

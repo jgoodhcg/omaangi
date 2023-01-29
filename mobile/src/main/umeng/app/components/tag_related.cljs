@@ -2,7 +2,9 @@
   (:require
    ["react-native" :as rn]
    ["react-native-paper" :as paper]
+   ["color" :as c]
 
+   [applied-science.js-interop :as j]
    [potpuri.core :as p]
 
    [umeng.app.misc :refer [<sub >evt]]
@@ -12,13 +14,15 @@
   [{:keys [color label on-press style assigned-to-selected]}]
   [:> paper/Button
    (merge
-     (when assigned-to-selected {:disabled true})
+    (when assigned-to-selected {:disabled true})
      (when (some? on-press)
        {:on-press on-press})
      (when (some? style)
        {:style style})
-     {:mode  (if (some? color) "contained" "outlined")
-      :color color})
+     {:mode        (if (some? color) "contained" "outlined")
+      :buttonColor color
+      :dark        (-> color c (j/call :isDark))
+      })
    label])
 
 (defn tag-remove-modal

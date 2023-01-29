@@ -2,6 +2,7 @@
   (:require
    ["react-native" :as rn]
    ["react-native-paper" :as paper]
+   ["color" :as c]
 
    [applied-science.js-interop :as j]
    [reagent.core :as r]
@@ -32,12 +33,13 @@
                                 :on-change-text #(>evt [:update-tag {:tag/id    id
                                                                      :tag/label %}])}]
            [:> rn/View {:style (tw "flex flex-col mb-8")}
-            [:> paper/Button {:mode     mode
-                              :icon     "palette"
-                              :color    color
-                              :on-press #(>evt [:set-color-picker
-                                                #:color-picker {:visible true
-                                                                :value   color}])}
+            [:> paper/Button {:mode        mode
+                              :icon        "palette"
+                              :buttonColor color
+                              :dark        (-> color c (j/call :isDark))
+                              :on-press    #(>evt [:set-color-picker
+                                                   #:color-picker {:visible true
+                                                                   :value   color}])}
              label]
 
             [color-picker/component {:input-color color
