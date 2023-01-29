@@ -190,7 +190,7 @@
                                                      :component (hoc-wrap session/screen)})])})
         (drawer-screen {:name      (:reports screens)
                         :options   {:drawerIcon (drawer-icon "hamburger")}
-                        :component (paper/withTheme reports/screen)})
+                        :component (hoc-wrap reports/screen)})
         (drawer-screen {:name      (:tags-stack screens)
                         :options   {:drawerIcon (drawer-icon "hamburger")}
                         :component #(r/as-element

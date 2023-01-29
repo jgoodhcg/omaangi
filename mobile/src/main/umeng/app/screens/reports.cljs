@@ -10,6 +10,7 @@
 
    [umeng.app.components.time-related :as tm]
    [umeng.app.components.tag-related :as tags]
+   [umeng.app.components.screen-wrap :as screen-wrap]
    [umeng.app.screens.core :refer [screens]]
    [umeng.app.components.generic-top-section :as top-section]
    [umeng.app.misc :refer [<sub >evt get-theme clear-datetime-picker]]
@@ -182,31 +183,22 @@
                        :field-key :end}]]]))
 
 (defn screen [props]
-  (r/as-element
-    [(fn []
-       (let [theme (->> [:theme] <sub get-theme)]
-         ;; TODO justin 2021-05-01 add safe area view, heading, and pattern
-         ;;
-         [:> rn/SafeAreaView {:style (merge (tw "flex flex-1")
-                                            {:background-color (-> theme (j/get :colors) (j/get :background))})}
-          [:> paper/Surface {:style (-> (tw "flex flex-1")
-                                        (merge {:background-color (-> theme (j/get :colors) (j/get :background))}))}
-           [:> rn/ScrollView
-            [:> rn/View
-             [:> rn/StatusBar {:visibility "hidden"}]
+  (let [theme (->> [:theme] <sub get-theme)]
+    [screen-wrap/basic
+     [:> rn/ScrollView
+      [:> rn/View
+       [top-section/component props (:reports screens)]
 
-             [top-section/component props (:reports screens)]
+       [interval-buttons]
 
-             [interval-buttons]
+       [:> paper/Divider]
 
-             [:> paper/Divider]
+       [pie-chart]
 
-             [pie-chart]
+       [:> paper/Divider]
 
-             [:> paper/Divider]
+       [pattern-graph]
 
-             [pattern-graph]
+       [:> paper/Divider]
 
-             [:> paper/Divider]
-
-             [stacked-bar-chart]]]]]))]))
+       [stacked-bar-chart]]]]))
