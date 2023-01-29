@@ -82,7 +82,12 @@
         text-color-hex (-> theme (j/get :colors) (j/get :onSurface))]
 
     (r/as-element
-      [:> d/DrawerContentScrollView (js->clj props)
+     [:> d/DrawerContentScrollView (merge (js->clj props)
+                                          {:style {:backgroundColor
+                                                   (-> theme
+                                                       (j/get :colors)
+                                                       (j/get :surface)
+                                                       )}})
        [:> d/DrawerItemList (js->clj props)]
        [:> d/DrawerItem {:label       "Share"
                          :label-style {:color text-color-hex}
@@ -154,12 +159,15 @@
        [:> (drawer-navigator) {:drawer-content     custom-drawer
                                :drawer-style       drawer-style
                                :initial-route-name (:day screens)
-                               :screen-options     {:active-tint-color   (-> theme
-                                                                             (j/get :colors)
-                                                                             (j/get :onSurface))
-                                                    :inactive-tint-color (-> theme
-                                                                             (j/get :colors)
-                                                                             (j/get :onSurfaceVariant))}}
+                               :screen-options     {:headerShown         false
+                                                    :drawerActiveTintColor
+                                                    (-> theme
+                                                        (j/get :colors)
+                                                        (j/get :onSurface))
+                                                    :drawerInactiveTintColor
+                                                    (-> theme
+                                                        (j/get :colors)
+                                                        (j/get :onSurfaceVariant))}}
         (drawer-screen {:name      (:day-stack screens)
                         :options   {:drawerIcon (drawer-icon "calendar")}
                         :component #(r/as-element
