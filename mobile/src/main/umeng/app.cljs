@@ -151,16 +151,16 @@
                                          [:> rn/SafeAreaView
                                           [:> paper/Text {:variant "displayLarge"} "Hello"]]]]))})]
 
-       [:> (drawer-navigator) {:drawer-content         custom-drawer
-                               :drawer-style           drawer-style
-                               :initial-route-name     (:day screens)
-                               :drawer-content-options {:active-tint-color   (-> theme
-                                                                                 (j/get :colors)
-                                                                                 (j/get :onSurface))
-                                                        :inactive-tint-color (-> theme
-                                                                                 (j/get :colors)
-                                                                                 (j/get :onSurfaceVariant))}}
-        (drawer-screen {:name      (:day screens)
+       [:> (drawer-navigator) {:drawer-content     custom-drawer
+                               :drawer-style       drawer-style
+                               :initial-route-name (:day screens)
+                               :screen-options     {:active-tint-color   (-> theme
+                                                                             (j/get :colors)
+                                                                             (j/get :onSurface))
+                                                    :inactive-tint-color (-> theme
+                                                                             (j/get :colors)
+                                                                             (j/get :onSurfaceVariant))}}
+        (drawer-screen {:name      (:day-stack screens)
                         :options   {:drawerIcon (drawer-icon "calendar")}
                         :component #(r/as-element
                                      [:> (stack-navigator) {:initial-route-name (:day screens)}
@@ -183,7 +183,7 @@
         (drawer-screen {:name      (:reports screens)
                         :options   {:drawerIcon (drawer-icon "hamburger")}
                         :component (paper/withTheme reports/screen)})
-        (drawer-screen {:name      (:tags screens)
+        (drawer-screen {:name      (:tags-stack screens)
                         :options   {:drawerIcon (drawer-icon "hamburger")}
                         :component #(r/as-element
                                      [:> (stack-navigator) {:initial-route-name (:tags screens)}
@@ -203,7 +203,7 @@
                                                                                            (j/get :colors)
                                                                                            (j/get :surface))}}
                                                      :component (hoc-wrap tag/screen)})])})
-        (drawer-screen {:name      (:templates screens)
+        (drawer-screen {:name      (:templates-stack screens)
                         :options   {:drawerIcon (drawer-icon "hamburger")}
                         :component #(r/as-element
                                      [:> (stack-navigator) {:initial-route-name (:templates screens)}
