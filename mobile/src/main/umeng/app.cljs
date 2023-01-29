@@ -105,6 +105,20 @@
     (fn [props]
       (r/as-element [the-screen props])))))
 
+(defn inner-stack-screen-header-options
+  [theme]
+  {:headerTintColor (-> theme
+                        (j/get :colors)
+                        (j/get :onSurface))
+   :headerTitleStyle
+   #js {:display "none"}
+   :headerStyle
+   ;; for some reason the :surface color comes out the same as :background when used on paper/Surface
+   ;; when using :background here it has a weird opacity issue or something
+   #js {:backgroundColor (-> theme
+                             (j/get :colors)
+                             (j/get :surface))}})
+
 (defn root []
   (let [theme           (->> [:theme] <sub get-theme)
         !route-name-ref (clojure.core/atom {})
@@ -176,17 +190,7 @@
                                                      :component (hoc-wrap day/screen)
                                                      :options   {:headerShown false}})
                                       (stack-screen {:name      (:session screens)
-                                                     :options   {:headerTintColor (-> theme
-                                                                                      (j/get :colors)
-                                                                                      (j/get :onSurface))
-                                                                 :headerTitleStyle
-                                                                 #js {:display "none"}
-                                                                 :headerStyle
-                                                                 ;; for some reason the :surface color comes out the same as :background when used on paper/Surface
-                                                                 ;; when using :background here it has a weird opacity issue or something
-                                                                 #js {:backgroundColor (-> theme
-                                                                                           (j/get :colors)
-                                                                                           (j/get :surface))}}
+                                                     :options   (inner-stack-screen-header-options theme)
                                                      :component (hoc-wrap session/screen)})])})
         (drawer-screen {:name      (:reports screens)
                         :options   {:drawerIcon (drawer-icon "hamburger")}
@@ -199,17 +203,7 @@
                                                      :component (hoc-wrap tags/screen)
                                                      :options   {:headerShown false}})
                                       (stack-screen {:name      (:tag screens)
-                                                     :options   {:headerTintColor (-> theme
-                                                                                      (j/get :colors)
-                                                                                      (j/get :text))
-                                                                 :headerTitleStyle
-                                                                 #js {:display "none"}
-                                                                 :headerStyle
-                                                                 ;; for some reason the :surface color comes out the same as :background when used on paper/Surface
-                                                                 ;; when using :background here it has a weird opacity issue or something
-                                                                 #js {:backgroundColor (-> theme
-                                                                                           (j/get :colors)
-                                                                                           (j/get :surface))}}
+                                                     :options   (inner-stack-screen-header-options theme)
                                                      :component (hoc-wrap tag/screen)})])})
         (drawer-screen {:name      (:templates-stack screens)
                         :options   {:drawerIcon (drawer-icon "hamburger")}
@@ -219,26 +213,10 @@
                                                      :component (hoc-wrap templates/screen)
                                                      :options   {:headerShown false}})
                                       (stack-screen {:name      (:template screens)
-                                                     :options   {:headerTintColor (-> theme
-                                                                                      (j/get :colors)
-                                                                                      (j/get :text))
-                                                                 :headerTitleStyle
-                                                                 #js {:display "none"}
-                                                                 :headerStyle
-                                                                 #js {:backgroundColor (-> theme
-                                                                                           (j/get :colors)
-                                                                                           (j/get :background))}}
+                                                     :options   (inner-stack-screen-header-options theme)
                                                      :component (hoc-wrap template/screen)})
                                       (stack-screen {:name      (:session-template screens)
-                                                     :options   {:headerTintColor (-> theme
-                                                                                      (j/get :colors)
-                                                                                      (j/get :text))
-                                                                 :headerTitleStyle
-                                                                 #js {:display "none"}
-                                                                 :headerStyle
-                                                                 #js {:backgroundColor (-> theme
-                                                                                           (j/get :colors)
-                                                                                           (j/get :background))}}
+                                                     :options   (inner-stack-screen-header-options theme)
                                                      :component (hoc-wrap session-template/screen)})])})
         (drawer-screen {:name      (:settings screens)
                         :options   {:drawerIcon (drawer-icon "tune")}
