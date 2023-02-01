@@ -93,15 +93,10 @@
                          :label-style {:color text-color-hex}
                          :icon        (drawer-icon "hamburger" text-color-hex)
                          :on-press    #(tap> "Sharing is caring")}]
-
        [:> d/DrawerItem {:label       "Contact"
                          :label-style {:color text-color-hex}
                          :icon        (drawer-icon "hamburger" text-color-hex)
-                         :on-press    #(tap> "Scotty, come in Scotty!")}]
-       [:> d/DrawerItem {:label       "Dashboard"
-                         :label-style {:color text-color-hex}
-                         :icon        (drawer-icon "bug" text-color-hex)
-                         :on-press    #(>evt :navigate "test-dashboard")}]])))
+                         :on-press    #(tap> "Scotty, come in Scotty!")}]])))
 
 (defn hoc-wrap
   [the-screen]
@@ -164,99 +159,74 @@
 
                              (swap! !route-name-ref merge {:current current-route-name})))}
 
-       [:> (stack-navigator) {:screen-options {:header-shown false}}
-        (stack-screen {:name      "test-dashboard"
-                       :options   {}
-                       :component (hoc-wrap
-                                   (fn [_]
-                                     (let [card (fn [{:keys [title nav-to]}]
-                                                  [:> paper/Card
-                                                   {:style    (tw "h-32 w-32 justify-center items-center")
-                                                    :mode     "contained"
-                                                    :on-press #(>evt [:navigate nav-to])}
-                                                   [:> paper/Card.Content
-                                                    [:> paper/Text {:variant "titleLarge"} title]]])]
+       #_[:> (stack-navigator) {:screen-options {:header-shown false}}
+          (stack-screen {:name      "test-dashboard"
+                         :options   {}
+                         :component (hoc-wrap
+                                     #(r/as-element
                                        [:> rn/View {:style (tw "h-full")}
                                         [:> rn/StatusBar {:hidden true}]
-                                        [:> paper/Surface {:style (tw "h-full")}
+                                        [:> paper/Surface {:style (tw "h-full justify-center items-center")}
                                          [:> rn/SafeAreaView
-                                          [:> rn/View {:style (tw "h-full flex-row justify-around items-center")}
-                                           (-> {:title  "Time"
-                                                :nav-to "time-entrypoint"} card)
-                                           (-> {:title  "Exercise"
-                                                :nav-to "exercise-entrypoint"} card)]]]])))})
-        (stack-screen {:name      "exercise-entrypoint"
-                       :options   {}
-                       :component (hoc-wrap
-                                   (fn [_]
-                                     [:> rn/View {:style (tw "h-full")}
-                                      [:> rn/StatusBar {:hidden true}]
-                                      [:> paper/Surface {:style (tw "h-full")}
-                                       [:> rn/SafeAreaView
-                                        [:> paper/Text {:variant "displayLarge"} "Exercise!"]
-                                        [:> paper/Button {:on-press #(>evt [:navigate "test-dashboard"])}
-                                         "Dashboard"]]]]))})
-        (stack-screen {:name      "time-entrypoint"
-                       :options   {}
-                       :component (fn [_]
-                                    (r/as-element
-                                     [:> (drawer-navigator) {:drawer-content     custom-drawer
-                                                             :drawer-style       drawer-style
-                                                             :initial-route-name (:day screens)
-                                                             :screen-options     {:headerShown false
-                                                                                  :drawerActiveTintColor
-                                                                                  (-> theme
-                                                                                      (j/get :colors)
-                                                                                      (j/get :onSurface))
-                                                                                  :drawerInactiveTintColor
-                                                                                  (-> theme
-                                                                                      (j/get :colors)
-                                                                                      (j/get :onSurfaceVariant))}}
-                                      (drawer-screen {:name      (:day-stack screens)
-                                                      :options   {:drawerIcon (drawer-icon "calendar")}
-                                                      :component #(r/as-element
-                                                                   [:> (stack-navigator) {:initial-route-name (:day screens)}
-                                                                    (stack-screen {:name      (:day screens)
-                                                                                   :component (hoc-wrap day/screen)
-                                                                                   :options   {:headerShown false}})
-                                                                    (stack-screen {:name      (:session screens)
-                                                                                   :options   (inner-stack-screen-header-options theme)
-                                                                                   :component (hoc-wrap session/screen)})])})
-                                      (drawer-screen {:name      (:reports screens)
-                                                      :options   {:drawerIcon (drawer-icon "hamburger")}
-                                                      :component (hoc-wrap reports/screen)})
-                                      (drawer-screen {:name      (:tags-stack screens)
-                                                      :options   {:drawerIcon (drawer-icon "hamburger")}
-                                                      :component #(r/as-element
-                                                                   [:> (stack-navigator) {:initial-route-name (:tags screens)}
-                                                                    (stack-screen {:name      (:tags screens)
-                                                                                   :component (hoc-wrap tags/screen)
-                                                                                   :options   {:headerShown false}})
-                                                                    (stack-screen {:name      (:tag screens)
-                                                                                   :options   (inner-stack-screen-header-options theme)
-                                                                                   :component (hoc-wrap tag/screen)})])})
-                                      (drawer-screen {:name      (:templates-stack screens)
-                                                      :options   {:drawerIcon (drawer-icon "hamburger")}
-                                                      :component #(r/as-element
-                                                                   [:> (stack-navigator) {:initial-route-name (:templates screens)}
-                                                                    (stack-screen {:name      (:templates screens)
-                                                                                   :component (hoc-wrap templates/screen)
-                                                                                   :options   {:headerShown false}})
-                                                                    (stack-screen {:name      (:template screens)
-                                                                                   :options   (inner-stack-screen-header-options theme)
-                                                                                   :component (hoc-wrap template/screen)})
-                                                                    (stack-screen {:name      (:session-template screens)
-                                                                                   :options   (inner-stack-screen-header-options theme)
-                                                                                   :component (hoc-wrap session-template/screen)})])})
-                                      (drawer-screen {:name      (:settings screens)
-                                                      :options   {:drawerIcon (drawer-icon "tune")}
-                                                      :component (hoc-wrap settings/screen)})
-                                      (drawer-screen {:name      (:backups screens)
-                                                      :options   {:drawerIcon (drawer-icon "tune")}
-                                                      :component (hoc-wrap backups/screen)})
-                                      (drawer-screen {:name      (:import screens)
-                                                      :options   {:drawerIcon (drawer-icon "tune")}
-                                                      :component (hoc-wrap import/screen)})]))})]]]))
+                                          [:> paper/Text {:variant "displayLarge"} "Hello"]]]]))})]
+
+       [:> (drawer-navigator) {:drawer-content     custom-drawer
+                               :drawer-style       drawer-style
+                               :initial-route-name (:day screens)
+                               :screen-options     {:headerShown         false
+                                                    :drawerActiveTintColor
+                                                    (-> theme
+                                                        (j/get :colors)
+                                                        (j/get :onSurface))
+                                                    :drawerInactiveTintColor
+                                                    (-> theme
+                                                        (j/get :colors)
+                                                        (j/get :onSurfaceVariant))}}
+        (drawer-screen {:name      (:day-stack screens)
+                        :options   {:drawerIcon (drawer-icon "calendar")}
+                        :component #(r/as-element
+                                     [:> (stack-navigator) {:initial-route-name (:day screens)}
+                                      (stack-screen {:name      (:day screens)
+                                                     :component (hoc-wrap day/screen)
+                                                     :options   {:headerShown false}})
+                                      (stack-screen {:name      (:session screens)
+                                                     :options   (inner-stack-screen-header-options theme)
+                                                     :component (hoc-wrap session/screen)})])})
+        (drawer-screen {:name      (:reports screens)
+                        :options   {:drawerIcon (drawer-icon "hamburger")}
+                        :component (hoc-wrap reports/screen)})
+        (drawer-screen {:name      (:tags-stack screens)
+                        :options   {:drawerIcon (drawer-icon "hamburger")}
+                        :component #(r/as-element
+                                     [:> (stack-navigator) {:initial-route-name (:tags screens)}
+                                      (stack-screen {:name      (:tags screens)
+                                                     :component (hoc-wrap tags/screen)
+                                                     :options   {:headerShown false}})
+                                      (stack-screen {:name      (:tag screens)
+                                                     :options   (inner-stack-screen-header-options theme)
+                                                     :component (hoc-wrap tag/screen)})])})
+        (drawer-screen {:name      (:templates-stack screens)
+                        :options   {:drawerIcon (drawer-icon "hamburger")}
+                        :component #(r/as-element
+                                     [:> (stack-navigator) {:initial-route-name (:templates screens)}
+                                      (stack-screen {:name      (:templates screens)
+                                                     :component (hoc-wrap templates/screen)
+                                                     :options   {:headerShown false}})
+                                      (stack-screen {:name      (:template screens)
+                                                     :options   (inner-stack-screen-header-options theme)
+                                                     :component (hoc-wrap template/screen)})
+                                      (stack-screen {:name      (:session-template screens)
+                                                     :options   (inner-stack-screen-header-options theme)
+                                                     :component (hoc-wrap session-template/screen)})])})
+        (drawer-screen {:name      (:settings screens)
+                        :options   {:drawerIcon (drawer-icon "tune")}
+                        :component (hoc-wrap settings/screen)})
+        (drawer-screen {:name      (:backups screens)
+                        :options   {:drawerIcon (drawer-icon "tune")}
+                        :component (hoc-wrap backups/screen)})
+        (drawer-screen {:name      (:import screens)
+                        :options   {:drawerIcon (drawer-icon "tune")}
+                        :component (hoc-wrap import/screen)})]]]))
 
 (defn start
   {:dev/after-load true}
