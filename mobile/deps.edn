@@ -12,7 +12,7 @@
         metosin/potpuri                     {:mvn/version "0.5.3"}
         org.clojure/test.check              {:mvn/version "1.1.1"} ;; TODO dev dep?
         org.clojure/core.async              {:mvn/version "1.5.648"}
-        reagent/reagent                     {:mvn/version "1.1.0"}
+        reagent/reagent                     {:mvn/version "1.1.1"}
         re-frame/re-frame                   {:mvn/version "1.1.1"}
         tick/tick                           {:mvn/version "0.5.0"}
         thheller/shadow-cljs                {:mvn/version "2.19.8"}
