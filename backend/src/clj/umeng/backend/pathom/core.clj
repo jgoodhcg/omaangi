@@ -40,11 +40,15 @@
 (defmethod valid-item? :exercise         [item] (spec/valid? e-specs/exercise-spec item))
 (defmethod valid-item? :exercise-log     [item] (spec/valid? e-specs/exercise-log-spec item))
 (defmethod valid-item? :exercise-session [item] (spec/valid? e-specs/exercise-session-spec item))
+(defmethod valid-item? nil [_] false)
+(defmethod valid-item? :default [_] false)
 
 (defmulti  explain-item :umeng/type)
 (defmethod explain-item :exercise         [item] (explain-item-xform item e-specs/exercise))
 (defmethod explain-item :exercise-log     [item] (explain-item-xform item e-specs/exercise-log))
 (defmethod explain-item :exercise-session [item] (explain-item-xform item e-specs/exercise-session))
+(defmethod explain-item nil [item] (str "No umeng/type specified for " item))
+(defmethod explain-item :default [item] (str "not a valid umeng/type for " item))
 
 (pco/defmutation upsert-items
   [{items :umeng/items}]
