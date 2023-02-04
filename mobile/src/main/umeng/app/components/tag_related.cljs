@@ -21,9 +21,8 @@
        {:style style})
      {:mode        (if (some? color) "contained" "outlined")
       :buttonColor color
-      :dark        (-> color c (j/call :isDark))
-      })
-   label])
+      :dark        (-> color c (j/call :isDark))})
+  label])
 
 (defn tag-remove-modal
   "`remove-fn` is wrapped in partial and given tag-id"

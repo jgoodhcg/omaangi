@@ -159,17 +159,6 @@
 
                              (swap! !route-name-ref merge {:current current-route-name})))}
 
-       #_[:> (stack-navigator) {:screen-options {:header-shown false}}
-          (stack-screen {:name      "test-dashboard"
-                         :options   {}
-                         :component (hoc-wrap
-                                     #(r/as-element
-                                       [:> rn/View {:style (tw "h-full")}
-                                        [:> rn/StatusBar {:hidden true}]
-                                        [:> paper/Surface {:style (tw "h-full justify-center items-center")}
-                                         [:> rn/SafeAreaView
-                                          [:> paper/Text {:variant "displayLarge"} "Hello"]]]]))})]
-
        [:> (drawer-navigator) {:drawer-content     custom-drawer
                                :drawer-style       drawer-style
                                :initial-route-name (:day screens)

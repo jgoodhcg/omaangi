@@ -2,7 +2,7 @@
   "expo": {
     "name": "umeng",
     "slug": "umeng",
-    "version": "0.0.29",
+    "version": "0.0.30",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "splash": {
@@ -45,6 +45,11 @@
     },
     "runtimeVersion": {
       "policy": "sdkVersion"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "ff2b176b-2fbd-4619-839a-8ca32ef9326c"
+      }
     }
   }
 }

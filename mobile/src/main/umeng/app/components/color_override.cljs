@@ -15,15 +15,17 @@
                   color-override    :color-override
                   update-fn         :update-fn
                   remove-fn         :remove-fn}]
-  (let [mode  (if (and (some? session-ish-color)
+  ;; Apparently all session-ish items have a color by default ...
+  ;; Maybe I should indicate that a default color has been supplied so this button can be displayed with flat or outline mode
+  (let [mode  (if (or (some? session-ish-color)
                        color-override) "contained" "flat")
         label (if (some? session-ish-color) session-ish-color "set color")]
 
     [:> rn/View {:style (tw "flex flex-col mb-8")}
      [:> paper/Button {:mode        mode
                        :icon        "palette"
-                       :dark        (-> session-ish-color color (j/call :isDark))
                        :buttonColor session-ish-color
+                       :dark        (-> session-ish-color color (j/call :isDark))
                        :on-press    #(>evt [:set-color-picker
                                             #:color-picker {:visible true
                                                             :value   session-ish-color}])}
