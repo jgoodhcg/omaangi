@@ -112,10 +112,11 @@
                 (j/call :writeAsStringAsync app-db-file-path (serialize app-db)))
             (catch js/Object e (tap> (str "error saving db to file " e))))))
 
-(def version (-> expo-constants
+(def version (or (-> expo-constants
                  (j/get :default)
                  (j/get :manifest)
-                 (j/get :version)))
+                 (j/get :version))
+                 "version not set"))
 
 ;; TODO deprecate remove
 (def persist-app-db-task "PERSIST_APP_DB")

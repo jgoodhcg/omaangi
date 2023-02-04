@@ -20,7 +20,12 @@
    [clojure.test.check.generators]
 
    [umeng.app.colors :refer [material-500-hexes]]
-   [umeng.app.misc :refer [touches chance is-color? hex-if-some make-color-if-some]    ]))
+   [umeng.app.misc :refer [touches chance is-color? hex-if-some make-color-if-some]]
+   [umeng.shared.specs.exercises :refer [exercise-spec
+                                         exercise-log-spec
+                                         exercise-session-spec]]
+
+   ))
 
 ;;
 ;; misc
@@ -296,12 +301,27 @@
                 (s/and map? (s/every-kv uuid? ::tag))
                 #(gen/fmap generate-tags (s/gen ::reasonable-number))))
 
+;; exercise
+;; TODO add generators?
+(s/def ::exercise exercise-spec)
+
+(s/def ::exercises (s/and map? (s/every-kv uuid? ::exercise)))
+
+(s/def ::exercise-session exercise-session-spec)
+
+(s/def ::exercise-sessions (s/and map? (s/every-kv uuid? ::exercise-session)))
+
+(s/def ::exercise-log exercise-log-spec)
+
+(s/def ::exercise-logs (s/and map? (s/every-kv uuid? ::exercise-log)))
+
 ;; calendars
 
 (def calendar-val-data-spec
   (ds/spec {:name ::calendar-ds
-            :spec {:calendar/date     t/date?
-                   :calendar/sessions [uuid?]}})) ;; TODO this should maybe be a set
+            :spec {:calendar/date              t/date?
+                   :calendar/sessions          [uuid?]
+                   :calendar/exercise-sessions [uuid?]}})) ;; TODO should these maybe be sets instead of vecs?
 
 (s/def ::calendar-val (s/with-gen calendar-val-data-spec #(gen/fmap generate-calendar-val (s/gen int?))))
 
@@ -387,56 +407,59 @@
 
 (def app-db-spec
   (ds/spec
-    {:name ::app-db
-     :spec
-     {:app-db/version                                   string?
-      :app-db/current-time                              ::instant
-      :app-db/current-timezone                          t/zone?
-      :app-db/tracking                                  [uuid?]
-      :app-db/calendar                                  ::calendar
-      :app-db/sessions                                  ::sessions
-      :app-db/tags                                      ::tags
-      :app-db/templates                                 ::templates
-      :app-db/session-templates                         ::session-templates
-      :app-db/backup-keys                               [string?]
-      :app-db.selected/session                          (ds/maybe uuid?)
-      :app-db.selected/template                         (ds/maybe uuid?)
-      :app-db.selected/session-template                 (ds/maybe uuid?)
-      :app-db.selected/day                              t/date?
-      :app-db.selected/tag                              (ds/maybe uuid?)
-      :app-db.settings/theme                            (s/spec #{:light :dark})
-      :app-db.view/zoom                                 ::zoom
-      :app-db.view/screen-width                         float?
-      :app-db.view.tag-remove-modal/id                  (ds/maybe uuid?)
-      :app-db.view.tag-remove-modal/visible             boolean?
-      :app-db.view.tag-remove-modal/label               (ds/maybe string?)
-      :app-db.view.tag-remove-modal/color               (ds/maybe ::color)
-      :app-db.view.tag-add-modal/visible                boolean?
-      :app-db.view.date-time-picker/visible             boolean?
-      :app-db.view.date-time-picker/value               (ds/maybe inst?)
-      :app-db.view.date-time-picker/mode                (ds/maybe (s/spec #{"date" "time"}))
-      :app-db.view.date-time-picker/session-id          (ds/maybe uuid?)
-      :app-db.view.date-time-picker/session-template-id (ds/maybe uuid?)
-      :app-db.view.date-time-picker/field-key           (ds/maybe keyword?)
-      :app-db.view.date-time-picker/id                  (ds/maybe (s/spec #{:day :session :session-template :report}))
-      :app-db.view.color-picker/visible                 boolean?
-      :app-db.view.color-picker/value                   (ds/maybe ::color)
-      :app-db.reports/beginning-date                    t/date?
-      :app-db.reports/end-date                          t/date?
-      :app-db.reports.pie-chart/tag-groups              ::tag-groups
-      :app-db.reports.pie-chart/selected-tag-group      (ds/maybe uuid?)
-      :app-db.reports.pie-chart/data                    [{:name  string?
-                                                          :min   number?
-                                                          :color string?}]
-      :app-db.reports.pie-chart/data-state              ::data-state
-      :app-db.reports.pattern/data                      [{:day   ::days-of-week-abbreviated
-                                                          :hours [string?]}]
-      :app-db.reports.pattern/data-state                ::data-state
-      :app-db.reports.bar-chart/data                    {(ds/opt :labels)    [::days-of-week-abbreviated]
-                                                         (ds/opt :legend)    [string?]
-                                                         (ds/opt :data)      [ [ number? ] ]
-                                                         (ds/opt :barColors) [string?]}
-      :app-db.reports.bar-chart/data-state              ::data-state}}))
+   {:name ::app-db
+    :spec
+    {:app-db/version                                   string?
+     :app-db/current-time                              ::instant
+     :app-db/current-timezone                          t/zone?
+     :app-db/tracking                                  [uuid?]
+     :app-db/calendar                                  ::calendar
+     :app-db/sessions                                  ::sessions
+     :app-db/exercises                                 ::exercises
+     :app-db/exercise-sessions                         ::exercise-sessions
+     :app-db/exercise-logs                             ::exercise-logs
+     :app-db/tags                                      ::tags
+     :app-db/templates                                 ::templates
+     :app-db/session-templates                         ::session-templates
+     :app-db/backup-keys                               [string?]
+     :app-db.selected/session                          (ds/maybe uuid?)
+     :app-db.selected/template                         (ds/maybe uuid?)
+     :app-db.selected/session-template                 (ds/maybe uuid?)
+     :app-db.selected/day                              t/date?
+     :app-db.selected/tag                              (ds/maybe uuid?)
+     :app-db.settings/theme                            (s/spec #{:light :dark})
+     :app-db.view/zoom                                 ::zoom
+     :app-db.view/screen-width                         float?
+     :app-db.view.tag-remove-modal/id                  (ds/maybe uuid?)
+     :app-db.view.tag-remove-modal/visible             boolean?
+     :app-db.view.tag-remove-modal/label               (ds/maybe string?)
+     :app-db.view.tag-remove-modal/color               (ds/maybe ::color)
+     :app-db.view.tag-add-modal/visible                boolean?
+     :app-db.view.date-time-picker/visible             boolean?
+     :app-db.view.date-time-picker/value               (ds/maybe inst?)
+     :app-db.view.date-time-picker/mode                (ds/maybe (s/spec #{"date" "time"}))
+     :app-db.view.date-time-picker/session-id          (ds/maybe uuid?)
+     :app-db.view.date-time-picker/session-template-id (ds/maybe uuid?)
+     :app-db.view.date-time-picker/field-key           (ds/maybe keyword?)
+     :app-db.view.date-time-picker/id                  (ds/maybe (s/spec #{:day :session :session-template :report}))
+     :app-db.view.color-picker/visible                 boolean?
+     :app-db.view.color-picker/value                   (ds/maybe ::color)
+     :app-db.reports/beginning-date                    t/date?
+     :app-db.reports/end-date                          t/date?
+     :app-db.reports.pie-chart/tag-groups              ::tag-groups
+     :app-db.reports.pie-chart/selected-tag-group      (ds/maybe uuid?)
+     :app-db.reports.pie-chart/data                    [{:name  string?
+                                                         :min   number?
+                                                         :color string?}]
+     :app-db.reports.pie-chart/data-state              ::data-state
+     :app-db.reports.pattern/data                      [{:day   ::days-of-week-abbreviated
+                                                         :hours [string?]}]
+     :app-db.reports.pattern/data-state                ::data-state
+     :app-db.reports.bar-chart/data                    {(ds/opt :labels)    [::days-of-week-abbreviated]
+                                                        (ds/opt :legend)    [string?]
+                                                        (ds/opt :data)      [ [ number? ] ]
+                                                        (ds/opt :barColors) [string?]}
+     :app-db.reports.bar-chart/data-state              ::data-state}}))
 
 (comment
   (s/explain app-db-spec (merge {:settings {:theme :dark}
@@ -461,54 +484,58 @@
         ]
     (merge
       ;; blank default
-      {:app-db/calendar          {selected-day {:calendar/date     selected-day
-                                                :calendar/sessions []}}
-       :app-db/tags              {}
-       :app-db/sessions          {}
-       :app-db/templates         {}
-       :app-db/session-templates {}}
+     {:app-db/calendar          {selected-day {:calendar/date              selected-day
+                                               :calendar/sessions          []
+                                               :calendar/exercise-sessions []}}
+      :app-db/tags              {}
+      :app-db/sessions          {}
+      :app-db/templates         {}
+      :app-db/session-templates {}
+      :app-db/exercises         {}
+      :app-db/exercise-sessions {}
+      :app-db/exercise-logs     {}}
 
       ;; uncomment bellow to use generated data
       ;; cal-tag-sessions
 
-      {
-       :app-db/version                                   "version-not-set"
-       :app-db/current-time                              (t/now)
-       :app-db/current-timezone                          (-> localization (j/get :timezone) (t/zone))
-       :app-db/tracking                                  []
-       :app-db/backup-keys                               []
-       :app-db.selected/session                          nil
-       :app-db.selected/template                         nil
-       :app-db.selected/session-template                 nil
-       :app-db.selected/tag                              nil
-       :app-db.selected/day                              selected-day
-       :app-db.settings/theme                            :dark
-       :app-db.view/zoom                                 1.25
-       :app-db.view/screen-width                         1.0 ;; TODO better default?
-       :app-db.view.tag-remove-modal/id                  nil
-       :app-db.view.tag-remove-modal/visible             false
-       :app-db.view.tag-remove-modal/label               nil
-       :app-db.view.tag-remove-modal/color               nil
-       :app-db.view.tag-add-modal/visible                false
-       :app-db.view.date-time-picker/visible             false
-       :app-db.view.date-time-picker/value               nil
-       :app-db.view.date-time-picker/mode                nil
-       :app-db.view.date-time-picker/session-id          nil
-       :app-db.view.date-time-picker/session-template-id nil
-       :app-db.view.date-time-picker/field-key           nil
-       :app-db.view.date-time-picker/id                  nil
-       :app-db.view.color-picker/visible                 false
-       :app-db.view.color-picker/value                   nil
-       :app-db.reports/beginning-date                    (-> (t/now) (t/<< (t/new-duration 7 :days)) (t/date))
-       :app-db.reports/end-date                          (-> (t/now) (t/date))
-       :app-db.reports.pie-chart/tag-groups              {}
-       :app-db.reports.pie-chart/selected-tag-group      nil
-       :app-db.reports.pie-chart/data                    []
-       :app-db.reports.pie-chart/data-state              :stale
-       :app-db.reports.pattern/data                      []
-       :app-db.reports.pattern/data-state                :stale
-       :app-db.reports.bar-chart/data                    {}
-       :app-db.reports.bar-chart/data-state              :stale})))
+     {
+      :app-db/version                                   "version-not-set"
+      :app-db/current-time                              (t/now)
+      :app-db/current-timezone                          (-> localization (j/get :timezone) (t/zone))
+      :app-db/tracking                                  []
+      :app-db/backup-keys                               []
+      :app-db.selected/session                          nil
+      :app-db.selected/template                         nil
+      :app-db.selected/session-template                 nil
+      :app-db.selected/tag                              nil
+      :app-db.selected/day                              selected-day
+      :app-db.settings/theme                            :dark
+      :app-db.view/zoom                                 1.25
+      :app-db.view/screen-width                         1.0 ;; TODO better default?
+      :app-db.view.tag-remove-modal/id                  nil
+      :app-db.view.tag-remove-modal/visible             false
+      :app-db.view.tag-remove-modal/label               nil
+      :app-db.view.tag-remove-modal/color               nil
+      :app-db.view.tag-add-modal/visible                false
+      :app-db.view.date-time-picker/visible             false
+      :app-db.view.date-time-picker/value               nil
+      :app-db.view.date-time-picker/mode                nil
+      :app-db.view.date-time-picker/session-id          nil
+      :app-db.view.date-time-picker/session-template-id nil
+      :app-db.view.date-time-picker/field-key           nil
+      :app-db.view.date-time-picker/id                  nil
+      :app-db.view.color-picker/visible                 false
+      :app-db.view.color-picker/value                   nil
+      :app-db.reports/beginning-date                    (-> (t/now) (t/<< (t/new-duration 7 :days)) (t/date))
+      :app-db.reports/end-date                          (-> (t/now) (t/date))
+      :app-db.reports.pie-chart/tag-groups              {}
+      :app-db.reports.pie-chart/selected-tag-group      nil
+      :app-db.reports.pie-chart/data                    []
+      :app-db.reports.pie-chart/data-state              :stale
+      :app-db.reports.pattern/data                      []
+      :app-db.reports.pattern/data-state                :stale
+      :app-db.reports.bar-chart/data                    {}
+      :app-db.reports.bar-chart/data-state              :stale})))
 
 ;;
 ;; serialization
