@@ -197,6 +197,16 @@
   `:session/remove-color` can be used to remove the color attribute.
   `:session/hex-color` wins over :session/remove-color for setting color.
   Session will not update (no error thrown yet) when stamps are not valid."
+  ;; 2023-02-04 Justin My best guess as to why this doesn't include tags is that
+  ;; Tags are a list of references
+  ;; This function essentially merges the provided map with the existing one
+  ;; Trying to manage a list of references in this function would be diffficult
+  ;; It would require doing one of the following
+  ;; - always providing all tags to just replace what exists
+  ;; - specicying add or remove with any tag reference provided
+  ;; I think in the past I decided that it would be better to just have add and remove events for setting tags
+  ;; It's more boilerplate but it makes for simpler functions with easier to reason about events
+  ;; Maybe I'll regret that as time goes one
   [{:keys [db]} [_ {:session/keys [id color-hex remove-color] :as session}]]
   (let [c              (make-color-if-some color-hex)
         session        (-> session
@@ -872,3 +882,18 @@
   {:db            db
    :import-backup-fx (-> db (select-keys [:app-db/current-time]))})
 (reg-event-fx :import-backup [base-interceptors] import-backup)
+
+;; create-exercise
+;; update-exercise
+;; delete-exercise
+
+;; create-exercise-session
+;; update-exercise-session
+;; delete-exercise-session
+;; add-exercise-log-to-exercise-session
+;; remove-exercise-log-from-exercise-session
+;; re-index-exercise-session
+
+;; create-exercise-log (side effect to add to session)
+;; delete-exercise-log (side effect to remove from session)
+;; update-exercise-log

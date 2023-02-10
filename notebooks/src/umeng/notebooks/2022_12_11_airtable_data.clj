@@ -70,6 +70,7 @@
 (-> exercise-logs-raw rand-nth)
 
 ;; TODO move this to shared ns
+;; TODO add steps
 (defn xform-exercise-log
   [{:keys [id fields]}]
   (let [{:keys

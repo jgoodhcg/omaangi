@@ -10,20 +10,21 @@
 (s/def ::type (s/spec #{:exercise :exercise-log :exercise-session}))
 
 (def exercise
-  {(ds/req :xt/id)          uuid?
-   (ds/req :umeng/type)     ::type
-   (ds/req :exercise/label) string?
-   :exercise/notes          string?
-   :exercise/source         string?
-   :exercise/body-areas     [keyword?]
-   :airtable/ported         boolean?
-   :airtable/created-time   string?
-   :airtable/distance-unit  string?
-   :airtable/id             string?
-   :airtable/exercise-log   [string?]
-   :airtable/weight-unit    string?
-   :airtable/log-count      integer?
-   :airtable/latest-done    string?})
+  {(ds/req :xt/id)               uuid?
+   (ds/req :umeng/type)          ::type
+   (ds/req :exercise/label)      string?
+   :exercise/notes               string?
+   :exercise/source              string?
+   :exercise/body-areas          [keyword?]
+   :exercise/default-weight-unit keyword?
+   :airtable/ported              boolean?
+   :airtable/created-time        string?
+   :airtable/distance-unit       string?
+   :airtable/id                  string?
+   :airtable/exercise-log        [string?]
+   :airtable/weight-unit         string?
+   :airtable/log-count           integer?
+   :airtable/latest-done         string?})
 
 (def exercise-session
   {(ds/req :xt/id)                               uuid?
@@ -50,6 +51,8 @@
    :exercise-log.interval/beginning      t/instant?
    :exercise-log.interval/end            t/instant?
    :exercise-log/sets                    [{:exercise-log.set/reps integer?
+                                           (ds/opt :exercise-lo.set/beginning) t/instant?
+                                           (ds/opt :exercise-lo.set/end) t/instant?
                                            (ds/opt :exercise-log.set/weight)
                                            {:exercise-log.set.weight/amount      float?
                                             :exercise-log.set.weight/unit keyword?}}]
