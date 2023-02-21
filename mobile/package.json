@@ -41,7 +41,7 @@
     "react-native": "0.70.5",
     "react-native-chart-kit": "^6.11.0",
     "react-native-color-picker": "^0.6.0",
-    "react-native-gesture-handler": "~2.9.0",
+    "react-native-gesture-handler": "~2.8.0",
     "react-native-modal-datetime-picker": "^14.0.1",
     "react-native-paper": "^5.1.4",
     "react-native-reanimated": "~2.12.0",
