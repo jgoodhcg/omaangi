@@ -7,7 +7,7 @@
 ;; but I can't figure out how to enforce that within the data spec right now
 ;; also I don't know if I __should__ enforce it within the data spec
 ;; it's kind of a spec selector attribute (somehwat like a multi method)
-(s/def ::type (s/spec #{:exercise :exercise-log :exercise-session}))
+(s/def ::type (s/spec #{:exercise :exercise-log :exercise-session :exercise-set}))
 
 (def exercise
   {(ds/req :xt/id)               uuid?
@@ -47,15 +47,10 @@
   {(ds/req :xt/id)                       uuid?
    (ds/req :umeng/type)                  ::type
    (ds/req :exercise-session/id)         uuid?
-   (ds/req :exercise/id )                uuid?
+   (ds/req :exercise/id)                 uuid?
    :exercise-log.interval/beginning      t/instant?
    :exercise-log.interval/end            t/instant?
-   :exercise-log/sets                    [{:exercise-log.set/reps integer?
-                                           (ds/opt :exercise-lo.set/beginning) t/instant?
-                                           (ds/opt :exercise-lo.set/end) t/instant?
-                                           (ds/opt :exercise-log.set/weight)
-                                           {:exercise-log.set.weight/amount      float?
-                                            :exercise-log.set.weight/unit keyword?}}]
+   :exercise-log/set-ids                 [uuid?]
    :exercise-log/distance                float?
    :exercise-log/distance-unit           keyword?
    :exercise-log/elevation-gain          float?
@@ -68,6 +63,16 @@
    :airtable/ported                      boolean?
    :airtable/average-duration            boolean?
    :airtable/average-of-average-duration boolean?})
+
+(def exercise-set
+  {(ds/req :xt/id)             uuid?
+   (ds/req :umeng/type)        type
+   (ds/req :exercise-log/id)   uuid?
+   (ds/req :exercise-set/reps) integer?
+   :exercise-set/beginning     t/instant?
+   :exercise-set/end           t/instant?
+   :exercise-set/weight-amount float?
+   :exercise-set/weight-unit   keyword?})
 
 (def exercise-spec
   (ds/spec
@@ -85,4 +90,10 @@
   (ds/spec
    {:name         ::exercise-session-spec
     :spec         exercise-session
+    :keys-default ds/opt}))
+
+(def exercise-set-spec
+  (ds/spec
+   {:name         ::exercise-session-spec
+    :spec         exercise-set
     :keys-default ds/opt}))
