@@ -25,6 +25,7 @@
    [umeng.app.misc :refer [<sub >evt get-theme]]
    [umeng.app.screens.core :refer [screens]]
    [umeng.app.screens.day :as day]
+   [umeng.app.screens.exercise.landing :as exercise-landing]
    [umeng.app.screens.settings :as settings]
    [umeng.app.screens.session :as session]
    [umeng.app.screens.reports :as reports]
@@ -174,13 +175,22 @@
         (drawer-screen {:name      (:day-stack screens)
                         :options   {:drawerIcon (drawer-icon "calendar")}
                         :component #(r/as-element
-                                     [:> (stack-navigator) {:initial-route-name (:day screens)}
+                                     [:> (stack-navigator) 
+                                      {:initial-route-name (:day screens)}
                                       (stack-screen {:name      (:day screens)
                                                      :component (hoc-wrap day/screen)
                                                      :options   {:headerShown false}})
                                       (stack-screen {:name      (:session screens)
                                                      :options   (inner-stack-screen-header-options theme)
                                                      :component (hoc-wrap session/screen)})])})
+        (drawer-screen {:name (:exercise-stack screens)
+                        :options (:drawerIcon (drawer-icon "weight"))
+                        :component #(r/as-element
+                                     [:> (stack-navigator) 
+                                      {:initial-route-name (:exercise-landing screens)}
+                                      (stack-screen {:name      (:exercise-landing screens)
+                                                     :component (hoc-wrap exercise-landing/screen)
+                                                     :options   {:headerShown false}})])})
         (drawer-screen {:name      (:reports screens)
                         :options   {:drawerIcon (drawer-icon "hamburger")}
                         :component (hoc-wrap reports/screen)})

@@ -36,3 +36,5 @@ notebooks/dev/user.clj
 notebooks/.clerk/
 
 notebooks/docs/
+
+mobile/.calva/output-window/output.calva-repl

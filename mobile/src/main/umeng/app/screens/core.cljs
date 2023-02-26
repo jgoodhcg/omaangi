@@ -3,6 +3,8 @@
 (def screens {:session          "Session"
               :day-stack        "Day"
               :day              "Day Screen"
+              :exercise-stack   "Exercise"
+              :exercise-landing "Exercise Landing"
               :tags-stack       "Tags"
               :tags             "Tags Screen"
               :tag              "Tag"

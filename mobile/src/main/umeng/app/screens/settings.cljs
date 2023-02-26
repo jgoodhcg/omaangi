@@ -7,29 +7,20 @@
    [reagent.core :as r]
 
    [umeng.app.components.generic-top-section :as top-section]
+   [umeng.app.components.screen-wrap :as screen-wrap]
    [umeng.app.misc :refer [<sub >evt get-theme]]
    [umeng.app.screens.core :refer [screens]]
    [umeng.app.tailwind :refer [tw]]))
 
 (defn screen [props]
-  (r/as-element
-    [(fn []
-       (let [theme   (->> [:theme] <sub get-theme)
-             version (<sub [:version])]
+  (let [theme   (->> [:theme] <sub get-theme)
+        version (<sub [:version])]
 
-         [:> rn/SafeAreaView {:style (merge (tw "flex flex-1")
-                                            {:background-color (-> theme (j/get :colors) (j/get :background))})}
-
-          [:> rn/StatusBar {:visibility "hidden"}]
-
-          [top-section/component props (:settings screens)]
-
-          [:> paper/Surface {:style (merge  (tw "flex flex-1"))}
-
-           [:> rn/View {:style (tw "flex p-8 flex-col")}
-
-            [:> rn/View {:style (tw "flex flex-col mb-8")}
-             [:> paper/Caption {} version]]]]]))]))
+    [screen-wrap/basic
+     [top-section/component props (:settings screens)]
+     [:> rn/View {:style (tw "flex p-8 flex-col")}
+      [:> rn/View {:style (tw "flex flex-col mb-8")}
+       [:> paper/Caption {} version]]]]))
 
 (comment
   ;; switchties
