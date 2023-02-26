@@ -94,6 +94,13 @@
     (j/contains? c :color)
     false))
 
+(defn is-hex-color?
+  [maybe-hex]
+  (and
+   (-> maybe-hex string?)
+   (-> maybe-hex count (= 7))
+   (-> maybe-hex first (= "#"))))
+
 (defn active-gesture? [evt]
   (-> evt
       (j/get :nativeEvent)

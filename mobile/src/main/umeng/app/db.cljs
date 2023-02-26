@@ -20,7 +20,12 @@
    [clojure.test.check.generators]
 
    [umeng.app.colors :refer [material-500-hexes]]
-   [umeng.app.misc :refer [touches chance is-color? hex-if-some make-color-if-some]]
+   [umeng.app.misc :refer [touches 
+                           chance
+                           is-color? 
+                           is-hex-color?
+                           hex-if-some 
+                           make-color-if-some]]
    [umeng.shared.specs.exercises :refer [exercise-spec
                                          exercise-log-spec
                                          exercise-session-spec]]
@@ -81,6 +86,9 @@
 (defn generate-color []
   ;; (-> faker (j/get :internet) (j/call :color) color)
   (-> material-500-hexes rand-nth color))
+
+(defn generate-hex-color []
+  (-> material-500-hexes rand-nth))
 
 (defn generate-session
   "By default will make a session that is contained within a day.
@@ -258,11 +266,16 @@
 
 (s/def ::duration (s/with-gen t/duration? #(gen/fmap generate-duration (s/gen int?))))
 
+;; Deprecated for hex-color
 (s/def ::color (s/with-gen is-color?
                  #(gen/fmap
                     generate-color
                     (s/gen int?))))
 
+(s/def ::hex-color (s/with-gen is-hex-color?
+                     #(gen/fmap
+                       generate-hex-color
+                       (s/gen int?))))
 ;; sessions
 
 (def session-data-spec
@@ -433,7 +446,7 @@
      :app-db.view.tag-remove-modal/id                  (ds/maybe uuid?)
      :app-db.view.tag-remove-modal/visible             boolean?
      :app-db.view.tag-remove-modal/label               (ds/maybe string?)
-     :app-db.view.tag-remove-modal/color               (ds/maybe ::color)
+     :app-db.view.tag-remove-modal/color               (ds/maybe ::hex-color)
      :app-db.view.tag-add-modal/visible                boolean?
      :app-db.view.date-time-picker/visible             boolean?
      :app-db.view.date-time-picker/value               (ds/maybe inst?)
@@ -545,7 +558,6 @@
   [app-db]
   (->> app-db
 
-       (transform [:app-db.view.tag-remove-modal/color] hex-if-some)
        (transform [:app-db.view.color-picker/value ] hex-if-some)
        (transform [:app-db/tags sp/MAP-VALS (sp/must :tag/color)] hex-if-some)
        (transform [:app-db/sessions sp/MAP-VALS (sp/must :session/color)] hex-if-some)
@@ -567,7 +579,6 @@
                                'time/time    t/time
                                'time/zone    t/zone}})
 
-       (transform [:app-db.view.tag-remove-modal/color] make-color-if-some)
        (transform [:app-db.view.color-picker/value ] make-color-if-some)
        (transform [:app-db/tags sp/MAP-VALS (sp/must :tag/color)] make-color-if-some)
        (transform [:app-db/sessions sp/MAP-VALS (sp/must :session/color)] make-color-if-some)

@@ -83,13 +83,12 @@
 (reg-event-fx :navigate [base-interceptors] navigate)
 
 (defn set-tag-remove-modal
-  [db [_ {:tag-remove-modal/keys [id visible label]
-          hex-color              :tag-remove-modal/color}]]
+  [db [_ {:tag-remove-modal/keys [id visible label color]}]]
   (->> db
        (setval [:app-db.view.tag-remove-modal/id] id)
        (setval [:app-db.view.tag-remove-modal/visible] visible)
        (setval [:app-db.view.tag-remove-modal/label] label)
-       (setval [:app-db.view.tag-remove-modal/color] (color hex-color))))
+       (setval [:app-db.view.tag-remove-modal/color] color)))
 (reg-event-db :set-tag-remove-modal [base-interceptors] set-tag-remove-modal)
 
 (defn set-tag-add-modal

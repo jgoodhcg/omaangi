@@ -377,8 +377,6 @@
                                 :app-db.view.tag-remove-modal/visible
                                 :app-db.view.tag-remove-modal/color
                                 :app-db.view.tag-remove-modal/label])])
-       (transform [(sp/keypath :app-db.view.tag-remove-modal/color)]
-                  hex-if-some)
        ;; remove :app-db.view from keyword because legacy subscription consumer
        (transform [sp/MAP-KEYS] #(drop-keyword-sections 2 %))))
 (reg-sub :tag-remove-modal tag-removal-modal)
