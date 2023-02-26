@@ -8,7 +8,7 @@
    ["expo-document-picker" :as doc-picker]
 
    [applied-science.js-interop :as j]
-   [com.rpl.specter :as sp :refer [select transform]]
+   [com.rpl.specter :as sp :refer [select transform setval]]
    [cljs.core.async :refer [go <!]]
    [cljs.core.async.interop :refer [<p!]]
    [clojure.set :refer [subset?]]
@@ -71,6 +71,20 @@
 
 (def backups-dir (str dd "backups/"))
 
+(defn app-db-load-tx
+  "these changes handle accretion to the db spec"
+  [app-db-str]
+  (-> app-db-str de-serialize
+  ;; Add exercise-sessions to calendar index if they don't exist
+      (->> (transform [:app-db/calendar
+                       sp/MAP-VALS
+                       :calendar/exercise-sessions]
+                      (fn [exercise-sessions]
+                        (if (some? exercise-sessions)
+                          exercise-sessions
+                          []))))
+      (->> (merge default-app-db))))
+
 (reg-fx :check-for-saved-db
         (fn [_]
           (go
@@ -89,9 +103,7 @@
                            (-> expo-file-system (j/call :readAsStringAsync app-db-file-path)
                                <p!
                                ((fn [app-db-str]
-                                  (>evt [:load-db (-> app-db-str de-serialize
-                                                      ;; this merge handles accretion to the db spec
-                                                      (->> (merge default-app-db )))]))))
+                                  (>evt [:load-db (-> app-db-str app-db-load-tx)]))))
                            (catch js/Object e
                              (-> rn/Alert (j/call :alert "Failure on readAsStringAsync" (str e))))))))))
               (catch js/Object e
