@@ -333,10 +333,12 @@
 (def calendar-val-data-spec
   (ds/spec {:name ::calendar-ds
             :spec {:calendar/date              t/date?
-                   :calendar/sessions          [uuid?]
-                   :calendar/exercise-sessions [uuid?]}})) ;; TODO should these maybe be sets instead of vecs?
+;; TODO should these maybe be sets instead of vecs?
+                   (ds/opt :calendar/sessions)          [uuid?]
+                   (ds/opt :calendar/exercise-sessions) [uuid?]}})) 
 
-(s/def ::calendar-val (s/with-gen calendar-val-data-spec #(gen/fmap generate-calendar-val (s/gen int?))))
+(s/def ::calendar-val (s/with-gen calendar-val-data-spec
+                        #(gen/fmap generate-calendar-val (s/gen int?))))
 
 (s/def ::calendar (s/with-gen
                     (s/and map? (s/every-kv t/date? ::calendar-val))

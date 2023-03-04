@@ -126,10 +126,29 @@
        (setval [:app-db.view.color-picker/visible] visible)))
 (reg-event-db :set-color-picker [base-interceptors] set-color-picker)
 
+;; TODO 2023-02-26 Justin - This function should be it's own event
+;; Every caller of re-index-session would need to call this first
+;; Thought about maybe putting it in as an interceptor to re-index session but that seems like an anti pattern
+(defn make-new-calendar-indexes
+  "db is appdb and days is a vector of t/date"
+  [days db]
+  (->> db
+       (transform [:app-db/calendar]
+                  #(merge
+                    (->> days
+                         (map (fn [d] [d {:calendar/date     d
+                                          :calendar/sessions []
+                                          :calendar/exercise-sessions []}]))
+                         flatten
+                         (apply hash-map))
+                    %))))
+
 (defn set-selected-day
   [db [_ new-date-inst]]
-  (->> db
-       (setval [:app-db.selected/day] (-> new-date-inst t/date))))
+  (let [d (-> new-date-inst t/date)]
+    (->> db
+         (setval [:app-db.selected/day] d)
+         (make-new-calendar-indexes [d]))))
 (reg-event-db :set-selected-day [base-interceptors] set-selected-day)
 
 (defn set-selected-session
@@ -158,14 +177,7 @@
                               vec))]
     (->> db
          ;; add days that don't exist yet to calendar
-         (transform [:app-db/calendar]
-                    #(merge
-                       (->> new-indexes
-                            (map (fn [d] [d {:calendar/date     d
-                                             :calendar/sessions []}]))
-                            flatten
-                            (apply hash-map))
-                       %))
+         (make-new-calendar-indexes new-indexes)
          ;; remove from old indexes
          (transform [:app-db/calendar
                      (sp/submap old-indexes)
@@ -403,7 +415,7 @@
               (mapv (fn [{:session/keys [id]}]
                       [:dispatch
                        [:update-session {:session/id   id
-                                         :session/stop now}]]))) }))
+                                         :session/stop now}]])))}))
 (reg-event-fx :update-tracking [base-interceptors insert-now] update-tracking)
 
 (defn create-track-session-from-other-session

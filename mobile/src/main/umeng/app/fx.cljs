@@ -74,17 +74,10 @@
 (defn app-db-load-tx
   "these changes handle accretion to the db spec"
   [app-db-str]
-  (-> app-db-str de-serialize
-  ;; Add exercise-sessions to calendar index if they don't exist
-      (->> (transform [:app-db/calendar
-                       sp/MAP-VALS
-                       :calendar/exercise-sessions]
-                      (fn [exercise-sessions]
-                        (if (some? exercise-sessions)
-                          exercise-sessions
-                          []))))
+  (-> app-db-str 
+      de-serialize
       (->> (merge default-app-db))))
-
+ 
 (reg-fx :check-for-saved-db
         (fn [_]
           (go
