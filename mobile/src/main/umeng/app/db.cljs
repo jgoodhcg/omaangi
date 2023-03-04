@@ -458,7 +458,7 @@
      :app-db.view.date-time-picker/field-key           (ds/maybe keyword?)
      :app-db.view.date-time-picker/id                  (ds/maybe (s/spec #{:day :session :session-template :report}))
      :app-db.view.color-picker/visible                 boolean?
-     :app-db.view.color-picker/value                   (ds/maybe ::color)
+     :app-db.view.color-picker/value                   (ds/maybe ::hex-color)
      :app-db.reports/beginning-date                    t/date?
      :app-db.reports/end-date                          t/date?
      :app-db.reports.pie-chart/tag-groups              ::tag-groups
@@ -560,7 +560,6 @@
   [app-db]
   (->> app-db
 
-       (transform [:app-db.view.color-picker/value ] hex-if-some)
        (transform [:app-db/tags sp/MAP-VALS (sp/must :tag/color)] hex-if-some)
        (transform [:app-db/sessions sp/MAP-VALS (sp/must :session/color)] hex-if-some)
        (transform [:app-db/session-templates sp/MAP-VALS (sp/must :session-template/color)] hex-if-some)
@@ -581,7 +580,6 @@
                                'time/time    t/time
                                'time/zone    t/zone}})
 
-       (transform [:app-db.view.color-picker/value ] make-color-if-some)
        (transform [:app-db/tags sp/MAP-VALS (sp/must :tag/color)] make-color-if-some)
        (transform [:app-db/sessions sp/MAP-VALS (sp/must :session/color)] make-color-if-some)
        (transform [:app-db/session-templates sp/MAP-VALS (sp/must :session-template/color)] make-color-if-some)

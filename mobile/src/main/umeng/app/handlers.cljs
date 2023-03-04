@@ -122,7 +122,7 @@
   [db [_ {:color-picker/keys [visible value]}]]
   (->> db
        (setval [:app-db.view.color-picker/value]
-               (if (some? value) (color value) nil))
+               (if (some? value) value nil))
        (setval [:app-db.view.color-picker/visible] visible)))
 (reg-event-db :set-color-picker [base-interceptors] set-color-picker)
 

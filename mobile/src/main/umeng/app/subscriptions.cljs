@@ -409,9 +409,7 @@
        (select-one [(sp/submap [:app-db.view.color-picker/visible
                                 :app-db.view.color-picker/value])])
        ;; remove :app-db.view from keyword because legacy subscription consumer
-       (transform [sp/MAP-KEYS] #(drop-keyword-sections 2 %))
-       (transform [:color-picker/value]
-                  #(when-some [c %] (-> c (j/call :hex))))))
+       (transform [sp/MAP-KEYS] #(drop-keyword-sections 2 %))))
 (reg-sub :color-picker color-picker)
 
 (defn selected-session-id
