@@ -430,8 +430,6 @@
                        (merge s {:session/color-override (some? c)})))
        (replace-tag-refs-with-objects tags)
        (set-session-ish-color {:hex true})
-       (transform [(sp/keypath :session/tags) sp/ALL (sp/keypath :tag/color)]
-                  hex-if-some)
        (transform []
                   (fn [{:session/keys [start stop]
                         :as           session}]
@@ -464,8 +462,7 @@
 (defn selected-tag
   [[selected-tag-id tags] _]
   (->> tags
-       (select-one! [(sp/keypath selected-tag-id)])
-       (transform [:tag/color] hex-if-some)))
+       (select-one! [(sp/keypath selected-tag-id)])))
 (reg-sub :selected-tag
 
          :<- [:selected-tag-id]
@@ -476,8 +473,7 @@
 (defn tag-list
   [indexed-tags _]
   (->> indexed-tags
-       (select [sp/MAP-VALS])
-       (transform [sp/ALL (sp/keypath :tag/color)] hex-if-some)))
+       (select [sp/MAP-VALS])))
 (reg-sub :tag-list
 
          :<- [:tags]
@@ -582,8 +578,6 @@
                        (merge s {:session-template/color-override (some? c)})))
        (replace-tag-refs-with-objects tags)
        (set-session-ish-color {:hex true})
-       (transform [(sp/keypath :session-template/tags) sp/ALL (sp/keypath :tag/color)]
-                  hex-if-some)
        (transform []
                   (fn [{:session-template/keys [start stop]
                         :as                    session-template}]
@@ -696,7 +690,8 @@
                                       tags           :tag-group/tags
                                       :as            tag-group}]
                                   (let [tag-colors            (->> tags
-                                                                   (mapv :tag/color))
+                                                                   (mapv :tag/color)
+                                                                   (mapv color))
                                         {:keys [mixed-color]} (mix-tag-colors tag-colors)
                                         c                     (or color-override mixed-color)]
                                     (merge tag-group {:tag-group/color (hex-if-some c)}))))
@@ -706,10 +701,7 @@
                                         label           (if (= " " combined-labels)
                                                           "Empty tag group"
                                                           combined-labels)]
-                                    (merge tag-group {:tag-group-render/label label}))))
-       ;; The tag component requires that the tag colors be hex values
-       ;; TODO I should use a render key or something to be more explicit about this
-       (transform [sp/MAP-VALS (sp/must :tag-group/tags) sp/ALL (sp/must :tag/color)] hex-if-some)))
+                                    (merge tag-group {:tag-group-render/label label}))))))
 (reg-sub :pie-chart-tag-groups-hydrated
 
          :<- [:pie-chart-tag-groups]

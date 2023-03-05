@@ -356,7 +356,7 @@
 
 (defn update-tag
   [db [_ {:tag/keys [id color-hex remove-color] :as tag}]]
-  (let [c   (make-color-if-some color-hex)
+  (let [c   color-hex
         tag (-> tag (dissoc :tag/color-hex))]
     (->> db (transform [:app-db/tags (sp/keypath id)]
                        #(merge

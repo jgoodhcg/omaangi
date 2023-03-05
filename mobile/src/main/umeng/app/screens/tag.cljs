@@ -14,9 +14,11 @@
 (defn screen [props]
   (r/as-element
     [(fn []
-       (let [theme                        (->> [:theme] <sub get-theme)
-             {:tag/keys [color id label]} (<sub [:selected-tag])
-             mode                         (if (some? color) "contained" "outlined")]
+       (let [theme              (->> [:theme] <sub get-theme)
+             {color :tag/color
+              id    :tag/id
+              label :tag/label} (<sub [:selected-tag])
+             mode               (if (some? color) "contained" "outlined")]
 
          ;; TODO justin 2021-02-07 Do we need safe area view everywhere?
          [:> rn/ScrollView {:style (merge (tw "flex flex-1")

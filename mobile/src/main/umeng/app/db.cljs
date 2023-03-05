@@ -305,7 +305,7 @@
   (ds/spec {:name ::tag-ds
             :spec {:tag/id             uuid?
                    ;; TODO justin 2021-09-18 Add created and last-edited
-                   (ds/opt :tag/color) (ds/maybe ::color)
+                   (ds/opt :tag/color) (ds/maybe ::hex-color)
                    (ds/opt :tag/label) (ds/maybe string?)}}))
 
 (s/def ::tag (s/with-gen tag-data-spec #(gen/fmap generate-tag (s/gen int?))))
@@ -560,7 +560,6 @@
   [app-db]
   (->> app-db
 
-       (transform [:app-db/tags sp/MAP-VALS (sp/must :tag/color)] hex-if-some)
        (transform [:app-db/sessions sp/MAP-VALS (sp/must :session/color)] hex-if-some)
        (transform [:app-db/session-templates sp/MAP-VALS (sp/must :session-template/color)] hex-if-some)
        (setval [:app-db/backup-keys] []) ;; don't backup backup keys
@@ -580,7 +579,6 @@
                                'time/time    t/time
                                'time/zone    t/zone}})
 
-       (transform [:app-db/tags sp/MAP-VALS (sp/must :tag/color)] make-color-if-some)
        (transform [:app-db/sessions sp/MAP-VALS (sp/must :session/color)] make-color-if-some)
        (transform [:app-db/session-templates sp/MAP-VALS (sp/must :session-template/color)] make-color-if-some)
        ))

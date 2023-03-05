@@ -299,6 +299,7 @@
                                   :session-template/color (if hex (hex-if-some c) c)})
                         ;; when there is NOT an override color mix tag colors
                         (merge s (let [mixed-color (->> tag-colors
+                                                        (mapv color)
                                                         mix-tag-colors
                                                         :mixed-color
                                                         ((fn [c]

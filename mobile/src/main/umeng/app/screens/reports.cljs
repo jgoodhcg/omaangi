@@ -119,10 +119,10 @@
            "remove tag group"]]
          [:> rn/View {:key id :style (tw "flex pb-6")}
 
-          [:> paper/Button (merge {:color    color
-                                   :mode     "contained"
-                                   :on-press #(>evt [:set-selected-pie-chart-tag-group
-                                                     {:pie-chart.tag-group/id id}])}
+          [:> paper/Button (merge {:buttonColor color
+                                   :mode        "contained"
+                                   :on-press    #(>evt [:set-selected-pie-chart-tag-group
+                                                        {:pie-chart.tag-group/id id}])}
                                   (when strictness {:icon "equal"}))
            label]]))
      [:> paper/Button {:icon     "playlist-plus"

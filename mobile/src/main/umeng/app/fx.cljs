@@ -6,6 +6,7 @@
    ["expo-sharing" :as expo-sharing]
    ["react-native" :as rn]
    ["expo-document-picker" :as doc-picker]
+   ["color" :as color]
 
    [applied-science.js-interop :as j]
    [com.rpl.specter :as sp :refer [select transform setval]]
@@ -326,6 +327,7 @@
                                                                   :tag-group/color     (->> tag-group
                                                                                             :tag-group/tags
                                                                                             (mapv :tag/color)
+                                                                                            (mapv color)
                                                                                             mix-tag-colors
                                                                                             :mixed-color
                                                                                             hex-if-some)
@@ -437,10 +439,9 @@
                                                           day-of-week hour))
                                                         (map :session/tags)
                                                         flatten
-                                                        (filter #(-> % :tag/color hex-if-some))
+                                                        (filter #(-> % :tag/color some?))
                                                         (map #(-> %
                                                                   :tag/color
-                                                                  hex-if-some
                                                                   (or "#ffffff")))
                                                         frequencies
                                                         (map identity)
@@ -483,7 +484,7 @@
                     :session/stop  (-> (t/date "2022-01-30") (t/at "06:00") t/instant)}}
         :tags {#uuid "ff07f1c6-2361-4d40-a30c-a6a656c8e488"
                {:tag/id #uuid "ff07f1c6-2361-4d40-a30c-a6a656c8e488"
-                :tag/color (make-color-if-some "#bbaa77")}}
+                :tag/color "#bbaa77"}}
         :report-interval {:app-db.reports/beginning-date (t/date "2022-01-28")
                           :app-db.reports/end-date       (t/date "2022-01-30")}}
        generate-pattern-data
