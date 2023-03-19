@@ -21,6 +21,10 @@
 
   (clerk/clear-cache!)
 
-  (clerk/build-static-app! {:paths [] :out-path "docs"})
-
+  (clerk/build! {:paths ["src/umeng/notebooks/"]
+                 ;; :out-path "resources/clerk_output/"
+                 :bundle true
+                 ;; :ssr true
+                 ;; :compile-css true
+                 :browse true})
   )
