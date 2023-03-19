@@ -3,11 +3,11 @@
             [tick.core :as t]
             [clojure.spec.alpha :as s]))
 
-;; 2022-12-03 Justin should match the data spec symbol
+;; 2022-12-03 Justin - should match the data spec symbol
 ;; but I can't figure out how to enforce that within the data spec right now
 ;; also I don't know if I __should__ enforce it within the data spec
 ;; it's kind of a spec selector attribute (somehwat like a multi method)
-(s/def ::type (s/spec #{:exercise :exercise-log :exercise-session :exercise-set}))
+(s/def ::type (s/spec #{:exercise :exercise-log :exercise-session :exercise-set :exercise-group}))
 
 (def exercise
   {(ds/req :xt/id)               uuid?
@@ -16,6 +16,7 @@
    :exercise/notes               string?
    :exercise/source              string?
    :exercise/body-areas          [keyword?]
+   :exercise/group-ids           [uuid?]
    :exercise/default-weight-unit keyword?
    :airtable/ported              boolean?
    :airtable/created-time        string?
@@ -25,6 +26,13 @@
    :airtable/weight-unit         string?
    :airtable/log-count           integer?
    :airtable/latest-done         string?})
+
+(def exercise-group
+  {(ds/req :xt/id)                uuid?
+   (ds/req :umeng/type)           ::type
+   (ds/req :exercise-group/label) string?
+   :exercise-group/notes          string?
+   :exercise-group/exercise-ids   [uuid?]})
 
 (def exercise-session
   {(ds/req :xt/id)                               uuid?
@@ -96,4 +104,10 @@
   (ds/spec
    {:name         ::exercise-session-spec
     :spec         exercise-set
+    :keys-default ds/opt}))
+
+(def exercise-group-spec
+  (ds/spec
+   {:name         ::exercise-group-spec
+    :spec         exercise-group
     :keys-default ds/opt}))
