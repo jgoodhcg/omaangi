@@ -9,6 +9,7 @@
            com.cognitect/transit-clj             {:mvn/version "1.0.329"}
            umeng/shared                          {:local/root "../shared"}
            kixi/stats                            {:mvn/version "0.5.5"}
+           com.taoensso/tufte                    {:mvn/version "2.4.5"}
            org.shredzone.commons/commons-suncalc {:mvn/version "3.5"}
            io.github.nextjournal/clerk           {:mvn/version "0.12.707"}}
  :aliases {:dev {:extra-paths ["dev"]}}}
