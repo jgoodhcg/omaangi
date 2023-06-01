@@ -30,7 +30,8 @@
           "appleTeamId": "85AM629RKZ",
           "iCloudContainerEnvironment": "Production"
         }
-      ]
+      ],
+      "expo-localization"
     ],
     "android": {
       "adaptiveIcon": {
